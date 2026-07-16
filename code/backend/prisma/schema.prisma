@@ -1,9 +1,3 @@
-// ============================================================
-// PRISMA SCHEMA — E-commerce Đồ Công Nghệ
-// Dựa trên SRS mục 4.2 + bổ sung cho chức năng Recommendation
-// (huấn luyện offline từ Amazon Electronics Reviews dataset)
-// ============================================================
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -13,9 +7,251 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// ------------------------------------------------------------
-// ENUMS
-// ------------------------------------------------------------
+model User {
+  id            String             @id @default(uuid())
+  email         String             @unique
+  passwordHash  String
+  fullName      String
+  phone         String?
+  avatarUrl     String?
+  role          UserRole           @default(CUSTOMER)
+  isActive      Boolean            @default(true)
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+  cartItems     CartItem[]
+  emailLogs     EmailLog[]
+  orders        Order[]
+  reviews       Review[]
+  activityLogs  UserActivityLog[]
+  voucherUsages UserVoucherUsage[]
+  wishlists     Wishlist[]
+
+  @@map("users")
+}
+
+model Category {
+  id          String     @id @default(uuid())
+  name        String
+  slug        String     @unique
+  description String?
+  imageUrl    String?
+  parentId    String?
+  isActive    Boolean    @default(true)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  parent      Category?  @relation("CategoryToSub", fields: [parentId], references: [id])
+  children    Category[] @relation("CategoryToSub")
+  products    Product[]
+
+  @@index([parentId], map: "categories_parentId_fkey")
+  @@map("categories")
+}
+
+model Product {
+  id               String                  @id @default(uuid())
+  categoryId       String
+  name             String
+  slug             String                  @unique
+  brand            String?
+  description      String?
+  specifications   Json?
+  tags             Json?
+  price            Decimal                 @db.Decimal(12, 2)
+  discountPrice    Decimal?                @db.Decimal(12, 2)
+  stock            Int                     @default(0)
+  images           Json?
+  sourceExternalId String?
+  viewCount        Int                     @default(0)
+  soldCount        Int                     @default(0)
+  avgRating        Float                   @default(0)
+  reviewCount      Int                     @default(0)
+  isActive         Boolean                 @default(true)
+  createdAt        DateTime                @default(now())
+  updatedAt        DateTime                @updatedAt
+  cartItems        CartItem[]
+  orderItems       OrderItem[]
+  recommendedFrom  ProductRecommendation[] @relation("source")
+  recommendedTo    ProductRecommendation[] @relation("target")
+  category         Category                @relation(fields: [categoryId], references: [id])
+  reviews          Review[]
+  activityLogs     UserActivityLog[]
+  wishlists        Wishlist[]
+
+  @@index([categoryId])
+  @@index([brand])
+  @@map("products")
+}
+
+model CartItem {
+  id        String   @id @default(uuid())
+  userId    String
+  productId String
+  quantity  Int      @default(1)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  product   Product  @relation(fields: [productId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@unique([userId, productId])
+  @@index([productId], map: "cart_items_productId_fkey")
+  @@map("cart_items")
+}
+
+model Order {
+  id              String             @id @default(uuid())
+  userId          String
+  status          OrderStatus        @default(PENDING)
+  subtotal        Decimal            @db.Decimal(12, 2)
+  discountAmount  Decimal            @default(0.00) @db.Decimal(12, 2)
+  shippingFee     Decimal            @default(0.00) @db.Decimal(12, 2)
+  totalAmount     Decimal            @db.Decimal(12, 2)
+  shippingAddress String
+  shippingPhone   String
+  paymentMethod   String
+  voucherId       String?
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+  items           OrderItem[]
+  user            User               @relation(fields: [userId], references: [id])
+  voucher         Voucher?           @relation(fields: [voucherId], references: [id])
+  voucherUsage    UserVoucherUsage[]
+
+  @@index([userId], map: "orders_userId_fkey")
+  @@index([voucherId], map: "orders_voucherId_fkey")
+  @@map("orders")
+}
+
+model Voucher {
+  id            String             @id @default(uuid())
+  code          String             @unique
+  type          VoucherType
+  value         Decimal            @db.Decimal(12, 2)
+  minOrderValue Decimal            @default(0.00) @db.Decimal(12, 2)
+  maxDiscount   Decimal?           @db.Decimal(12, 2)
+  usageLimit    Int?
+  usedCount     Int                @default(0)
+  startDate     DateTime
+  endDate       DateTime
+  isActive      Boolean            @default(true)
+  createdAt     DateTime           @default(now())
+  orders        Order[]
+  usages        UserVoucherUsage[]
+
+  @@map("vouchers")
+}
+
+model UserVoucherUsage {
+  id        String   @id @default(uuid())
+  userId    String
+  voucherId String
+  orderId   String
+  usedAt    DateTime @default(now())
+  order     Order    @relation(fields: [orderId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
+  voucher   Voucher  @relation(fields: [voucherId], references: [id])
+
+  @@unique([userId, voucherId, orderId])
+  @@index([orderId], map: "user_voucher_usage_orderId_fkey")
+  @@index([voucherId], map: "user_voucher_usage_voucherId_fkey")
+  @@map("user_voucher_usage")
+}
+
+model OrderItem {
+  id        String  @id @default(uuid())
+  orderId   String
+  productId String
+  quantity  Int
+  unitPrice Decimal @db.Decimal(12, 2)
+  subtotal  Decimal @db.Decimal(12, 2)
+  order     Order   @relation(fields: [orderId], references: [id])
+  product   Product @relation(fields: [productId], references: [id])
+
+  @@index([orderId], map: "order_items_orderId_fkey")
+  @@index([productId], map: "order_items_productId_fkey")
+  @@map("order_items")
+}
+
+model Review {
+  id                 String   @id @default(uuid())
+  userId             String
+  productId          String
+  orderId            String?
+  rating             Int
+  title              String?
+  content            String?
+  isVerifiedPurchase Boolean  @default(false)
+  helpfulCount       Int      @default(0)
+  sentimentScore     Float?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  product            Product  @relation(fields: [productId], references: [id])
+  user               User     @relation(fields: [userId], references: [id])
+
+  @@unique([userId, productId])
+  @@index([productId])
+  @@map("reviews")
+}
+
+model EmailLog {
+  id        String      @id @default(uuid())
+  userId    String?
+  toEmail   String
+  subject   String
+  template  String?
+  status    EmailStatus @default(QUEUED)
+  errorMsg  String?
+  sentAt    DateTime?
+  createdAt DateTime    @default(now())
+  user      User?       @relation(fields: [userId], references: [id])
+
+  @@index([userId], map: "email_logs_userId_fkey")
+  @@map("email_logs")
+}
+
+model UserActivityLog {
+  id          String       @id @default(uuid())
+  userId      String?
+  sessionId   String?
+  productId   String
+  action      ActivityType
+  searchQuery String?
+  createdAt   DateTime     @default(now())
+  product     Product      @relation(fields: [productId], references: [id])
+  user        User?        @relation(fields: [userId], references: [id])
+
+  @@index([userId, createdAt])
+  @@index([productId, action])
+  @@map("user_activity_logs")
+}
+
+model ProductRecommendation {
+  id            String   @id @default(uuid())
+  productId     String
+  recommendedId String
+  score         Float
+  algorithm     String
+  updatedAt     DateTime @updatedAt
+  product       Product  @relation("source", fields: [productId], references: [id])
+  recommended   Product  @relation("target", fields: [recommendedId], references: [id])
+
+  @@unique([productId, recommendedId, algorithm])
+  @@index([productId, algorithm])
+  @@index([recommendedId], map: "product_recommendations_recommendedId_fkey")
+  @@map("product_recommendations")
+}
+
+model Wishlist {
+  id        String   @id @default(uuid())
+  userId    String
+  productId String
+  createdAt DateTime @default(now())
+  product   Product  @relation(fields: [productId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@unique([userId, productId])
+  @@index([productId], map: "wishlists_productId_fkey")
+  @@map("wishlists")
+}
 
 enum UserRole {
   CUSTOMER
@@ -51,306 +287,4 @@ enum ActivityType {
   REMOVE_FROM_CART
   WISHLIST_ADD
   PURCHASE
-}
-
-// ------------------------------------------------------------
-// 1. USERS
-// ------------------------------------------------------------
-
-model User {
-  id           String   @id @default(uuid())
-  email        String   @unique
-  passwordHash String
-  fullName     String
-  phone        String?
-  avatarUrl    String?
-  role         UserRole @default(CUSTOMER)
-  isActive     Boolean  @default(true)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-
-  cartItems      CartItem[]
-  orders         Order[]
-  reviews        Review[]
-  voucherUsages  UserVoucherUsage[]
-  activityLogs   UserActivityLog[]
-  wishlists      Wishlist[]
-  emailLogs      EmailLog[]
-
-  @@map("users")
-}
-
-// ------------------------------------------------------------
-// 2. CATEGORIES (hỗ trợ phân cấp)
-// ------------------------------------------------------------
-
-model Category {
-  id          String   @id @default(uuid())
-  name        String
-  slug        String   @unique
-  description String?
-  imageUrl    String?
-  parentId    String?
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  parent   Category?  @relation("CategoryToSub", fields: [parentId], references: [id])
-  children Category[] @relation("CategoryToSub")
-  products Product[]
-
-  @@map("categories")
-}
-
-// ------------------------------------------------------------
-// 3. PRODUCTS (bổ sung field cho content-based recommendation)
-// ------------------------------------------------------------
-
-model Product {
-  id               String   @id @default(uuid())
-  categoryId       String
-  name             String
-  slug             String   @unique
-  brand            String?
-  description      String?
-  specifications   Json?    // { "ram": "16GB", "screen": "15.6 inch", ... }
-  tags             Json?
-  price            Decimal  @db.Decimal(12, 2)
-  discountPrice    Decimal? @db.Decimal(12, 2)
-  stock            Int      @default(0)
-  images           Json?
-  sourceExternalId String?  // map với "asin" trong Amazon dataset (nếu seed/đối chiếu)
-  viewCount        Int      @default(0)
-  soldCount        Int      @default(0)
-  avgRating        Float    @default(0)
-  reviewCount      Int      @default(0)
-  isActive         Boolean  @default(true)
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
-
-  category Category @relation(fields: [categoryId], references: [id])
-
-  cartItems       CartItem[]
-  orderItems      OrderItem[]
-  reviews         Review[]
-  activityLogs    UserActivityLog[]
-  wishlists       Wishlist[]
-  recommendedFrom ProductRecommendation[] @relation("source")
-  recommendedTo   ProductRecommendation[] @relation("target")
-
-  @@index([categoryId])
-  @@index([brand])
-  @@map("products")
-}
-
-// ------------------------------------------------------------
-// 4. CART_ITEMS
-// ------------------------------------------------------------
-
-model CartItem {
-  id        String   @id @default(uuid())
-  userId    String
-  productId String
-  quantity  Int      @default(1)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  user    User    @relation(fields: [userId], references: [id])
-  product Product @relation(fields: [productId], references: [id])
-
-  @@unique([userId, productId])
-  @@map("cart_items")
-}
-
-// ------------------------------------------------------------
-// 5. ORDERS
-// ------------------------------------------------------------
-
-model Order {
-  id              String      @id @default(uuid())
-  userId          String
-  status          OrderStatus @default(PENDING)
-  subtotal        Decimal     @db.Decimal(12, 2)
-  discountAmount  Decimal     @default(0) @db.Decimal(12, 2)
-  shippingFee     Decimal     @default(0) @db.Decimal(12, 2)
-  totalAmount     Decimal     @db.Decimal(12, 2)
-  shippingAddress String
-  shippingPhone   String
-  paymentMethod   String
-  voucherId       String?
-  createdAt       DateTime    @default(now())
-  updatedAt       DateTime    @updatedAt
-
-  user    User     @relation(fields: [userId], references: [id])
-  voucher Voucher? @relation(fields: [voucherId], references: [id])
-
-  items         OrderItem[]
-  voucherUsage  UserVoucherUsage[]
-
-  @@map("orders")
-}
-
-// ------------------------------------------------------------
-// 6. VOUCHERS
-// ------------------------------------------------------------
-
-model Voucher {
-  id            String      @id @default(uuid())
-  code          String      @unique
-  type          VoucherType
-  value         Decimal     @db.Decimal(12, 2)
-  minOrderValue Decimal     @default(0) @db.Decimal(12, 2)
-  maxDiscount   Decimal?    @db.Decimal(12, 2)
-  usageLimit    Int?
-  usedCount     Int         @default(0)
-  startDate     DateTime
-  endDate       DateTime
-  isActive      Boolean     @default(true)
-  createdAt     DateTime    @default(now())
-
-  orders Order[]
-  usages UserVoucherUsage[]
-
-  @@map("vouchers")
-}
-
-// ------------------------------------------------------------
-// 7. USER_VOUCHER_USAGE
-// ------------------------------------------------------------
-
-model UserVoucherUsage {
-  id        String   @id @default(uuid())
-  userId    String
-  voucherId String
-  orderId   String
-  usedAt    DateTime @default(now())
-
-  user    User    @relation(fields: [userId], references: [id])
-  voucher Voucher @relation(fields: [voucherId], references: [id])
-  order   Order   @relation(fields: [orderId], references: [id])
-
-  @@unique([userId, voucherId, orderId])
-  @@map("user_voucher_usage")
-}
-
-// ------------------------------------------------------------
-// 8. ORDER_ITEMS (snapshot giá tại thời điểm mua)
-// ------------------------------------------------------------
-
-model OrderItem {
-  id        String  @id @default(uuid())
-  orderId   String
-  productId String
-  quantity  Int
-  unitPrice Decimal @db.Decimal(12, 2) // snapshot giá lúc đặt, không join ngược product.price
-  subtotal  Decimal @db.Decimal(12, 2)
-
-  order   Order   @relation(fields: [orderId], references: [id])
-  product Product @relation(fields: [productId], references: [id])
-
-  @@map("order_items")
-}
-
-// ------------------------------------------------------------
-// 9. REVIEWS (bổ sung field theo cấu trúc Amazon Reviews)
-// ------------------------------------------------------------
-
-model Review {
-  id                  String   @id @default(uuid())
-  userId              String
-  productId           String
-  orderId             String?
-  rating              Int      // 1-5, tương ứng "overall" trong Amazon dataset
-  title               String?  // tương ứng "summary"
-  content             String?  // tương ứng "reviewText"
-  isVerifiedPurchase  Boolean  @default(false)
-  helpfulCount        Int      @default(0)
-  sentimentScore      Float?   // kết quả từ pipeline NLP (nullable, tính sau)
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
-
-  user    User    @relation(fields: [userId], references: [id])
-  product Product @relation(fields: [productId], references: [id])
-
-  @@unique([userId, productId])
-  @@index([productId])
-  @@map("reviews")
-}
-
-// ------------------------------------------------------------
-// 10. EMAIL_LOGS
-// ------------------------------------------------------------
-
-model EmailLog {
-  id        String      @id @default(uuid())
-  userId    String?
-  toEmail   String
-  subject   String
-  template  String?
-  status    EmailStatus @default(QUEUED)
-  errorMsg  String?
-  sentAt    DateTime?
-  createdAt DateTime    @default(now())
-
-  user User? @relation(fields: [userId], references: [id])
-
-  @@map("email_logs")
-}
-
-// ------------------------------------------------------------
-// 11. USER_ACTIVITY_LOGS (implicit feedback cho recommendation)
-// ------------------------------------------------------------
-
-model UserActivityLog {
-  id          String       @id @default(uuid())
-  userId      String?      // nullable cho guest
-  sessionId   String?      // để track guest theo session
-  productId   String
-  action      ActivityType
-  searchQuery String?      // dùng khi action = SEARCH
-  createdAt   DateTime     @default(now())
-
-  user    User?   @relation(fields: [userId], references: [id])
-  product Product @relation(fields: [productId], references: [id])
-
-  @@index([userId, createdAt])
-  @@index([productId, action])
-  @@map("user_activity_logs")
-}
-
-// ------------------------------------------------------------
-// 12. PRODUCT_RECOMMENDATIONS (kết quả model train offline)
-// ------------------------------------------------------------
-
-model ProductRecommendation {
-  id            String   @id @default(uuid())
-  productId     String   // sản phẩm gốc
-  recommendedId String   // sản phẩm được gợi ý
-  score         Float    // độ tương đồng / độ liên quan
-  algorithm     String   // "item_cf", "content_embedding", "co_purchase"...
-  updatedAt     DateTime @updatedAt
-
-  product     Product @relation("source", fields: [productId], references: [id])
-  recommended Product @relation("target", fields: [recommendedId], references: [id])
-
-  @@unique([productId, recommendedId, algorithm])
-  @@index([productId, algorithm])
-  @@map("product_recommendations")
-}
-
-// ------------------------------------------------------------
-// 13. WISHLISTS (tín hiệu "muốn mua" — hỗ trợ recommendation)
-// ------------------------------------------------------------
-
-model Wishlist {
-  id        String   @id @default(uuid())
-  userId    String
-  productId String
-  createdAt DateTime @default(now())
-
-  user    User    @relation(fields: [userId], references: [id])
-  product Product @relation(fields: [productId], references: [id])
-
-  @@unique([userId, productId])
-  @@map("wishlists")
 }
