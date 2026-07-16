@@ -1,3 +1,7 @@
 # Internal planning documents
 plans/
-.agents/
+
+# Machine Learning Data
+ml/data/*.csv
+ml/data/*.jsonl
+ml/data/*.json
