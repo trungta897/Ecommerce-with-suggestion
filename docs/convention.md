@@ -55,3 +55,9 @@ Tài liệu này định nghĩa các quy tắc viết code (Coding Conventions) 
   - `style`: Định dạng code (khoảng trắng, dấu chấm phẩy, v.v.), không ảnh hưởng đến logic.
   - `chore`: Cập nhật tool, cấu hình build, v.v.
 - **Branching**: `main` (Production), `develop` (Staging), tính năng tạo nhánh từ develop `feature/ten-tinh-nang`.
+
+## 7. Quy tắc làm việc của AI Agent (Planning Mandate)
+
+- **BẮT BUỘC TẠO PLAN**: Trước khi bắt đầu xây dựng một tính năng mới (feature) hoặc thay đổi một logic phức tạp nào đó, Agent **BẮT BUỘC** phải tạo một Kế hoạch triển khai (Implementation Plan) để xin ý kiến và sự xác nhận (Approve) từ User.
+- **CHỜ APPROVE CUỐI CÙNG**: Nếu User có feedback chỉnh sửa Plan, Agent phải cập nhật lại Plan và **tiếp tục chờ User duyệt bản Plan cuối cùng** chứ không được phép tự động chuyển sang bước thực thi (code).
+- Không được phép tự ý sửa file code khi chưa thống nhất kế hoạch hoàn chỉnh.

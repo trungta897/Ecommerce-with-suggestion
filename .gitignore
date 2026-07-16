@@ -7,4 +7,5 @@ ml/data/*.jsonl
 ml/data/*.json
 node_modules/
 
+.env
 .env.*
