@@ -17,12 +17,12 @@ Tài liệu này định nghĩa các quy tắc viết code (Coding Conventions) 
 - **Thư viện đề xuất**: `next-intl` hoặc `react-i18next`.
 - **Quy tắc**: Mọi text hiển thị cho người dùng (Label, Placeholder, Button text, Error message validation, v.v.) đều phải sử dụng hàm dịch của i18n.
 - **Ví dụ**: Không viết `<button>Đăng nhập</button>`, mà phải viết `<button>{t('auth.login')}</button>`.
-- Các file ngôn ngữ (JSON) được tổ chức theo module, đặt trong thư mục `messages` hoặc thư mục theo quy chuẩn của thư viện.
+- **Quy tắc chia nhỏ (Modularization)**: BẮT BUỘC phải chia nhỏ các file từ điển (JSON) thành nhiều module độc lập theo tính năng (ví dụ: `common.json`, `auth.json`, `product.json`). Tuyệt đối không nhồi nhét tất cả vào một file duy nhất để đảm bảo dễ bảo trì. Các file này đặt trong `src/messages/`.
 
 ### 2.2. Đối với Backend (NestJS)
 - **Thư viện đề xuất**: `nestjs-i18n`.
 - **Quy tắc**: Mọi thông báo lỗi (Exceptions), tin nhắn trả về (Response messages), nội dung email gửi đi đều phải được khai báo qua hệ thống i18n, tuyệt đối không hardcode text tiếng Việt hoặc tiếng Anh trực tiếp trong code logic.
-- Các text đa ngôn ngữ được đặt tại `src/common/i18n/`.
+- **Quy tắc chia nhỏ (Modularization)**: Tương tự như Frontend, bắt buộc chia nhỏ file từ điển theo module tính năng (ví dụ: `auth.json`, `order.json`) và đặt tại `src/common/i18n/`.
 
 ## 3. Quy tắc Backend (NestJS)
 
