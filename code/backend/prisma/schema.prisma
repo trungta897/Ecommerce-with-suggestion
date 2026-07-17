@@ -16,6 +16,8 @@ model User {
   avatarUrl     String?
   role          UserRole           @default(CUSTOMER)
   isActive      Boolean            @default(true)
+  isVerified    Boolean            @default(false)
+  passwordSetAt DateTime?
   createdAt     DateTime           @default(now())
   updatedAt     DateTime           @updatedAt
   cartItems     CartItem[]
@@ -53,7 +55,7 @@ model Product {
   name             String
   slug             String                  @unique
   brand            String?
-  description      String?
+  description      String?                 @db.Text
   specifications   Json?
   tags             Json?
   price            Decimal                 @db.Decimal(12, 2)
@@ -98,23 +100,31 @@ model CartItem {
 }
 
 model Order {
-  id              String             @id @default(uuid())
-  userId          String
-  status          OrderStatus        @default(PENDING)
-  subtotal        Decimal            @db.Decimal(12, 2)
-  discountAmount  Decimal            @default(0.00) @db.Decimal(12, 2)
-  shippingFee     Decimal            @default(0.00) @db.Decimal(12, 2)
-  totalAmount     Decimal            @db.Decimal(12, 2)
-  shippingAddress String
-  shippingPhone   String
-  paymentMethod   String
-  voucherId       String?
-  createdAt       DateTime           @default(now())
-  updatedAt       DateTime           @updatedAt
-  items           OrderItem[]
-  user            User               @relation(fields: [userId], references: [id])
-  voucher         Voucher?           @relation(fields: [voucherId], references: [id])
-  voucherUsage    UserVoucherUsage[]
+  id               String             @id @default(uuid())
+  userId           String
+  status           OrderStatus        @default(PENDING)
+  subtotal         Decimal            @db.Decimal(12, 2)
+  discountAmount   Decimal            @default(0.00) @db.Decimal(12, 2)
+  shippingFee      Decimal            @default(0.00) @db.Decimal(12, 2)
+  totalAmount      Decimal            @db.Decimal(12, 2)
+  shippingName     String
+  shippingAddress  String
+  shippingPhone    String
+  deliveryMethod   String?
+  deliveryPartner  String?
+  trackingId       String?
+  paymentMethod    PaymentMethod
+  paymentStatus    PaymentStatus      @default(PENDING)
+  vnpTxnRef        String?
+  vnpTransactionNo String?
+  vnpPayDate       String?
+  voucherId        String?
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  items            OrderItem[]
+  user             User               @relation(fields: [userId], references: [id])
+  voucher          Voucher?           @relation(fields: [voucherId], references: [id])
+  voucherUsage     UserVoucherUsage[]
 
   @@index([userId], map: "orders_userId_fkey")
   @@index([voucherId], map: "orders_voucherId_fkey")
@@ -172,20 +182,21 @@ model OrderItem {
 }
 
 model Review {
-  id                 String   @id @default(uuid())
+  id                 String       @id @default(uuid())
   userId             String
   productId          String
   orderId            String?
   rating             Int
   title              String?
-  content            String?
-  isVerifiedPurchase Boolean  @default(false)
-  helpfulCount       Int      @default(0)
+  content            String?      @db.Text
+  isVerifiedPurchase Boolean      @default(false)
+  helpfulCount       Int          @default(0)
   sentimentScore     Float?
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
-  product            Product  @relation(fields: [productId], references: [id])
-  user               User     @relation(fields: [userId], references: [id])
+  status             ReviewStatus @default(VISIBLE)
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+  product            Product      @relation(fields: [productId], references: [id])
+  user               User         @relation(fields: [userId], references: [id])
 
   @@unique([userId, productId])
   @@index([productId])
@@ -198,6 +209,7 @@ model EmailLog {
   toEmail   String
   subject   String
   template  String?
+  type      EmailType
   status    EmailStatus @default(QUEUED)
   errorMsg  String?
   sentAt    DateTime?
@@ -256,15 +268,32 @@ model Wishlist {
 enum UserRole {
   CUSTOMER
   ADMIN
+  SUPER_ADMIN
 }
 
 enum OrderStatus {
+  PENDING_PAYMENT
   PENDING
   CONFIRMED
-  SHIPPING
-  DELIVERED
+  HANDED_OVER
+  DELIVERING
+  COMPLETED
+  RETURN_REQUESTED
+  RETURNED
   CANCELLED
   REFUNDED
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+enum PaymentMethod {
+  VNPAY
+  COD
 }
 
 enum VoucherType {
@@ -277,6 +306,18 @@ enum EmailStatus {
   QUEUED
   SENT
   FAILED
+}
+
+enum EmailType {
+  OTP
+  ORDER_CONFIRM
+  ORDER_COMPLETE
+  RESET_PASS
+}
+
+enum ReviewStatus {
+  VISIBLE
+  HIDDEN
 }
 
 enum ActivityType {
