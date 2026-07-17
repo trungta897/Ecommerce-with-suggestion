@@ -323,10 +323,10 @@ Tính phí vận chuyển theo khu vực hoặc do Admin tự nhận cước ph�
 ### 4.2. Cấu trúc các bảng (MySQL)
 
 **1. Bảng `users`**
-- `id`: INT (PK)
+- `id`: VARCHAR(UUID) (PK)
 - `email`: VARCHAR (Unique, Not Null)
-- `password`: VARCHAR (Hash)
-- `role`: ENUM ('user', 'admin', 'super_admin')
+- `password`: VARCHAR (Hash, NOT NULL - validate: 1 Hoa, 1 Số, 1 Ký tự đặc biệt)
+- `role`: ENUM ('CUSTOMER', 'ADMIN', 'SUPER_ADMIN')
 - `is_verified`: BOOLEAN (Default FALSE)
 - `password_set_at`: TIMESTAMP (Nullable — NULL nghĩa là tài khoản tạo từ Guest Checkout nhưng chưa hoàn tất verify + đặt mật khẩu, dùng để job dọn dẹp nhận diện)
 - `created_at`, `updated_at`
