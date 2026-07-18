@@ -1,0 +1,37 @@
+{
+  "hero": {
+    "main_banner_title": "MacBook Pro M3 Max",
+    "main_banner_subtitle": "Supercharged for pros",
+    "main_banner_cta": "Pre-order now",
+    "sub_banner_1_title": "iPhone 15 Pro",
+    "sub_banner_1_subtitle": "Titanium",
+    "sub_banner_2_title": "AirPods Pro",
+    "sub_banner_2_subtitle": "Magic like you've never heard",
+    "ai_assistant": "✨ AI Assistant"
+  },
+  "product": {
+    "recommended_title": "Just for you",
+    "recommended_subtitle": "AI-curated product selections",
+    "ai_match": "✨ AI Match",
+    "view_details": "View details",
+    "add_to_cart": "Add to cart",
+    "ram": "RAM",
+    "rom": "ROM"
+  },
+  "features": {
+    "free_shipping": "Free Shipping",
+    "free_shipping_desc": "For all orders $80+",
+    "returns": "1 & 1 Returns",
+    "returns_desc": "Cancellation after 7 days",
+    "secure_payment": "100% Secure Payments",
+    "secure_payment_desc": "Guarantee secure payments",
+    "support": "24/7 Dedicated Support",
+    "support_desc": "Anywhere & anytime"
+  },
+  "newsletter": {
+    "title": "Don't Miss Out Latest Trends & Offers",
+    "desc": "Register to receive news about the latest offers & discount codes",
+    "placeholder": "Enter your email",
+    "subscribe": "Subscribe"
+  }
+}

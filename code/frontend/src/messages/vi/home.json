@@ -1,0 +1,37 @@
+{
+  "hero": {
+    "main_banner_title": "MacBook Pro M3 Max",
+    "main_banner_subtitle": "Sức mạnh tối thượng cho dân chuyên nghiệp",
+    "main_banner_cta": "Đặt trước ngay",
+    "sub_banner_1_title": "iPhone 15 Pro",
+    "sub_banner_1_subtitle": "Chất liệu Titanium",
+    "sub_banner_2_title": "AirPods Pro",
+    "sub_banner_2_subtitle": "Kỳ diệu như chưa từng nghe",
+    "ai_assistant": "✨ Trợ lý AI"
+  },
+  "product": {
+    "recommended_title": "Dành riêng cho bạn",
+    "recommended_subtitle": "Các sản phẩm được AI tuyển chọn",
+    "ai_match": "✨ AI Gợi ý cho bạn",
+    "view_details": "Xem chi tiết",
+    "add_to_cart": "Thêm vào giỏ",
+    "ram": "RAM",
+    "rom": "ROM"
+  },
+  "features": {
+    "free_shipping": "Giao hàng miễn phí",
+    "free_shipping_desc": "Cho mọi đơn hàng từ 2.000.000đ",
+    "returns": "Đổi trả 1-1",
+    "returns_desc": "Trong vòng 7 ngày đầu",
+    "secure_payment": "Thanh toán an toàn 100%",
+    "secure_payment_desc": "Đảm bảo tính bảo mật tuyệt đối",
+    "support": "Hỗ trợ 24/7",
+    "support_desc": "Bất cứ nơi đâu & bất cứ lúc nào"
+  },
+  "newsletter": {
+    "title": "Đừng Bỏ Lỡ Các Ưu Đãi Mới Nhất",
+    "desc": "Đăng ký để nhận thông tin về sản phẩm và mã giảm giá",
+    "placeholder": "Nhập email của bạn",
+    "subscribe": "Đăng ký"
+  }
+}

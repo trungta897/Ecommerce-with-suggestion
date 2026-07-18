@@ -1,25 +1,28 @@
 import type { Metadata } from "next";
-import localFont from "next/font/local";
 import "../globals.css";
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 
-const geistSans = localFont({
-  src: "../fonts/GeistVF.woff",
-  variable: "--font-geist-sans",
-  weight: "100 900",
+import { Plus_Jakarta_Sans, Inter } from "next/font/google";
+
+const fontDisplay = Plus_Jakarta_Sans({
+  subsets: ["latin", "vietnamese"],
+  variable: "--font-display",
 });
-const geistMono = localFont({
-  src: "../fonts/GeistMonoVF.woff",
-  variable: "--font-geist-mono",
-  weight: "100 900",
+const fontBody = Inter({
+  subsets: ["latin", "vietnamese"],
+  variable: "--font-body",
 });
+
 
 export const metadata: Metadata = {
   title: "E-Commerce Recommendation System",
   description: "DATN E-Commerce with AI Recommendation",
 };
+
+import { HeaderVN } from "@/components/layout/HeaderVN";
+import { FooterVN } from "@/components/layout/FooterVN";
 
 export default async function RootLayout({
   children,
@@ -38,9 +41,13 @@ export default async function RootLayout({
 
   return (
     <html lang={locale}>
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+      <body className={`${fontDisplay.variable} ${fontBody.variable} antialiased`}>
         <NextIntlClientProvider messages={messages}>
-          {children}
+          <HeaderVN />
+          <main className="min-h-screen">
+            {children}
+          </main>
+          <FooterVN />
         </NextIntlClientProvider>
       </body>
     </html>

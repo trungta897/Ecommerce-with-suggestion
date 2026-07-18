@@ -1,10 +1,30 @@
 {
-  "welcome": "Welcome to our store",
+  "welcome": "Welcome to our ecommerce website",
   "home": "Home",
   "products": "Products",
   "cart": "Cart",
   "language": "Language",
   "vi": "Tiếng Việt",
   "en": "English",
-  "searchPlaceholder": "Search products..."
+  "searchPlaceholder": "Search for products...",
+  "header": {
+    "promo_text": "Get free delivery on orders over $80",
+    "create_account": "Create an account",
+    "sign_in": "Sign In",
+    "search": "Search",
+    "wishlist": "Wishlist",
+    "cart": "Cart"
+  },
+  "footer": {
+    "help_support": "Help & Support",
+    "address": "685 Market Street, Las Vegas, LA 95820, United States.",
+    "phone": "(+099) 532-786-9843",
+    "email": "support@example.com",
+    "account": "Account",
+    "login_register": "Login / Register",
+    "quick_link": "Quick Link",
+    "privacy_policy": "Privacy Policy",
+    "refund_policy": "Refund Policy",
+    "terms_of_use": "Terms of Use"
+  }
 }
