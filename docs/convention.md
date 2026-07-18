@@ -23,28 +23,53 @@ Tài liệu này định nghĩa các quy tắc viết code (Coding Conventions) 
 - **Thư viện đề xuất**: `nestjs-i18n`.
 - **Quy tắc**: Mọi thông báo lỗi (Exceptions), tin nhắn trả về (Response messages), nội dung email gửi đi đều phải được khai báo qua hệ thống i18n, tuyệt đối không hardcode text tiếng Việt hoặc tiếng Anh trực tiếp trong code logic.
 - **Quy tắc chia nhỏ (Modularization)**: Tương tự như Frontend, bắt buộc chia nhỏ file từ điển theo module tính năng (ví dụ: `auth.json`, `order.json`) và đặt tại `src/common/i18n/`.
+## 3. Kiến trúc RESTful API (API Design Architecture)
 
-## 3. Quy tắc Backend (NestJS)
+Để đảm bảo frontend và backend giao tiếp chuẩn mực, toàn bộ API phải tuân thủ nghiêm ngặt các quy chuẩn thiết kế RESTful sau:
+
+- **Đường dẫn (Route Naming)**: Bắt buộc dùng danh từ số nhiều, chữ thường (kebab-case), có version prefix. Ví dụ: `GET /api/v1/users`, `POST /api/v1/orders`. Tuyệt đối không dùng động từ trong URL (Không dùng `/api/v1/createUser`).
+- **HTTP Methods**: Sử dụng chuẩn phương thức để diễn đạt hành động:
+  - `GET`: Lấy dữ liệu (Không chứa body).
+  - `POST`: Tạo mới dữ liệu.
+  - `PUT`/`PATCH`: Cập nhật dữ liệu (PUT ghi đè toàn bộ, PATCH cập nhật một phần).
+  - `DELETE`: Xóa dữ liệu.
+- **Cấu trúc JSON Trả về (Standardized Response Wrapper)**: Mọi API trả về thành công đều phải gói gọn trong một format chung:
+  ```json
+  {
+    "statusCode": 200,
+    "message": "User fetched successfully",
+    "data": { ... }
+  }
+  ```
+- **Xử lý mã lỗi (HTTP Status Codes)**: 
+  - `200 OK` (Thành công), `201 Created` (Tạo mới thành công).
+  - `400 Bad Request` (Dữ liệu gửi lên sai - Validation lỗi).
+  - `401 Unauthorized` (Chưa đăng nhập / Token hết hạn).
+  - `403 Forbidden` (Không có quyền truy cập).
+  - `404 Not Found` (Không tìm thấy dữ liệu).
+
+## 4. Quy tắc Backend (NestJS)
 
 - **Kiến trúc**: Tuân thủ triệt để cấu trúc thư mục được định nghĩa, phân tách logic theo tầng (Controller -> Service -> Repository/Prisma).
 - **Validation**: Sử dụng `class-validator` và `class-transformer` tại các file DTO.
 - **Error Handling**: Bắt lỗi tập trung (Global Exception Filter) trong `src/common/filters/`. Sử dụng các Custom Business Exceptions đã được định nghĩa.
 - **No `any`**: Hạn chế tối đa việc sử dụng kiểu `any`. Phải định nghĩa Type/Interface rõ ràng hoặc DTO cho request/response.
 
-## 4. Quy tắc Frontend (Next.js)
+## 5. Quy tắc Frontend (Next.js)
 
 - **Component**: Tách nhỏ các component. Component sử dụng chung đặt tại `src/components/base/`, component theo nghiệp vụ đặt tại `src/components/features/`.
+- **Quản lý Tài nguyên (Assets & Icons)**: Bắt buộc phân tách rõ ràng tài nguyên UI. File icon tĩnh (.svg, .png) phải được đặt trong thư mục riêng `src/assets/icons/`. Các icon được viết dưới dạng React Component bắt buộc phải đặt tập trung tại thư mục `src/components/base/icons/`, tuyệt đối không để rải rác ở các thư mục module khác.
 - **State Management**: Sử dụng Zustand hoặc Redux Toolkit cho Global State (theo chuẩn thư mục `src/store/`). Không lạm dụng Global State cho những state có thể quản lý cục bộ.
 - **Data Fetching**: Khuyến khích sử dụng Server Components của Next.js để fetch data khi có thể. Đối với Client-side fetching, sử dụng các thư viện quản lý state server như SWR hoặc React Query/Axios Client (đặt tại `src/services/`).
 - **Styling**: Sử dụng Tailwind CSS qua file `index.css`. Không sử dụng inline styles trừ những trường hợp tính toán động.
 - **Validation Form**: Bắt buộc sử dụng `zod` kết hợp với `react-hook-form` (chuẩn thư mục `src/schemas/`).
 
-## 5. Quy tắc Linting & Formatting
+## 6. Quy tắc Linting & Formatting
 
 - Code phải pass qua toàn bộ rules của ESLint (được cấu hình khắt khe không có cảnh báo) và Prettier trước khi được commit.
 - Hỗ trợ Git Hooks (Husky + lint-staged) được thiết lập tự động trong thư mục `.husky/` để chặn commit nếu code lỗi convention.
 
-## 6. Git Workflow & Commit Messages
+## 7. Git Workflow & Commit Messages
 
 - Sử dụng **Conventional Commits** cho tất cả các commit messages.
 - Cú pháp: `<type>[optional scope]: <description>`
@@ -56,7 +81,7 @@ Tài liệu này định nghĩa các quy tắc viết code (Coding Conventions) 
   - `chore`: Cập nhật tool, cấu hình build, v.v.
 - **Branching**: `main` (Production), `develop` (Staging), tính năng tạo nhánh từ develop `feature/ten-tinh-nang`.
 
-## 7. Quy tắc làm việc của AI Agent (Planning Mandate)
+## 8. Quy tắc làm việc của AI Agent (Planning Mandate)
 
 - **BẮT BUỘC TẠO PLAN**: Trước khi bắt đầu xây dựng một tính năng mới (feature) hoặc thay đổi một logic phức tạp nào đó, Agent **BẮT BUỘC** phải tạo một Kế hoạch triển khai (Implementation Plan) để xin ý kiến và sự xác nhận (Approve) từ User.
 - **CHỜ APPROVE CUỐI CÙNG**: Nếu User có feedback chỉnh sửa Plan, Agent phải cập nhật lại Plan và **tiếp tục chờ User duyệt bản Plan cuối cùng** chứ không được phép tự động chuyển sang bước thực thi (code).
