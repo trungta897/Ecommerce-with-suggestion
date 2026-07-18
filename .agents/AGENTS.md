@@ -21,6 +21,10 @@
 - **Frontend (Next.js)**: Mọi text hiển thị trên UI bắt buộc phải khai báo trong `src/messages/` và gọi qua `useTranslations()`.
 - **Backend (NestJS)**: Mọi thông báo lỗi (Error messages, Validation) trả về qua API cũng bắt buộc phải sử dụng đa ngôn ngữ (ví dụ: `nestjs-i18n`) thay vì ném exception kèm chuỗi string cứng.
 
+## i18n Synchronization & Lowercase Mandate
+
+**Rule**: BẮT BUỘC sử dụng chữ thường (lowercase) cho tất cả các namespace (ví dụ: `common`, `home`, `product`) trong thư mục `messages/` cũng như khi khai báo cấu hình.
+- Khi tạo mới một file JSON từ điển (ví dụ: `auth.json`), Agent **BẮT BUỘC** phải tự động đăng ký namespace đó vào file cấu hình (ví dụ: `src/i18n/request.ts` ở Frontend) bằng đúng khóa lowercase TRƯỚC KHI sử dụng nó trong các component để tránh lỗi "Could not resolve message".
 ## Modularization Mandate
 
 **Rule**: Bắt buộc phải chia nhỏ code và các file tài nguyên dịch thuật thành nhiều modules nhỏ độc lập theo từng tính năng (ví dụ: `common`, `auth`, `product`) áp dụng cho CẢ Frontend và Backend.
