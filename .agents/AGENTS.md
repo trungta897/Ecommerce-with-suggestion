@@ -25,3 +25,10 @@
 
 **Rule**: Bắt buộc phải chia nhỏ code và các file tài nguyên dịch thuật thành nhiều modules nhỏ độc lập theo từng tính năng (ví dụ: `common`, `auth`, `product`) áp dụng cho CẢ Frontend và Backend.
 - Không được nhồi nhét tất cả vào một file khổng lồ duy nhất, để đảm bảo hệ thống dễ dàng quản lý, mở rộng và bảo trì sau này.
+
+## UI Assets & Icons Separation Mandate
+
+**Rule**: Bắt buộc phải quản lý các tài nguyên đồ họa (Icons, Images) một cách tách biệt và rành mạch.
+- Tuyệt đối không để file hình ảnh hoặc icon lộn xộn trong thư mục `components` hoặc các thư mục logic khác.
+- File tĩnh (như `.svg`, `.png`) bắt buộc đặt tại thư mục riêng biệt như `src/assets/icons/`.
+- Nếu chuyển đổi Icon thành React Component (`<IconName />`), thì phải gom tập trung tất cả vào thư mục `src/components/base/icons/`.
