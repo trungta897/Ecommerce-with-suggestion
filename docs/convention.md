@@ -18,6 +18,7 @@ Tài liệu này định nghĩa các quy tắc viết code (Coding Conventions) 
 - **Quy tắc**: Mọi text hiển thị cho người dùng (Label, Placeholder, Button text, Error message validation, v.v.) đều phải sử dụng hàm dịch của i18n.
 - **Ví dụ**: Không viết `<button>Đăng nhập</button>`, mà phải viết `<button>{t('auth.login')}</button>`.
 - **Quy tắc chia nhỏ (Modularization)**: BẮT BUỘC phải chia nhỏ các file từ điển (JSON) thành nhiều module độc lập theo tính năng (ví dụ: `common.json`, `auth.json`, `product.json`). Tuyệt đối không nhồi nhét tất cả vào một file duy nhất để đảm bảo dễ bảo trì. Các file này đặt trong `src/messages/`.
+- **Đồng bộ hóa & Định dạng (Sync & Lowercase)**: Tất cả các namespace (khóa module) phải được viết bằng chữ thường (lowercase). Khi tạo một file JSON mới trong `src/messages/`, BẮT BUỘC phải đăng ký file đó vào cấu hình của `next-intl` (thường nằm tại `src/i18n/request.ts`) với khóa (key) in thường tương ứng TRƯỚC KHI sử dụng nó ở Component để tránh lỗi runtime.
 
 ### 2.2. Đối với Backend (NestJS)
 - **Thư viện đề xuất**: `nestjs-i18n`.
@@ -60,7 +61,7 @@ Tài liệu này định nghĩa các quy tắc viết code (Coding Conventions) 
 - **Component**: Tách nhỏ các component. Component sử dụng chung đặt tại `src/components/base/`, component theo nghiệp vụ đặt tại `src/components/features/`.
 - **Quản lý Tài nguyên (Assets & Icons)**: Bắt buộc phân tách rõ ràng tài nguyên UI. File icon tĩnh (.svg, .png) phải được đặt trong thư mục riêng `src/assets/icons/`. Các icon được viết dưới dạng React Component bắt buộc phải đặt tập trung tại thư mục `src/components/base/icons/`, tuyệt đối không để rải rác ở các thư mục module khác.
 - **State Management**: Sử dụng Zustand hoặc Redux Toolkit cho Global State (theo chuẩn thư mục `src/store/`). Không lạm dụng Global State cho những state có thể quản lý cục bộ.
-- **Data Fetching**: Khuyến khích sử dụng Server Components của Next.js để fetch data khi có thể. Đối với Client-side fetching, sử dụng các thư viện quản lý state server như SWR hoặc React Query/Axios Client (đặt tại `src/services/`).
+- **Data Fetching & HTTP Client**: BẮT BUỘC sử dụng thư viện `axios` làm HTTP Client chính cho toàn bộ ứng dụng để đồng bộ hóa cơ chế gọi API và dễ dàng áp dụng interceptor (như Idempotency Key). Đối với Client-side fetching, kết hợp Axios với SWR hoặc React Query (đặt tại `src/services/`).
 - **Styling**: Sử dụng Tailwind CSS qua file `index.css`. Không sử dụng inline styles trừ những trường hợp tính toán động.
 - **Validation Form**: Bắt buộc sử dụng `zod` kết hợp với `react-hook-form` (chuẩn thư mục `src/schemas/`).
 
