@@ -4,10 +4,14 @@ Tài liệu này định hình phong cách thiết kế, trải nghiệm ngườ
 
 ## 1. Thiết kế Thẩm mỹ & Hiện đại (Aesthetics)
 
-Dự án yêu cầu giao diện không được "sơ sài" hay mang cảm giác "MVP cơ bản". Bắt buộc phải áp dụng các tiêu chuẩn thiết kế web hiện đại nhất:
-- **Prioritize Visual Excellence**: Giao diện cần thu hút ngay từ ánh nhìn đầu tiên ("WOW the user"). Không sử dụng các màu sắc nguyên bản (như đỏ thuần `red`, xanh dương thuần `blue`). Hãy dùng các bảng màu được phối tỉ mỉ (ví dụ: HSL tailored colors).
+Dự án yêu cầu giao diện không được "sơ sài". Bắt buộc phải áp dụng các tiêu chuẩn thiết kế web hiện đại nhất, đặc biệt tuân theo **Phong cách Hybrid (VN Tech Retailer + AI)** đã được chốt:
+- **Màu sắc (Color Palette)**:
+  - **Primary Brand (Đỏ rực/Crimson)**: Sử dụng làm điểm nhấn kích thích mua sắm (như FPT, CellphoneS).
+  - **AI Highlight (Gradient Tím/Xanh)**: BẮT BUỘC dùng cho các tính năng liên quan đến AI (AI Summary, AI Match, Smart Filter) để tách biệt với UI thông thường.
+  - **Background**: Sáng sủa, nhiều khoảng trắng (Light Tech Gray/White).
+- **Cấu trúc Bố cục (Layout)**: Mật độ thông tin cao (Dense layout) đặc trưng của bán lẻ điện máy Việt Nam, nhưng giữ các góc bo mềm mại và spacing chuẩn của UI quốc tế (như CozyCommerce).
 - **Dark Mode / Glassmorphism**: Ưu tiên hỗ trợ Dark Mode tinh tế hoặc sử dụng các hiệu ứng Glassmorphism (làm mờ kính, độ trong suốt) để tăng độ sang trọng.
-- **Micro-animations**: Áp dụng các hình thức vi tương tác (micro-animations) khi người dùng hover vào button, card, hoặc khi chuyển trang để tạo cảm giác trang web "sống động" và phản hồi nhanh.
+- **Micro-animations**: Áp dụng các hình thức vi tương tác (micro-animations) khi người dùng hover vào button, card, hoặc khi chuyển trang.
 
 ## 2. Typography (Kiểu chữ)
 
