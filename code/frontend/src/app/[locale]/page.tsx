@@ -19,9 +19,10 @@ export default function Home() {
           </h2>
           <p className="text-gray-500">
             {t('recommended_subtitle')}
+            test
           </p>
         </div>
-        
+
         <ProductGridVN />
       </section>
 
