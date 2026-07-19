@@ -1,9 +1,6 @@
 ---
-name: brainstorm
+name: brainstorm-ba
 description: Dùng khi cần ghi lại 1 ý tưởng thô rồi phỏng vấn làm rõ trước khi viết URD/PRD. Kích hoạt bằng `/brainstorm <mô tả ý tưởng>` hoặc `/brainstorm @<file>`.
-allowed-tools: Read, Write, Edit, Bash, Glob, Grep
-user-invocable: true
-argument-hint: "<idea text> | @<file-path> | (empty for interactive)"
 ---
 
 # /brainstorm — Deep Interview + Clarify
@@ -267,5 +264,5 @@ User nói "nhanh gọn" / "shallow thôi" / "làm nhanh" (thay vì gõ flag) →
 - @../../rules/keyword-detection.md
 - @../../rules/resolve-oqs.md
 - @../../rules/changelog.md
-- @../../../_templates/brainstorm.md
-- @./references/example-brainstorm.md
+- templates/brainstorm.md
+- references/example-brainstorm.md
