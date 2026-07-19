@@ -1,0 +1,13 @@
+{
+  "dashboard": {
+    "title": "Dashboard",
+    "insights": "✨ AI Sales Insights",
+    "overview": "Overview"
+  },
+  "products": {
+    "add_new": "Add New Product",
+    "generate_desc": "✨ AI Generate Description",
+    "product_name": "Product Name",
+    "price": "Price"
+  }
+}

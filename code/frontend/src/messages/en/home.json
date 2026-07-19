@@ -15,8 +15,15 @@
     "ai_match": "✨ AI Match",
     "view_details": "View details",
     "add_to_cart": "Add to cart",
+    "view_all": "View all",
     "ram": "RAM",
     "rom": "ROM"
+  },
+  "categories": {
+    "laptop": "Laptops",
+    "phone": "Smartphones",
+    "tablet": "Tablets",
+    "accessory": "Accessories"
   },
   "features": {
     "free_shipping": "Free Shipping",

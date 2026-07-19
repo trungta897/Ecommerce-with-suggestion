@@ -1,75 +1,65 @@
-import React from 'react';
-import { useTranslations } from 'next-intl';
-
-/* Hallmark · component: Card · genre: modern-minimal · theme: custom
- * states: default · hover · focus · active · disabled · loading · error · success
- * contrast: pass
- */
+import Image from 'next/image';
+import Link from 'next/link';
+import { Product } from '@/lib/mockData';
 
 interface ProductCardProps {
-  title: string;
-  price: string;
-  originalPrice?: string;
-  ram: string;
-  rom: string;
-  isAiMatch?: boolean;
+  product: Product;
 }
 
-export default function ProductCardVN({
-  title,
-  price,
-  originalPrice,
-  ram,
-  rom,
-  isAiMatch = false,
-}: ProductCardProps) {
-  const t = useTranslations('home.product');
-
+export default function ProductCardVN({ product }: ProductCardProps) {
   return (
-    <div className="group relative flex flex-col bg-[var(--color-paper)] border border-[var(--color-rule)] rounded-xl overflow-hidden hover:border-[var(--color-accent)] transition-all duration-300 hover:shadow-lg focus-within:ring-2 focus-within:ring-[var(--color-focus)] focus-within:ring-offset-2">
-      {/* AI Match Badge */}
-      {isAiMatch && (
-        <div className="absolute top-[var(--space-2)] left-[var(--space-2)] z-10 bg-gradient-to-r from-[var(--color-ai-gradient-start)] to-[var(--color-ai-gradient-end)] text-white text-xs font-bold px-[var(--space-3)] py-[var(--space-1)] rounded-full flex items-center gap-1 shadow-sm">
-          {t('ai_match')}
+    <Link href={`/products/${product.slug}`} className="group bg-white p-4 rounded-xl border border-rule hover:shadow-lg transition-all flex flex-col h-full">
+      {/* AI Score Badge */}
+      {product.aiScore && (
+        <div className="mb-3 inline-flex items-center gap-1 bg-purple-50 text-purple-700 text-xs font-semibold px-2 py-1 rounded-md border border-purple-100 self-start">
+          ✨ {product.aiScore}% Phù hợp
         </div>
       )}
-
-      {/* Product Image Placeholder */}
-      <div className="w-full aspect-square bg-[var(--color-paper-2)] relative overflow-hidden">
-        <div className="absolute inset-0 transition-transform duration-500 group-hover:scale-105 bg-[var(--color-paper-3)]" />
+      
+      {/* Image Area */}
+      <div className="relative aspect-square w-full bg-paper-2 rounded-lg mb-4 overflow-hidden">
+        {/* Placeholder if no next/image domain config, using img for now or standard next/image */}
+        <img 
+          src={product.imageUrl} 
+          alt={product.name}
+          className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-300"
+        />
+        {product.discountPercentage && (
+          <div className="absolute top-2 left-2 bg-primary text-primary-foreground text-xs font-bold px-2 py-1 rounded">
+            Giảm {product.discountPercentage}%
+          </div>
+        )}
       </div>
 
       {/* Content */}
-      <div className="p-[var(--space-4)] flex flex-col flex-1">
-        <h3 className="font-semibold text-[var(--color-ink)] mb-[var(--space-1)] line-clamp-2">
-          <a href="#" className="outline-none">
-            <span className="absolute inset-0" />
-            {title}
-          </a>
-        </h3>
+      <div className="flex flex-col flex-grow justify-between">
+        <div>
+          {/* Tags */}
+          {product.tags && product.tags.length > 0 && (
+            <div className="flex flex-wrap gap-1 mb-2">
+              {product.tags.map(tag => (
+                <span key={tag} className="text-[10px] bg-gray-100 text-ink-2 px-2 py-0.5 rounded border border-gray-200">
+                  {tag}
+                </span>
+              ))}
+            </div>
+          )}
+          <h3 className="font-medium text-ink line-clamp-2 mb-2 text-sm md:text-base group-hover:text-primary transition-colors">
+            {product.name}
+          </h3>
+        </div>
         
-        {/* Price Block */}
-        <div className="mt-auto pt-[var(--space-2)] flex flex-col">
-          <span className="text-xl font-bold text-[var(--color-accent)]">
-            {price}
-          </span>
-          {originalPrice && (
-            <span className="text-sm text-[var(--color-muted)] line-through">
-              {originalPrice}
-            </span>
+        <div className="mt-2">
+          <div className="text-primary font-bold text-lg md:text-xl">
+            {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(product.price)}
+          </div>
+          {product.originalPrice && (
+            <div className="text-muted text-sm line-through mt-1">
+              {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(product.originalPrice)}
+            </div>
           )}
         </div>
-
-        {/* Specs (Dense Layout) */}
-        <div className="flex flex-wrap gap-[var(--space-2)] mt-[var(--space-3)]">
-          <div className="text-xs bg-[var(--color-paper-2)] border border-[var(--color-rule)] px-[var(--space-2)] py-1 rounded text-[var(--color-ink-2)]">
-            <span className="text-[var(--color-muted)]">{t('ram')}:</span> {ram}
-          </div>
-          <div className="text-xs bg-[var(--color-paper-2)] border border-[var(--color-rule)] px-[var(--space-2)] py-1 rounded text-[var(--color-ink-2)]">
-            <span className="text-[var(--color-muted)]">{t('rom')}:</span> {rom}
-          </div>
-        </div>
       </div>
-    </div>
+    </Link>
   );
 }

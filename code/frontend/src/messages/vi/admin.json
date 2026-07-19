@@ -1,0 +1,13 @@
+{
+  "dashboard": {
+    "title": "Bảng điều khiển",
+    "insights": "✨ AI Phân tích Doanh số",
+    "overview": "Tổng quan"
+  },
+  "products": {
+    "add_new": "Thêm sản phẩm mới",
+    "generate_desc": "✨ AI Viết Mô Tả",
+    "product_name": "Tên sản phẩm",
+    "price": "Giá bán"
+  }
+}

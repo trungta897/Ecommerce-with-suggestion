@@ -15,8 +15,15 @@
     "ai_match": "✨ AI Gợi ý cho bạn",
     "view_details": "Xem chi tiết",
     "add_to_cart": "Thêm vào giỏ",
+    "view_all": "Xem tất cả",
     "ram": "RAM",
     "rom": "ROM"
+  },
+  "categories": {
+    "laptop": "Laptop",
+    "phone": "Điện thoại di động",
+    "tablet": "Máy tính bảng",
+    "accessory": "Phụ kiện"
   },
   "features": {
     "free_shipping": "Giao hàng miễn phí",
