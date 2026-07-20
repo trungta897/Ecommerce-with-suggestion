@@ -55,7 +55,9 @@ Tài liệu này định nghĩa các quy tắc viết code (Coding Conventions) 
 - **Validation**: Sử dụng `class-validator` và `class-transformer` tại các file DTO.
 - **Error Handling**: Bắt lỗi tập trung (Global Exception Filter) trong `src/common/filters/`. Sử dụng các Custom Business Exceptions đã được định nghĩa.
 - **No `any`**: Hạn chế tối đa việc sử dụng kiểu `any`. Phải định nghĩa Type/Interface rõ ràng hoặc DTO cho request/response.
-
+- **Hiệu năng Database (Eager Loading)**: Bắt buộc áp dụng Eager Loading (thông qua `include` của Prisma) khi thực hiện truy vấn các thực thể có quan hệ với nhau để tránh lỗi N+1 Query. Phải chỉ định rõ ràng các quan hệ cần thiết tại từng hàm truy vấn, tránh lạm dụng Eager Loading dư thừa (ví dụ: query quá sâu hoặc dữ liệu không dùng tới).
+- **Bảo mật (SQL Injection)**: Ưu tiên sử dụng các hàm Query mặc định của Prisma. Trong trường hợp đặc biệt phải sử dụng `$queryRaw` (Raw SQL), **tuyệt đối không được nối chuỗi (string concatenation)** các giá trị người dùng nhập vào câu SQL. Bắt buộc phải sử dụng tham số hóa (Parameterized Queries) để phòng chống SQL Injection.
+- **Bất đồng bộ & Decoupling (Pub/Sub)**: Đối với các tác vụ phụ chạy ngầm sau một hành động chính (như gửi email sau khi đặt hàng, bắn thông báo, cập nhật thống kê), bắt buộc sử dụng kiến trúc Pub/Sub (sử dụng `@nestjs/event-emitter` hoặc message broker). Tuyệt đối không gọi trực tiếp nhiều service chồng chéo lên nhau trong cùng một luồng để đảm bảo API phản hồi nhanh (performance) và các module không bị dính chặt vào nhau (loose coupling).
 ## 5. Quy tắc Frontend (Next.js)
 
 - **Component**: Tách nhỏ các component. Component sử dụng chung đặt tại `src/components/base/`, component theo nghiệp vụ đặt tại `src/components/features/`.
