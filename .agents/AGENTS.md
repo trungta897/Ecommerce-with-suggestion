@@ -35,7 +35,8 @@
 **Rule**: Bắt buộc phải quản lý các tài nguyên đồ họa (Icons, Images) một cách tách biệt và rành mạch.
 - Tuyệt đối không để file hình ảnh hoặc icon lộn xộn trong thư mục `components` hoặc các thư mục logic khác.
 - File tĩnh (như `.svg`, `.png`) bắt buộc đặt tại thư mục riêng biệt như `src/assets/icons/`.
-- Nếu chuyển đổi Icon thành React Component (`<IconName />`), thì phải gom tập trung tất cả vào thư mục `src/components/base/icons/`.
+- Nếu chuyển đổi Icon thành React Component (`<IconName />`), hoặc trích xuất từ inline SVG, thì phải gom tập trung tất cả vào thư mục `src/components/base/icons/`.
+- Kể cả các icon sử dụng từ thư viện bên thứ ba (như `lucide-react`), **BẮT BUỘC** phải được re-export (xuất lại) thông qua một file index duy nhất (`src/components/base/icons/index.ts`). Các component khác trong dự án chỉ được phép import icon từ thư mục base này (`@/components/base/icons`), tuyệt đối không import trực tiếp từ thư viện ngoài để dễ dàng thay thế/quản lý sau này.
 
 ## Eager Loading & Database Performance Mandate
 
