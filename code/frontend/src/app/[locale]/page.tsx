@@ -1,8 +1,8 @@
-import HeroVN from "@/components/home/HeroVN";
-import { FeaturesVN } from "@/components/home/FeaturesVN";
-import { NewsletterVN } from "@/components/home/NewsletterVN";
-import CategorySection from "@/components/product/CategorySection";
-import { CATEGORIES, MOCK_PRODUCTS } from "@/lib/mockData";
+import HeroVN from '@/components/home/HeroVN';
+import { FeaturesVN } from '@/components/home/FeaturesVN';
+import { NewsletterVN } from '@/components/home/NewsletterVN';
+import CategorySection from '@/components/product/CategorySection';
+import { CATEGORIES, MOCK_PRODUCTS } from '@/lib/mockData';
 import { useTranslations } from 'next-intl';
 
 export default function Home() {
@@ -14,14 +14,14 @@ export default function Home() {
       <FeaturesVN />
 
       <section className="container mx-auto px-4 lg:px-8 max-w-7xl">
-        {CATEGORIES.map(category => {
-          const categoryProducts = MOCK_PRODUCTS.filter(p => p.category === category.slug);
+        {CATEGORIES.map((category) => {
+          const categoryProducts = MOCK_PRODUCTS.filter((p) => p.category === category.slug);
           if (categoryProducts.length === 0) return null;
-          
+
           return (
-            <CategorySection 
+            <CategorySection
               key={category.id}
-              title={t(category.nameKey as any) || category.nameKey}
+              title={t(category.nameKey as Parameters<typeof t>[0]) || category.nameKey}
               categorySlug={category.slug}
               products={categoryProducts}
             />
