@@ -1,29 +1,29 @@
-import { useTranslations } from "next-intl";
-import { Truck, RefreshCcw, ShieldCheck, Headset } from "lucide-react";
+import { useTranslations } from 'next-intl';
+import { Truck, RefreshCcw, ShieldCheck, Headset } from '@/components/base/icons';
 
 export function FeaturesVN() {
-  const t = useTranslations("home.features");
+  const t = useTranslations('home.features');
 
   const features = [
     {
       icon: <Truck className="h-8 w-8 text-red-600" />,
-      title: t("free_shipping"),
-      desc: t("free_shipping_desc"),
+      title: t('free_shipping'),
+      desc: t('free_shipping_desc'),
     },
     {
       icon: <RefreshCcw className="h-8 w-8 text-red-600" />,
-      title: t("returns"),
-      desc: t("returns_desc"),
+      title: t('returns'),
+      desc: t('returns_desc'),
     },
     {
       icon: <ShieldCheck className="h-8 w-8 text-red-600" />,
-      title: t("secure_payment"),
-      desc: t("secure_payment_desc"),
+      title: t('secure_payment'),
+      desc: t('secure_payment_desc'),
     },
     {
       icon: <Headset className="h-8 w-8 text-red-600" />,
-      title: t("support"),
-      desc: t("support_desc"),
+      title: t('support'),
+      desc: t('support_desc'),
     },
   ];
 

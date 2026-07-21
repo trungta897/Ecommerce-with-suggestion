@@ -1,5 +1,5 @@
-import axios, { AxiosRequestConfig, AxiosResponse, InternalAxiosRequestConfig } from "axios";
-import { generateIdempotencyKey } from "@/utils/idempotency";
+import axios, { AxiosResponse, InternalAxiosRequestConfig } from 'axios';
+import { generateIdempotencyKey } from '@/utils/idempotency';
 
 // Mở rộng cấu hình Axios để hỗ trợ cờ useIdempotency
 declare module 'axios' {
@@ -10,22 +10,24 @@ declare module 'axios' {
 
 // Khởi tạo instance của Axios
 export const apiClient = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || "", // Thay đổi theo URL của Backend sau này
+  baseURL: process.env.NEXT_PUBLIC_API_URL || '', // Thay đổi theo URL của Backend sau này
   timeout: 10000,
   headers: {
-    "Content-Type": "application/json",
+    'Content-Type': 'application/json',
   },
 });
 
 // Interceptor cho Request
 apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    const isMutation = ["post", "put", "patch", "delete"].includes(config.method?.toLowerCase() || "");
+    const isMutation = ['post', 'put', 'patch', 'delete'].includes(
+      config.method?.toLowerCase() || ''
+    );
     const shouldAttachIdempotency = config.useIdempotency !== false && isMutation;
 
     // Tự động thêm Idempotency-Key cho các thao tác mutation
-    if (shouldAttachIdempotency && !config.headers.has("Idempotency-Key")) {
-      config.headers.set("Idempotency-Key", generateIdempotencyKey());
+    if (shouldAttachIdempotency && !config.headers.has('Idempotency-Key')) {
+      config.headers.set('Idempotency-Key', generateIdempotencyKey());
     }
 
     return config;

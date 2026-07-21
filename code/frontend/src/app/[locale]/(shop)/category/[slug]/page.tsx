@@ -2,6 +2,7 @@ import { useTranslations } from 'next-intl';
 import FilterSidebarVN from '@/components/category/FilterSidebarVN';
 import ProductCardVN from '@/components/product/ProductCardVN';
 import { MOCK_PRODUCTS } from '@/lib/mockData';
+import { FilterIcon } from '@/components/base/icons';
 
 export default function CategorySlugPage({ params }: { params: { slug: string } }) {
   const t = useTranslations('home.categories');
@@ -31,19 +32,7 @@ export default function CategorySlugPage({ params }: { params: { slug: string } 
           {/* Mobile Filter Toggle Button */}
           <div className="lg:hidden mb-4">
             <button className="w-full py-2 border border-rule rounded-lg text-ink font-medium bg-white shadow-sm flex justify-center items-center gap-2">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
-              </svg>
+              <FilterIcon className="w-4 h-4" />
               Lọc sản phẩm
             </button>
           </div>
