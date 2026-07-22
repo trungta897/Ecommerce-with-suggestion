@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import { Product } from '@/lib/mockData';
 
 interface ProductCardProps {
@@ -21,10 +22,11 @@ export default function ProductCardVN({ product }: ProductCardProps) {
       {/* Image Area */}
       <div className="relative aspect-square w-full bg-paper-2 rounded-lg mb-4 overflow-hidden">
         {/* Placeholder if no next/image domain config, using img for now or standard next/image */}
-        <img
+        <Image
           src={product.imageUrl}
           alt={product.name}
-          className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-300"
+          fill
+          className="object-cover group-hover:scale-105 transition-transform duration-300"
         />
         {product.discountPercentage && (
           <div className="absolute top-2 left-2 bg-primary text-primary-foreground text-xs font-bold px-2 py-1 rounded">

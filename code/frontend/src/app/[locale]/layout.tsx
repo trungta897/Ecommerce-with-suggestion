@@ -1,32 +1,28 @@
-import type { Metadata } from "next";
-import "../globals.css";
+import type { Metadata } from 'next';
+import '../globals.css';
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 
-import { Plus_Jakarta_Sans, Inter } from "next/font/google";
+import { Plus_Jakarta_Sans, Inter } from 'next/font/google';
 
 const fontDisplay = Plus_Jakarta_Sans({
-  subsets: ["latin", "vietnamese"],
-  variable: "--font-display",
+  subsets: ['latin', 'vietnamese'],
+  variable: '--font-display',
 });
 const fontBody = Inter({
-  subsets: ["latin", "vietnamese"],
-  variable: "--font-body",
+  subsets: ['latin', 'vietnamese'],
+  variable: '--font-body',
 });
 
-
 export const metadata: Metadata = {
-  title: "E-Commerce Recommendation System",
-  description: "DATN E-Commerce with AI Recommendation",
+  title: 'E-Commerce Recommendation System',
+  description: 'DATN E-Commerce with AI Recommendation',
 };
-
-import { HeaderVN } from "@/components/layout/HeaderVN";
-import { FooterVN } from "@/components/layout/FooterVN";
 
 export default async function RootLayout({
   children,
-  params: { locale }
+  params: { locale },
 }: Readonly<{
   children: React.ReactNode;
   params: { locale: string };
@@ -42,13 +38,7 @@ export default async function RootLayout({
   return (
     <html lang={locale}>
       <body className={`${fontDisplay.variable} ${fontBody.variable} antialiased`}>
-        <NextIntlClientProvider messages={messages}>
-          <HeaderVN />
-          <main className="min-h-screen">
-            {children}
-          </main>
-          <FooterVN />
-        </NextIntlClientProvider>
+        <NextIntlClientProvider messages={messages}>{children}</NextIntlClientProvider>
       </body>
     </html>
   );

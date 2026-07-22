@@ -9,14 +9,31 @@ export default getRequestConfig(async ({ locale }) => {
   const currentLocale = locale || 'vi';
   if (!locales.includes(currentLocale)) notFound();
 
+  // Load namespaces concurrently for better performance
+  const [common, auth, product, home, admin, cart, profile, checkout, order] = await Promise.all([
+    import(`../messages/${currentLocale}/common.json`),
+    import(`../messages/${currentLocale}/auth.json`),
+    import(`../messages/${currentLocale}/product.json`),
+    import(`../messages/${currentLocale}/home.json`),
+    import(`../messages/${currentLocale}/admin.json`),
+    import(`../messages/${currentLocale}/cart.json`),
+    import(`../messages/${currentLocale}/profile.json`),
+    import(`../messages/${currentLocale}/checkout.json`),
+    import(`../messages/${currentLocale}/order.json`),
+  ]);
+
   return {
     locale: currentLocale,
     messages: {
-      common: (await import(`../messages/${currentLocale}/common.json`)).default,
-      auth: (await import(`../messages/${currentLocale}/auth.json`)).default,
-      product: (await import(`../messages/${currentLocale}/product.json`)).default,
-      home: (await import(`../messages/${currentLocale}/home.json`)).default,
-      admin: (await import(`../messages/${currentLocale}/admin.json`)).default,
+      common: common.default,
+      auth: auth.default,
+      product: product.default,
+      home: home.default,
+      admin: admin.default,
+      cart: cart.default,
+      profile: profile.default,
+      checkout: checkout.default,
+      order: order.default,
     },
   };
 });
