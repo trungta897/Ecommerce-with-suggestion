@@ -1,0 +1,18 @@
+{
+  "title": "Shopping Cart",
+  "empty": "Your cart is empty",
+  "emptyDesc": "Explore our products and add items to your cart!",
+  "continueShopping": "Continue Shopping",
+  "product": "Product",
+  "price": "Price",
+  "quantity": "Quantity",
+  "total": "Total",
+  "action": "Action",
+  "remove": "Remove",
+  "subtotal": "Subtotal",
+  "shipping": "Shipping",
+  "shippingNote": "Calculated at checkout",
+  "orderTotal": "Order Total",
+  "checkout": "Proceed to Checkout",
+  "itemCount": "{count} items"
+}

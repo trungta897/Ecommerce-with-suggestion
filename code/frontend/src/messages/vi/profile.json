@@ -1,0 +1,17 @@
+{
+  "title": "Tài khoản của tôi",
+  "personalInfo": "Thông tin cá nhân",
+  "myOrders": "Đơn hàng của tôi",
+  "wishlist": "Sản phẩm yêu thích",
+  "settings": "Cài đặt",
+  "logout": "Đăng xuất",
+  "fullName": "Họ và tên",
+  "email": "Email",
+  "phone": "Số điện thoại",
+  "address": "Địa chỉ",
+  "saveChanges": "Lưu thay đổi",
+  "recentOrders": "Đơn hàng gần đây",
+  "noOrders": "Chưa có đơn hàng nào",
+  "aiRecommend": "Gợi ý dành cho bạn",
+  "aiRecommendDesc": "Dựa trên lịch sử mua hàng, đây là sản phẩm phù hợp với bạn"
+}

@@ -1,0 +1,17 @@
+{
+  "title": "My Account",
+  "personalInfo": "Personal Information",
+  "myOrders": "My Orders",
+  "wishlist": "Wishlist",
+  "settings": "Settings",
+  "logout": "Sign Out",
+  "fullName": "Full Name",
+  "email": "Email",
+  "phone": "Phone Number",
+  "address": "Address",
+  "saveChanges": "Save Changes",
+  "recentOrders": "Recent Orders",
+  "noOrders": "No orders yet",
+  "aiRecommend": "Recommended for you",
+  "aiRecommendDesc": "Based on your purchase history, these products are a great fit for you"
+}

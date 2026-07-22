@@ -1,0 +1,18 @@
+{
+  "title": "Giỏ hàng",
+  "empty": "Giỏ hàng của bạn đang trống",
+  "emptyDesc": "Hãy khám phá các sản phẩm và thêm vào giỏ hàng nhé!",
+  "continueShopping": "Tiếp tục mua sắm",
+  "product": "Sản phẩm",
+  "price": "Đơn giá",
+  "quantity": "Số lượng",
+  "total": "Thành tiền",
+  "action": "Thao tác",
+  "remove": "Xóa",
+  "subtotal": "Tạm tính",
+  "shipping": "Phí vận chuyển",
+  "shippingNote": "Tính khi thanh toán",
+  "orderTotal": "Tổng cộng",
+  "checkout": "Tiến hành thanh toán",
+  "itemCount": "{count} sản phẩm"
+}
