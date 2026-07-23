@@ -3,6 +3,7 @@ import '../globals.css';
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
 import { notFound } from 'next/navigation';
+import { QueryProvider } from '@/providers/query-provider';
 
 import { Plus_Jakarta_Sans, Inter } from 'next/font/google';
 
@@ -38,7 +39,9 @@ export default async function RootLayout({
   return (
     <html lang={locale}>
       <body className={`${fontDisplay.variable} ${fontBody.variable} antialiased`}>
-        <NextIntlClientProvider messages={messages}>{children}</NextIntlClientProvider>
+        <NextIntlClientProvider messages={messages}>
+          <QueryProvider>{children}</QueryProvider>
+        </NextIntlClientProvider>
       </body>
     </html>
   );
