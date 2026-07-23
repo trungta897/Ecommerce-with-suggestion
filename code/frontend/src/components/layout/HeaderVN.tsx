@@ -5,6 +5,9 @@ import { ShoppingCart, Heart, User, Menu, Sparkles } from '@/components/base/ico
 export function HeaderVN() {
   const t = useTranslations('common.header');
 
+  // Tạm thời mock trạng thái đăng nhập. Sau này sẽ thay bằng hook useAuth() hoặc Zustand store.
+  const isLoggedIn = false;
+
   return (
     <header className="w-full bg-white border-b border-rule">
       {/* Top Banner */}
@@ -13,20 +16,22 @@ export function HeaderVN() {
           <div className="hidden lg:block">
             <p className="text-sm font-medium text-primary-foreground">{t('promo_text')}</p>
           </div>
-          <div className="flex divide-x divide-white/20">
-            <Link
-              href="/register"
-              className="pr-3 text-sm font-medium text-primary-foreground transition hover:text-gray-200"
-            >
-              {t('create_account')}
-            </Link>
-            <Link
-              href="/login"
-              className="pl-3 text-sm font-medium text-primary-foreground transition hover:text-gray-200"
-            >
-              {t('sign_in')}
-            </Link>
-          </div>
+          {!isLoggedIn && (
+            <div className="flex divide-x divide-white/20">
+              <Link
+                href="/register"
+                className="pr-3 text-sm font-medium text-primary-foreground transition hover:text-gray-200"
+              >
+                {t('create_account')}
+              </Link>
+              <Link
+                href="/login"
+                className="pl-3 text-sm font-medium text-primary-foreground transition hover:text-gray-200"
+              >
+                {t('sign_in')}
+              </Link>
+            </div>
+          )}
         </div>
       </div>
 
@@ -56,13 +61,15 @@ export function HeaderVN() {
 
           {/* Action Icons */}
           <div className="flex items-center gap-5">
-            <Link
-              href="/profile"
-              className="text-ink-2 transition hover:text-primary hidden sm:block"
-              aria-label={t('sign_in')}
-            >
-              <User className="h-6 w-6" />
-            </Link>
+            {isLoggedIn && (
+              <Link
+                href="/profile"
+                className="text-ink-2 transition hover:text-primary hidden sm:block"
+                aria-label={t('sign_in')} // Consider changing translation key to 'profile' later
+              >
+                <User className="h-6 w-6" />
+              </Link>
+            )}
             <Link
               href="/wishlist"
               className="text-ink-2 transition hover:text-primary hidden sm:block relative"

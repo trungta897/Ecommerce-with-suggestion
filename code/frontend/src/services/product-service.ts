@@ -13,14 +13,21 @@ const simulateApiDelay = <T>(data: T): Promise<T> =>
  * Khi tích hợp API thật, hàm này sẽ được loại bỏ.
  */
 const mapMockToProduct = (mock: MockProduct): Product => ({
-  id: Number(mock.id),
-  title_vi: mock.name,
-  description_vi: '',
+  id: String(mock.id),
+  name: mock.name,
+  slug: mock.name.toLowerCase().replace(/ /g, '-'),
+  description: '',
   price: mock.price,
   stock: 50,
-  image_url: mock.imageUrl,
-  category_id: 0,
-  is_active: true,
+  thumbnailUrl: mock.imageUrl,
+  images: [{ url: mock.imageUrl, variant: 'MAIN', isPrimary: true }],
+  avgRating: 4.5,
+  reviewCount: 100,
+  viewCount: 200,
+  soldCount: 50,
+  categoryId: '0',
+  isActive: true,
+  createdAt: new Date().toISOString(),
 });
 
 export const productService = {
@@ -45,9 +52,9 @@ export const productService = {
     // TODO: return apiClient.get('/categories').then(res => res.data.data);
     return simulateApiDelay(
       CATEGORIES.map((c) => ({
-        id: Number(c.id),
-        name_vi: c.nameKey,
-        description_vi: '',
+        id: String(c.id),
+        name: c.nameKey,
+        description: '',
         slug: c.slug,
       }))
     );

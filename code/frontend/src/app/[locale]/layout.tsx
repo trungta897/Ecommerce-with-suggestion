@@ -4,6 +4,9 @@ import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import { QueryProvider } from '@/providers/query-provider';
+import { ClientLayoutWrapper } from '@/components/layout/ClientLayoutWrapper';
+import { HeaderVN } from '@/components/layout/HeaderVN';
+import { FooterVN } from '@/components/layout/FooterVN';
 
 import { Plus_Jakarta_Sans, Inter } from 'next/font/google';
 
@@ -40,7 +43,11 @@ export default async function RootLayout({
     <html lang={locale}>
       <body className={`${fontDisplay.variable} ${fontBody.variable} antialiased`}>
         <NextIntlClientProvider messages={messages}>
-          <QueryProvider>{children}</QueryProvider>
+          <QueryProvider>
+            <ClientLayoutWrapper header={<HeaderVN />} footer={<FooterVN />}>
+              {children}
+            </ClientLayoutWrapper>
+          </QueryProvider>
         </NextIntlClientProvider>
       </body>
     </html>

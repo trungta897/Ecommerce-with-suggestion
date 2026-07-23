@@ -14,8 +14,8 @@ import {
 import { BaseButton } from '@/components/base';
 import { useCartStore } from '@/store';
 import Link from 'next/link';
-import Image from 'next/image';
 import { useState } from 'react';
+import { ProductImageCarousel } from '@/components/product/ProductImageCarousel';
 
 export default function ProductDetailPage({ params }: { params: { id: string } }) {
   const t = useTranslations('product');
@@ -69,10 +69,12 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
       </nav>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
-        {/* Product Image */}
-        <div className="bg-white rounded-2xl border border-rule p-6 flex items-center justify-center aspect-square relative overflow-hidden">
-          <Image src={product.imageUrl} alt={product.name} fill className="object-contain p-6" />
-        </div>
+        {/* Product Image Carousel */}
+        <ProductImageCarousel
+          thumbnailUrl={product.thumbnailUrl}
+          images={product.images}
+          altText={product.name}
+        />
 
         {/* Product Info */}
         <div className="space-y-6">
