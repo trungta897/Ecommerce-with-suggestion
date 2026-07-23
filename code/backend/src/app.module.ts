@@ -6,6 +6,7 @@ import { AppService } from './app.service';
 import { AcceptLanguageResolver, I18nModule, QueryResolver } from 'nestjs-i18n';
 import * as path from 'path';
 import { AuthModule } from './modules/auth/auth.module';
+import { StorageModule } from './modules/storage/storage.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { AuthModule } from './modules/auth/auth.module';
       ],
     }),
     AuthModule,
+    StorageModule,
   ],
   controllers: [AppController],
   providers: [
