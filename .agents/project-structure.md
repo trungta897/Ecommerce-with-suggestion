@@ -19,6 +19,10 @@ Dự án này sử dụng cấu trúc thư mục quy chuẩn sau đây. Agent kh
 ├── .agents/                   # Thư mục chứa các Rule, Workflow và Skill của AI
 │
 ├── test/                      # Thư mục chứa các file Test case
+│
+├── ml/                        # Thư mục chứa code Machine Learning (FastAPI, Jupyter, scripts)
+│   ├── scripts/               # Scripts phục vụ download data, training, seed database
+│   └── data/                  # Dữ liệu train/test và models
 ```
 
 **Lưu ý:**
@@ -113,6 +117,11 @@ Thư mục Backend sử dụng NestJS với cấu trúc phân tầng rõ ràng n
 │       │   ├── student.controller.ts # [Kế thừa BaseController]
 │       │   ├── student.service.ts    # [Kế thừa BaseService]
 │       │   └── student.module.ts     
+│       │
+│       ├── storage/                  # Module Storage tích hợp MinIO/S3
+│       │   ├── storage.service.ts    # Gọi AWS SDK upload file
+│       │   ├── storage.config.ts     # Cấu hình MinIO
+│       │   └── storage.module.ts     
 │       │
 │       └── projects/                 # Module Quản lý Dự án (Cấu trúc tương tự)
 │

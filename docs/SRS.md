@@ -56,8 +56,8 @@ graph TD
     System -- "Nội dung Email, OTP" --> Gmail
     Gmail -- "Gửi mail" --> User
     
-    System -- "Upload hình ảnh SP" --> Cloudinary
-    Cloudinary -- "URL hình ảnh" --> System
+    System -- "Upload hình ảnh SP" --> Cloudinary_MinIO
+    Cloudinary_MinIO -- "URL hình ảnh" --> System
     
     User -- "Tương tác (ẩn)" --> Recaptcha
     Recaptcha -- "Score Token" --> System
@@ -69,7 +69,7 @@ graph TD
 | **API Cổng thanh toán (VNPay)** | Cần mạng Internet để gọi VNPay, phụ thuộc vào tốc độ và uptime của sandbox VNPay. | Có cơ chế fallback về thanh toán COD nếu VNPay lỗi; lưu trạng thái Pending rõ ràng. |
 | **Bảo mật và Bot spam** | Nguy cơ bị bot spam API đăng ký, gửi OTP, hoặc brute-force mật khẩu. | Tích hợp Google reCAPTCHA v3 (ngưỡng score < 0.5 bị chặn); rate limit Redis (5 req/phút). |
 | **Hệ thống Email (SMTP)** | Lỗi mạng, email bị đánh dấu spam, hết hạn ngạch gửi mail miễn phí. | Sử dụng Nodemailer; cho phép resend OTP (tối đa 5 lần); lưu log gửi email để debug. |
-| **Cloudinary Storage** | Giới hạn dung lượng miễn phí (25GB/tháng) có thể bị vượt khi demo upload nhiều ảnh. | Quản lý size ảnh upload, nén ảnh. Xóa ảnh rác trên dashboard Cloudinary nếu cần. |
+| **Object Storage (Cloudinary/MinIO)** | Quản lý lưu trữ ảnh sản phẩm, ảnh avatar. Có thể hết dung lượng miễn phí trên Cloudinary. | Chuyển sang sử dụng MinIO nội bộ cho ảnh sản phẩm (S3 compatible), giúp lưu trữ lớn (hàng nghìn ảnh hi_res) mà không phụ thuộc bên ngoài. |
 | **ML Service (FastAPI)** | Quá trình dự đoán mô hình có thể chậm hoặc server Python sập/quá tải. | Timeout internal API (5s) và fallback trả về Popular Items; cache kết quả trong Redis 1 giờ. |
 | **Đối tác vận chuyển (Grab/Be)** | Không có API thật, phụ thuộc vào việc Admin nhập tay đúng/kịp thời sau khi đặt xe ngoài hệ thống. | Quy trình thủ công (mục 5.6); không phát sinh rủi ro kỹ thuật tích hợp vì không gọi API bên ngoài. |
 
@@ -155,14 +155,16 @@ flowchart TD
 | FR-03 | Quên / Reset Mật khẩu | Gửi link/OTP reset qua email đăng ký. Hết hạn sau 15p. | Guest, User |
 | FR-04 | Tìm kiếm & Lọc SP | Full-text search, lọc theo giá, category, rating. | All |
 | FR-05 | Quản lý Giỏ hàng | Thêm, xóa, cập nhật số lượng SP. | All (Local), User |
-| FR-06 | Checkout (Luồng Guest) | Guest chọn SP -> Điền form thông tin -> Hệ thống tự động tạo User ngầm, gửi mật khẩu mặc định (8 ký tự ngẫu nhiên) và OTP qua email -> Bắt buộc xác thực OTP & Đổi mật khẩu -> Chuyển về màn hình chốt đơn. | All |
-| FR-07 | Thanh toán & Nhận hàng | Khách hàng tuỳ chọn phương thức nhận hàng. Thanh toán qua VNPay hoặc COD. Nếu thanh toán VNPay đứt gãy, đơn hàng chuyển về `pending_payment` và cho phép thanh toán lại trong vòng 30 phút - 1 giờ. | User (Ver) |
+| FR-06 | Checkout (Luồng Guest) | Guest chọn SP -> Điền form thông tin -> Hệ thống tự động tạo User ngầm, gửi OTP qua email -> Bắt buộc xác thực OTP & Tự đặt mật khẩu -> Tự động redirect về trang checkout và điền lại thông tin. | All |
+| FR-07 | Thanh toán & Nhận hàng | Khách hàng tuỳ chọn phương thức nhận hàng. Thanh toán VNPay (timeout 30 phút). COD sẽ tự động duyệt thành công dựa trên API Webhook đa kênh từ Shipper (GHN, SPX, Grab, Be...). | User (Ver) |
 | FR-08 | Hủy đơn hàng | Cho phép hủy đơn khi trạng thái là `Pending` hoặc `pending_payment`. | User (Ver) |
-| FR-09 | Trả hàng | Gửi yêu cầu trả hàng trong vòng 7 ngày sau khi đơn `Completed`. | User (Ver) |
+| FR-09 | Trả hàng | Gửi yêu cầu trả hàng trong vòng 7 ngày sau khi đơn `Completed`. Bắt buộc chọn 1 trong 6 lý do hợp lệ (Lỗi NSX, Giao sai, Bể vỡ...). Admin có thể duyệt hoặc từ chối (`return_rejected`). | User (Ver) |
 | FR-10 | Realtime Tracking | Xem lịch sử đơn hàng, nhận SSE push trạng thái realtime. | User (Ver) |
 | FR-11 | Đánh giá Sản phẩm | Rate 1-5 sao và comment. *Chỉ đánh giá SP đã nhận hàng.* | User (Ver) |
 | FR-12 | Cá nhân hóa (RecSys) | Nhận danh sách gợi ý trên Home/Detail. | User (Ver) |
 | FR-13 | Tra cứu đơn hàng | Bắt buộc nhập **Mã đơn hàng + (SĐT hoặc Email)** (2 yếu tố) để tra cứu trạng thái đơn — không cho tra cứu chỉ bằng SĐT/Email để tránh lộ thông tin đơn hàng của người khác. | Guest, User |
+| FR-14 | Quản lý Profile | Cập nhật thông tin cá nhân (Tên, Ảnh đại diện, Địa chỉ giao hàng mặc định). | User (Ver) |
+| FR-15 | Xem chi tiết sản phẩm | Hiển thị mô tả chi tiết, ảnh gallery, phân trang đánh giá và khu vực gợi ý sản phẩm. | All |
 
 ### 3.3. Chức năng Quản trị viên
 
@@ -170,19 +172,20 @@ flowchart TD
 |---|---|---|---|
 | FR-A01 | Dashboard | Thống kê doanh thu, đơn hàng, tỷ lệ hủy, SP bán chạy. | Admin |
 | FR-A02 | Quản lý Sản phẩm & Danh mục | Thêm, sửa, ẩn/ngừng kinh doanh SP. Upload ảnh. | Admin |
-| FR-A03 | Quản lý Đơn hàng & Giao hàng | Xem đơn, duyệt đơn. Admin book dịch vụ vận chuyển (Grab, Be...) và nhập `shipping_fee`, `tracking_id` vào đơn hàng. Cập nhật trạng thái `Handed over to delivery partner` -> `Delivering` -> `Delivered`. | Admin |
-| FR-A04 | Quản lý Trả hàng | Duyệt yêu cầu trả hàng (Returned). Hoàn tiền VNPay tự động / COD thủ công -> Refunded. | Admin |
+| FR-A03 | Quản lý Đơn hàng & Giao hàng | Xem đơn, duyệt đơn. Cho phép ghi nhận thông tin giao hàng thủ công như một cơ chế Fallback trong trường hợp luồng API Webhook của Shipper gặp lỗi. | Admin |
+| FR-A04 | Quản lý Trả hàng | Duyệt yêu cầu trả hàng (Returned). Hoàn tiền VNPay tự động / COD thủ công -> Refunded. Nếu từ chối trả hàng chuyển sang `return_rejected`. | Admin |
 | FR-A05 | Quản lý Đánh giá | Xem, ẩn đánh giá vi phạm tiêu chuẩn cộng đồng. | Admin |
-| FR-A06 | Phân quyền Admin | Chỉ Super Admin được tạo hoặc xóa tài khoản Admin khác. | Super Admin |
+| FR-A06 | Phân quyền Admin | Chỉ Super Admin được tạo hoặc vô hiệu hóa (Soft Delete) tài khoản Admin khác nhằm bảo toàn lịch sử. | Super Admin |
+| FR-A07 | Quản lý Voucher | Tạo, sửa, thiết lập thời hạn và giới hạn lượt sử dụng các mã giảm giá (Nội bộ). | Admin |
 
 ### 3.4. Chức năng Machine Learning (Recommender System)
 
 | ID | Chức năng | Mô tả chi tiết |
 |---|---|---|
-| FR-ML01 | Popular Items | Trả về Top-K phổ biến nhất (dùng cho Cold-start hoặc khi chưa login). |
-| FR-ML02 | Content-Based | Trả về SP tương tự dựa trên TF-IDF cosine similarity. |
+| FR-ML01 | Popular Items | Trả về Top-K phổ biến nhất (dựa trên viewCount, soldCount, avgRating). Dùng cho Cold-start giai đoạn 1. |
+| FR-ML02 | Content-Based | Trả về SP tương tự dựa trên TF-IDF cosine similarity. Dùng cho Cold-start giai đoạn 2 (kết hợp UserActivityLog) và giai đoạn 3 (lịch sử mua hàng). |
 | FR-ML03 | Collaborative | SVD predict điểm đánh giá của user đối với các SP chưa mua. |
-| FR-ML04 | Hybrid | Kết hợp có trọng số giữa CB và CF. |
+| FR-ML04 | Hybrid | Kết hợp có trọng số giữa CB và CF. Dùng khi user đã có đủ reviews (giai đoạn 4). |
 | FR-ML05 | Cache & Fallback| API gọi nội bộ, cache kết quả Redis 1 giờ. Nếu ML timeout, trả về Popular Items. |
 
 ---
@@ -281,10 +284,11 @@ stateDiagram-v2
 
     confirmed --> handed_over: Admin giao cho đối tác vận chuyển
     handed_over --> delivering: Đối tác cập nhật đang giao
-    delivering --> completed: Giao hàng thành công
+    delivering --> completed: Giao hàng thành công (Tự động cập nhật qua Webhook của Shipper)
 
     completed --> return_requested: User yêu cầu trả (trong 7 ngày)
-    return_requested --> returned: Admin duyệt trả hàng
+    return_requested --> returned: Admin duyệt chấp nhận trả hàng
+    return_requested --> return_rejected: Admin từ chối trả hàng
     returned --> refunded: Hoàn tiền (VNPay auto / COD thủ công)
 
     cancelled --> [*]
@@ -297,13 +301,14 @@ stateDiagram-v2
 Có thể cấu hình giảm theo phần trăm (%) hoặc trừ một khoản tiền cố định. Mỗi voucher có điều kiện đi kèm (như mức giá đơn hàng tối thiểu, giới hạn tổng số lần sử dụng `usage_limit`). Ngoài giới hạn toàn hệ thống, **mỗi user chỉ được áp dụng 1 voucher cụ thể tối đa 1 lần** (theo dõi qua bảng `user_voucher_usage`, mục 4.2) để tránh lạm dụng.
 
 #### 3.6.3. Giữ và giải phóng tồn kho (Stock Reservation)
-Khi đơn được tạo (kể cả ở `pending_payment`), `stock` của sản phẩm được trừ tạm ngay trong transaction (row locking) để tránh oversell. Nếu đơn không hoàn tất thanh toán trong **30-60 phút** (VNPay) hoặc không được Admin duyệt trong thời gian hợp lý, một job định kỳ sẽ tự động chuyển đơn sang `cancelled` và **hoàn trả `stock`** đã giữ.
+Khi đơn được tạo (kể cả ở `pending_payment`), `stock` của sản phẩm được trừ tạm ngay trong transaction (row locking) để tránh oversell. Nếu đơn không hoàn tất thanh toán trong đúng **30 phút** (VNPay), một job định kỳ sẽ tự động chuyển đơn sang `cancelled` và **hoàn trả `stock`** đã giữ.
 
-#### 3.6.4. Dọn dẹp tài khoản/đơn hàng tạm bỏ dở (Guest Checkout)
-Nếu Guest Checkout bị bỏ dở (không hoàn tất OTP + đặt mật khẩu), tài khoản (`is_verified=false`, `password_set_at IS NULL`) và đơn hàng tạm liên quan sẽ được job định kỳ dọn dẹp (xóa hoặc đánh dấu expired) sau một khoảng thời gian cố định (đề xuất 24 giờ) để tránh rác dữ liệu và giải phóng `stock` đã giữ.
+#### 3.6.4. Dọn dẹp tài khoản/đơn hàng tạm bỏ dở (Guest Cleanup Cronjob)
+- **Đơn hàng tạm (Guest Order):** Nếu bị bỏ dở (chưa xác thực OTP), đơn sẽ bị job định kỳ xóa sau **24 giờ** và hoàn trả tồn kho.
+- **Tài khoản chưa xác thực (Guest Account):** Nếu chưa kích hoạt sau **6 ngày**, hệ thống gửi 1 email cảnh báo. Nếu vẫn không kích hoạt đến **ngày thứ 7**, tài khoản sẽ bị tự động xóa kèm email thông báo đã xóa.
 
-#### 3.6.5. Phí vận chuyển & đối tác giao hàng
-Tính phí vận chuyển theo khu vực hoặc do Admin tự nhận cước phí từ đơn vị vận chuyển thứ 3 (Grab, Be...) và nhập thủ công vào hệ thống. **Không có tích hợp API thật với Grab/Be** — đây là quy trình thủ công: Admin đặt xe/đơn giao ngoài hệ thống, sau đó nhập tay `delivery_partner`, `tracking_id`, `shipping_fee` vào đơn hàng để khách tra cứu (mục 5.6).
+#### 3.6.5. Tích hợp Webhook Vận chuyển đa kênh
+Sử dụng kiến trúc đa kênh, hệ thống tiếp nhận Webhook từ đối tác (Giao hàng tiêu chuẩn như SPX, GHN hoặc Giao hàng Hỏa tốc như Grab, Be). API Webhook sẽ tự động cập nhật trạng thái đơn (từ `handed_over` -> `delivering` -> `completed`) theo thực tế, qua đó tự động duyệt hoàn tất cho luồng thanh toán COD. Cập nhật thủ công chỉ áp dụng như một phương án Fallback khi webhook lỗi.
 
 ---
 
@@ -451,9 +456,9 @@ Tính phí vận chuyển theo khu vực hoặc do Admin tự nhận cước ph�
 - **Mục đích:** Trả về kết quả gợi ý.
 - **Yêu cầu:** Internal REST API `GET /recommend/hybrid/{user_id}`. Timeout 5 giây. NestJS gọi và cache vào Redis trong 1 giờ.
 
-### 5.6. Đối tác vận chuyển (Grab/Be) — Quy trình thủ công, KHÔNG phải API integration
-- **Mục đích:** Ghi nhận thông tin giao hàng để khách tra cứu.
-- **Lưu ý quan trọng:** Hệ thống **không gọi API thật** của Grab/Be (không cần API key/credentials). Admin tự đặt xe/đơn giao ngoài hệ thống, sau đó nhập tay `delivery_partner`, `tracking_id`, `shipping_fee` vào đơn hàng qua FR-A03. Đây là giả định phạm vi đồ án để đơn giản hóa, tránh nhầm lẫn với tích hợp API thật khi bảo vệ.
+### 5.6. Tích hợp Webhook Vận chuyển đa kênh (Grab/Be/GHN/SPX)
+- **Mục đích:** Tự động hóa quá trình xác nhận giao hàng và cập nhật hành trình đơn.
+- **Yêu cầu:** Hệ thống triển khai một Endpoint Webhook mở. Bất kỳ đối tác giao hàng nào khi hoàn tất trạng thái lấy hàng, đang giao, giao thành công đều có thể bắn POST request về Webhook này (kèm signature xác thực). Hệ thống dựa vào payload để đóng đơn COD tự động. (Trong phạm vi demo đồ án có thể dùng Postman để giả lập gọi Webhook thay cho Server thật của bên vận chuyển).
 
 ---
 
