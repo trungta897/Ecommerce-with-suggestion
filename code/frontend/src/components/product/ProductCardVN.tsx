@@ -23,7 +23,7 @@ export default function ProductCardVN({ product }: ProductCardProps) {
       <div className="relative aspect-square w-full bg-paper-2 rounded-lg mb-4 overflow-hidden">
         {/* Placeholder if no next/image domain config, using img for now or standard next/image */}
         <Image
-          src={product.imageUrl}
+          src={product.thumbnailUrl}
           alt={product.name}
           fill
           className="object-cover group-hover:scale-105 transition-transform duration-300"

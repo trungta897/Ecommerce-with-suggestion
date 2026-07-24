@@ -69,7 +69,7 @@ export default function CartPage() {
             >
               <div className="w-24 h-24 rounded-lg bg-paper-2 flex-shrink-0 flex items-center justify-center overflow-hidden relative">
                 <Image
-                  src={item.product?.imageUrl || ''}
+                  src={item.product?.thumbnailUrl || ''}
                   alt={item.product?.name || ''}
                   fill
                   className="object-contain"
