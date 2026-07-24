@@ -8,6 +8,7 @@ import { registerSchema, RegisterFormData } from '@/schemas';
 import { BaseInput, BaseButton } from '@/components/base';
 import { authService } from '@/services/authService';
 import { useRouter } from 'next/navigation';
+import { GoogleLogin, CredentialResponse } from '@react-oauth/google';
 
 export function RegisterForm() {
   const t = useTranslations('auth');
@@ -29,6 +30,15 @@ export function RegisterForm() {
       router.push('/login?registered=true');
     } catch {
       setError('root', { message: t('register_error') || 'Đăng ký thất bại' });
+    }
+  };
+
+  const onGoogleSuccess = async (credentialResponse: CredentialResponse) => {
+    try {
+      if (!credentialResponse.credential) throw new Error('No credential');
+      console.log('Google credential:', credentialResponse.credential);
+    } catch {
+      setError('root', { message: t('register_error') || 'Đăng nhập Google thất bại' });
     }
   };
 
@@ -82,6 +92,26 @@ export function RegisterForm() {
       <BaseButton type="submit" className="w-full" isLoading={isSubmitting}>
         {t('register_button')}
       </BaseButton>
+
+      <div className="relative my-4">
+        <div className="absolute inset-0 flex items-center">
+          <span className="w-full border-t" />
+        </div>
+        <div className="relative flex justify-center text-xs uppercase">
+          <span className="bg-background px-2 text-muted-foreground">
+            {t('or_continue_with') || 'Hoặc tiếp tục với'}
+          </span>
+        </div>
+      </div>
+
+      <div className="flex justify-center">
+        <GoogleLogin
+          onSuccess={onGoogleSuccess}
+          onError={() =>
+            setError('root', { message: t('register_error') || 'Đăng nhập Google thất bại' })
+          }
+        />
+      </div>
     </form>
   );
 }

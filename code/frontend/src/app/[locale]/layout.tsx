@@ -4,6 +4,7 @@ import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import { QueryProvider } from '@/providers/query-provider';
+import { GoogleOAuthProvider } from '@react-oauth/google';
 import { ClientLayoutWrapper } from '@/components/layout/ClientLayoutWrapper';
 import { HeaderVN } from '@/components/layout/HeaderVN';
 import { FooterVN } from '@/components/layout/FooterVN';
@@ -43,11 +44,15 @@ export default async function RootLayout({
     <html lang={locale}>
       <body className={`${fontDisplay.variable} ${fontBody.variable} antialiased`}>
         <NextIntlClientProvider messages={messages}>
-          <QueryProvider>
-            <ClientLayoutWrapper header={<HeaderVN />} footer={<FooterVN />}>
-              {children}
-            </ClientLayoutWrapper>
-          </QueryProvider>
+          <GoogleOAuthProvider
+            clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || 'mock-client-id'}
+          >
+            <QueryProvider>
+              <ClientLayoutWrapper header={<HeaderVN />} footer={<FooterVN />}>
+                {children}
+              </ClientLayoutWrapper>
+            </QueryProvider>
+          </GoogleOAuthProvider>
         </NextIntlClientProvider>
       </body>
     </html>

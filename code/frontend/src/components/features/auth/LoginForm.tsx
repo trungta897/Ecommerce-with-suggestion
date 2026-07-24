@@ -9,6 +9,7 @@ import { BaseInput, BaseButton } from '@/components/base';
 import { authService } from '@/services/authService';
 import { useAuthStore } from '@/store';
 import { useRouter } from 'next/navigation';
+import { GoogleLogin, CredentialResponse } from '@react-oauth/google';
 
 export function LoginForm() {
   const t = useTranslations('auth');
@@ -28,10 +29,26 @@ export function LoginForm() {
     try {
       const response = await authService.login(data);
       setAuth(response.user, response.accessToken);
-      // Redirect to home or intended page
       router.push('/');
     } catch {
       setError('root', { message: t('login_error') || 'Đăng nhập thất bại' });
+    }
+  };
+
+  const onGoogleSuccess = async (credentialResponse: CredentialResponse) => {
+    try {
+      if (!credentialResponse.credential) throw new Error('No credential');
+      // In real implementation:
+      // const response = await authService.loginWithGoogle(credentialResponse.credential);
+      // if (response.action === 'REQUIRE_PASSWORD') {
+      //   router.push(`/auth/google-complete?token=${response.tempToken}`);
+      //   return;
+      // }
+      // setAuth(response.user, response.accessToken);
+      // router.push('/');
+      console.log('Google credential:', credentialResponse.credential);
+    } catch {
+      setError('root', { message: t('login_error') || 'Đăng nhập Google thất bại' });
     }
   };
 
@@ -72,6 +89,26 @@ export function LoginForm() {
       <BaseButton type="submit" className="w-full" isLoading={isSubmitting}>
         {t('login_button')}
       </BaseButton>
+
+      <div className="relative my-4">
+        <div className="absolute inset-0 flex items-center">
+          <span className="w-full border-t" />
+        </div>
+        <div className="relative flex justify-center text-xs uppercase">
+          <span className="bg-background px-2 text-muted-foreground">
+            {t('or_continue_with') || 'Hoặc tiếp tục với'}
+          </span>
+        </div>
+      </div>
+
+      <div className="flex justify-center">
+        <GoogleLogin
+          onSuccess={onGoogleSuccess}
+          onError={() =>
+            setError('root', { message: t('login_error') || 'Đăng nhập Google thất bại' })
+          }
+        />
+      </div>
     </form>
   );
 }
