@@ -17,7 +17,7 @@ Dự án nhằm xây dựng một Website Thương mại điện tử chuyên b�
 2. **Phạm vi công nghệ:**
    - Hệ thống chia làm 3 services chính: Frontend (Next.js 14), Backend (NestJS), ML Service (FastAPI).
    - Tương tác thời gian thực thông qua Server-Sent Events (SSE).
-3. **Phạm vi đối tượng sử dụng:** Khách vãng lai, Người dùng (chưa verify & đã verify), Admin, Super Admin.
+3. **Phạm vi đối tượng sử dụng:** Khách vãng lai, Người dùng (chưa verify & đã verify), Nhân viên, Admin, Super Admin.
 
 ### 1.3. Mục tiêu hệ thống (System objectives)
 1. **Mục tiêu người dùng:** Cho phép khách hàng tìm kiếm, đặt mua đồ điện tử và theo dõi trạng thái đơn hàng một cách thuận tiện, an toàn.
@@ -172,10 +172,10 @@ flowchart TD
 |---|---|---|---|
 | FR-A01 | Dashboard | Thống kê doanh thu, đơn hàng, tỷ lệ hủy, SP bán chạy. | Admin |
 | FR-A02 | Quản lý Sản phẩm & Danh mục | Thêm, sửa, ẩn/ngừng kinh doanh SP. Upload ảnh. | Admin |
-| FR-A03 | Quản lý Đơn hàng & Giao hàng | Xem đơn, duyệt đơn. Cho phép ghi nhận thông tin giao hàng thủ công như một cơ chế Fallback trong trường hợp luồng API Webhook của Shipper gặp lỗi. | Admin |
-| FR-A04 | Quản lý Trả hàng | Duyệt yêu cầu trả hàng (Returned). Hoàn tiền VNPay tự động / COD thủ công -> Refunded. Nếu từ chối trả hàng chuyển sang `return_rejected`. | Admin |
-| FR-A05 | Quản lý Đánh giá | Xem, ẩn đánh giá vi phạm tiêu chuẩn cộng đồng. | Admin |
-| FR-A06 | Phân quyền Admin | Chỉ Super Admin được tạo hoặc vô hiệu hóa (Soft Delete) tài khoản Admin khác nhằm bảo toàn lịch sử. | Super Admin |
+| FR-A03 | Quản lý Đơn hàng & Giao hàng | Xem đơn, duyệt đơn. Cho phép ghi nhận thông tin giao hàng thủ công như một cơ chế Fallback trong trường hợp luồng API Webhook của Shipper gặp lỗi. | Admin, Nhân viên |
+| FR-A04 | Quản lý Trả hàng & Hoàn tiền | Duyệt/từ chối yêu cầu trả hàng (Admin, Nhân viên). Hoàn tiền VNPay tự động / COD thủ công -> Refunded (chỉ Admin — Nhân viên không có quyền hoàn tiền). | Admin, Nhân viên (duyệt trả); Admin (hoàn tiền) |
+| FR-A05 | Quản lý Đánh giá | Xem, ẩn đánh giá vi phạm tiêu chuẩn cộng đồng. | Admin, Nhân viên |
+| FR-A06 | Phân quyền Admin & Nhân viên | Super Admin được tạo/vô hiệu hóa (Soft Delete) tài khoản Admin. Admin và Super Admin được tạo/vô hiệu hóa tài khoản Nhân viên. | Super Admin (Admin), Admin & Super Admin (Nhân viên) |
 | FR-A07 | Quản lý Voucher | Tạo, sửa, thiết lập thời hạn và giới hạn lượt sử dụng các mã giảm giá (Nội bộ). | Admin |
 
 ### 3.4. Chức năng Machine Learning (Recommender System)
@@ -331,7 +331,7 @@ Sử dụng kiến trúc đa kênh, hệ thống tiếp nhận Webhook từ đ�
 - `id`: VARCHAR(UUID) (PK)
 - `email`: VARCHAR (Unique, Not Null)
 - `password`: VARCHAR (Hash, NOT NULL - validate: 1 Hoa, 1 Số, 1 Ký tự đặc biệt)
-- `role`: ENUM ('CUSTOMER', 'ADMIN', 'SUPER_ADMIN')
+- `role`: ENUM ('CUSTOMER', 'STAFF', 'ADMIN', 'SUPER_ADMIN')
 - `is_verified`: BOOLEAN (Default FALSE)
 - `password_set_at`: TIMESTAMP (Nullable — NULL nghĩa là tài khoản tạo từ Guest Checkout nhưng chưa hoàn tất verify + đặt mật khẩu, dùng để job dọn dẹp nhận diện)
 - `created_at`, `updated_at`

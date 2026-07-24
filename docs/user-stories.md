@@ -6,14 +6,15 @@ Tài liệu chuyển đổi các yêu cầu trong `docs/SRS.md` thành backlog U
 
 ## 2. Vai trò
 
-| Vai trò | Mô tả |
-|---|---|
-| Guest | Người chưa đăng nhập, có thể duyệt sản phẩm, quản lý giỏ cục bộ, tra cứu đơn và bắt đầu checkout. |
-| Người dùng chưa xác thực | Tài khoản đã được tạo nhưng chưa hoàn tất xác thực email và đặt mật khẩu. |
-| Khách hàng | Người dùng đã xác thực, có thể đặt hàng, thanh toán và quản lý hoạt động mua hàng. |
-| Admin | Người vận hành danh mục, sản phẩm, đơn hàng, trả hàng, đánh giá, voucher và dashboard. |
-| Super Admin | Quản trị viên có quyền quản lý tài khoản Admin. |
-| Hệ thống gợi ý | Thành phần cung cấp kết quả gợi ý và cơ chế dự phòng. |
+| Vai trò                  | Mô tả                                                                                                                                                                                                            |
+| ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Guest                    | Người chưa đăng nhập, có thể duyệt sản phẩm, quản lý giỏ cục bộ, tra cứu đơn và bắt đầu checkout.                                                                                                                |
+| Người dùng chưa xác thực | Tài khoản đã được tạo nhưng chưa hoàn tất xác thực email và đặt mật khẩu.                                                                                                                                        |
+| Khách hàng               | Người dùng đã xác thực, có thể đặt hàng, thanh toán và quản lý hoạt động mua hàng.                                                                                                                               |
+| Nhân viên                | Người vận hành tác vụ đơn hàng hàng ngày (duyệt đơn, ghi nhận giao hàng, duyệt yêu cầu trả hàng, kiểm duyệt đánh giá). Không có quyền với danh mục, sản phẩm, voucher, tài khoản Admin, hoặc thao tác hoàn tiền. |
+| Admin                    | Người vận hành danh mục, sản phẩm, voucher, dashboard, tài khoản hoàn tiền và có toàn bộ quyền của Nhân viên.                                                                                                    |
+| Super Admin              | Quản trị viên có quyền quản lý tài khoản Admin và Nhân viên.                                                                                                                                                     |
+| Hệ thống gợi ý           | Thành phần cung cấp kết quả gợi ý và cơ chế dự phòng.                                                                                                                                                            |
 
 Các công việc phục vụ vận hành kỹ thuật hoặc đánh giá học thuật không đại diện cho nhu cầu trực tiếp của một vai trò người dùng được xếp riêng tại nhóm **Technical Stories**.
 
@@ -202,7 +203,7 @@ Các công việc phục vụ vận hành kỹ thuật hoặc đánh giá học 
 **Acceptance Criteria:**
 
 1. **Given** đơn COD được tạo, **when** xác nhận đặt hàng, **then** đơn chuyển sang `pending` chờ xử lý.
-2. **Given** luồng Webhook đa kênh hoạt động, **when** đối tác vận chuyển cập nhật trạng thái trên hệ thống của họ, **then** hệ thống sẽ tự động cập nhật tuần tự các trạng thái: `handed_over` (khi Shipper lấy hàng) -> `delivering` (khi bắt đầu giao) -> `completed` (khi giao thành công).
+2. **Given** đơn COD đã được Admin duyệt (`confirmed`) và luồng Webhook đa kênh hoạt động, **when** đối tác vận chuyển cập nhật trạng thái trên hệ thống của họ, **then** hệ thống sẽ tự động cập nhật tuần tự các trạng thái: `handed_over` (khi Shipper lấy hàng) -> `delivering` (khi bắt đầu giao) -> `completed` (khi giao thành công).
 3. **Given** phương thức thủ công (Shipper nội bộ / Webhook lỗi), **when** Admin xác nhận, **then** đơn chuyển trạng thái tương ứng.
 
 ### US-CHK-05 — Thanh toán VNPay (Timeout 30 phút)
@@ -276,7 +277,7 @@ Các công việc phục vụ vận hành kỹ thuật hoặc đánh giá học 
 **Acceptance Criteria:**
 
 1. **Given** đơn ở `completed` chưa quá 7 ngày, **when** khách hàng yêu cầu trả hàng, **then** bắt buộc phải chọn 1 trong 6 lý do hợp lệ: Bể vỡ/móp méo, Lỗi kỹ thuật, Sai sản phẩm, Thiếu phụ kiện, Hàng đã qua sử dụng, Hàng giả/nhái (Không chấp nhận lý do "Không thích"). Yêu cầu phải đính kèm ảnh/video chứng minh.
-2. **Given** đơn đang ở `return_requested`, **when** Admin kiểm tra và Từ chối trả hàng, **then** đơn chuyển sang trạng thái `return_rejected` để thông báo cho khách.
+2. **Given** yêu cầu trả hàng bị từ chối (đơn chuyển sang `return_rejected`), **when** khách hàng xem chi tiết đơn, **then** hệ thống hiển thị trạng thái từ chối kèm lý do.
 
 ### US-ORD-04 — Tra cứu đơn bằng hai yếu tố
 
@@ -340,53 +341,65 @@ Các công việc phục vụ vận hành kỹ thuật hoặc đánh giá học 
 
 ### US-ADM-04 — Duyệt đơn hàng
 
-**User Story:** Là Admin, tôi muốn xem và duyệt đơn chờ xử lý (nếu không chạy webhook auto).
+**User Story:** Là Admin hoặc Nhân viên, tôi muốn xem và duyệt đơn chờ xử lý (nếu không chạy webhook auto).
 
 **Ưu tiên:** Must  
 **Truy vết:** FR-A03
 
 **Acceptance Criteria:**
 
-1. **Given** đơn ở `pending`, **when** Admin duyệt, **then** đơn chuyển sang `confirmed`.
+1. **Given** đơn ở `pending`, **when** Admin hoặc Nhân viên duyệt, **then** đơn chuyển sang `confirmed`.
 
 ### US-ADM-05 — Ghi nhận giao hàng thủ công
 
-**User Story:** Là Admin, tôi muốn nhập thông tin đối tác vận chuyển thủ công trong trường hợp lỗi webhook hoặc dùng shipper ngoài.
+**User Story:** Là Admin hoặc Nhân viên, tôi muốn nhập thông tin đối tác vận chuyển thủ công trong trường hợp lỗi webhook hoặc dùng shipper ngoài.
 
 **Ưu tiên:** Must  
 **Truy vết:** FR-A03, Mục 5.6
 
 **Acceptance Criteria:**
 
-1. **Given** đơn `confirmed`, **when** Admin nhập mã vận đơn, **then** đơn chuyển sang `handed_over`.
-2. **Given** có thông tin mới, **when** Admin cập nhật, **then** đơn chuyển sang `delivering` hoặc `completed`.
+1. **Given** đơn `confirmed`, **when** Admin hoặc Nhân viên nhập mã vận đơn, **then** đơn chuyển sang `handed_over`.
+2. **Given** có thông tin mới, **when** Admin hoặc Nhân viên cập nhật, **then** đơn chuyển sang `delivering` hoặc `completed`.
 
-### US-ADM-06 — Xử lý trả hàng và hoàn tiền
+### US-ADM-06 — Duyệt yêu cầu trả hàng
 
-**User Story:** Là Admin, tôi muốn duyệt yêu cầu trả và hoàn tiền để hoàn tất quy trình hậu mãi.
+**User Story:** Là Admin hoặc Nhân viên, tôi muốn duyệt hoặc từ chối yêu cầu trả hàng để hoàn tất bước kiểm tra hậu mãi.
+
+**Ưu tiên:** Should  
+**Truy vết:** FR-A04
+
+**Acceptance Criteria:**
+
+1. **Given** đơn `return_requested`, **when** Admin hoặc Nhân viên duyệt trả, **then** đơn chuyển sang `returned`.
+2. **Given** đơn `return_requested`, **when** Admin hoặc Nhân viên từ chối trả, **then** đơn chuyển sang `return_rejected`.
+
+### US-ADM-06b — Hoàn tiền
+
+**User Story:** Là Admin, tôi muốn xác nhận hoàn tiền cho đơn đã trả hàng vì đây là thao tác liên quan trực tiếp đến tiền thật, chỉ Admin mới được thực hiện.
 
 **Ưu tiên:** Should  
 **Truy vết:** FR-A04, FR-V3
 
 **Acceptance Criteria:**
 
-1. **Given** đơn `return_requested`, **when** Admin duyệt trả, **then** đơn chuyển sang `returned`.
-2. **Given** đơn VNPay đã `returned`, **when** Admin hoàn tiền, **then** gọi API VNPay Refund; chỉ khi thành công mới chuyển sang `refunded`. Hoàn tiền thất bại không được chuyển trạng thái.
+1. **Given** đơn VNPay đã `returned`, **when** Admin hoàn tiền, **then** gọi API VNPay Refund; chỉ khi thành công mới chuyển sang `refunded`. Hoàn tiền thất bại không được chuyển trạng thái.
+2. **Given** người dùng có vai trò Nhân viên, **when** cố thực hiện thao tác hoàn tiền, **then** hệ thống từ chối truy cập.
 
 ### US-ADM-07 — Kiểm duyệt đánh giá
 
-**User Story:** Là Admin, tôi muốn xem và ẩn đánh giá vi phạm tiêu chuẩn cộng đồng.
+**User Story:** Là Admin hoặc Nhân viên, tôi muốn xem và ẩn đánh giá vi phạm tiêu chuẩn cộng đồng.
 
 **Ưu tiên:** Should  
 **Truy vết:** FR-A05
 
 **Acceptance Criteria:**
 
-1. **Given** đánh giá vi phạm, **when** Admin chọn ẩn, **then** trạng thái chuyển sang `hidden`.
+1. **Given** đánh giá vi phạm, **when** Admin hoặc Nhân viên chọn ẩn, **then** trạng thái chuyển sang `hidden`.
 
-### US-ADM-08 — Quản lý tài khoản Admin
+### US-ADM-08 — Quản lý tài khoản Admin và Nhân viên
 
-**User Story:** Là Super Admin, tôi muốn tạo hoặc vô hiệu hóa tài khoản Admin để kiểm soát quyền.
+**User Story:** Là Super Admin, tôi muốn tạo hoặc vô hiệu hóa tài khoản Admin để kiểm soát quyền. Là Admin hoặc Super Admin, tôi muốn tạo hoặc vô hiệu hóa tài khoản Nhân viên để quản lý đội ngũ vận hành.
 
 **Ưu tiên:** Must  
 **Truy vết:** FR-A06
@@ -394,6 +407,8 @@ Các công việc phục vụ vận hành kỹ thuật hoặc đánh giá học 
 **Acceptance Criteria:**
 
 1. **Given** Super Admin chọn xóa một Admin, **when** thao tác, **then** tài khoản bị vô hiệu hóa (Soft Delete) chứ không xóa vật lý.
+2. **Given** Admin hoặc Super Admin chọn tạo hoặc vô hiệu hóa một tài khoản Nhân viên, **when** thao tác, **then** hệ thống thực hiện tương ứng; vô hiệu hóa dùng Soft Delete, không xóa vật lý.
+3. **Given** người dùng có vai trò Nhân viên, **when** cố tạo hoặc vô hiệu hóa bất kỳ tài khoản nào (Admin, Super Admin hoặc Nhân viên khác), **then** hệ thống từ chối truy cập.
 
 ### US-ADM-09 — Quản lý Voucher Nội bộ
 
@@ -462,49 +477,49 @@ Các công việc phục vụ vận hành kỹ thuật hoặc đánh giá học 
 
 ## 12. Yêu cầu chất lượng áp dụng chung
 
-| Mã | Yêu cầu | Áp dụng |
-|---|---|---|
-| Q-01 | Phản hồi API mục tiêu dưới 500 ms, ngoại trừ luồng ML có timeout riêng 5 giây. | Các story gọi API |
-| Q-02 | Trạng thái đơn được cập nhật realtime qua SSE. | US-ORD-01, Admin thao tác |
-| Q-03 | Trừ và hoàn tồn kho phải an toàn khi có thao tác đồng thời (idempotent). | Epic CHECKOUT |
-| Q-04 | Access Token có thời hạn 15 phút; Refresh Token có thời hạn 7 ngày. | Epic AUTH |
-| Q-05 | Dữ liệu đầu vào phải được làm sạch để giảm rủi ro XSS, SQL injection. | Toàn hệ thống |
-| Q-06 | Hệ thống hướng tới uptime 99% và có logging. | Toàn hệ thống |
-| Q-07 | Giao diện responsive trên mobile, tablet, desktop. | Các story giao diện |
-| Q-08 | Trạng thái tải, rỗng, lỗi tuân thủ UI/UX guideline và bắt buộc áp dụng **i18n**. | Các story giao diện |
+| Mã   | Yêu cầu                                                                          | Áp dụng                   |
+| ---- | -------------------------------------------------------------------------------- | ------------------------- |
+| Q-01 | Phản hồi API mục tiêu dưới 500 ms, ngoại trừ luồng ML có timeout riêng 5 giây.   | Các story gọi API         |
+| Q-02 | Trạng thái đơn được cập nhật realtime qua SSE.                                   | US-ORD-01, Admin thao tác |
+| Q-03 | Trừ và hoàn tồn kho phải an toàn khi có thao tác đồng thời (idempotent).         | Epic CHECKOUT             |
+| Q-04 | Access Token có thời hạn 15 phút; Refresh Token có thời hạn 7 ngày.              | Epic AUTH                 |
+| Q-05 | Dữ liệu đầu vào phải được làm sạch để giảm rủi ro XSS, SQL injection.            | Toàn hệ thống             |
+| Q-06 | Hệ thống hướng tới uptime 99% và có logging.                                     | Toàn hệ thống             |
+| Q-07 | Giao diện responsive trên mobile, tablet, desktop.                               | Các story giao diện       |
+| Q-08 | Trạng thái tải, rỗng, lỗi tuân thủ UI/UX guideline và bắt buộc áp dụng **i18n**. | Các story giao diện       |
 
 ## 13. Ma trận truy vết
 
-| Yêu cầu SRS | User Story |
-|---|---|
-| FR-01 | US-AUTH-01, US-AUTH-02 |
-| FR-02 | US-AUTH-03, US-AUTH-04 |
-| FR-03 | US-AUTH-05 |
-| FR-04 | US-CAT-01 |
-| FR-05 | US-CART-01, US-CART-02 |
-| FR-06 | US-CHK-01, US-CHK-02 |
-| FR-07 | US-CHK-02, US-CHK-04, US-CHK-05, US-CHK-06 |
-| FR-08 | US-ORD-02 |
-| FR-09 | US-ORD-03 |
-| FR-10 | US-ORD-01 |
-| FR-11 | US-ORD-05 |
-| FR-12 | US-REC-01 |
-| FR-13 | US-ORD-04 |
-| FR-14 | US-AUTH-06 |
-| FR-15 | US-CAT-02 |
-| FR-A01 | US-ADM-01 |
-| FR-A02 | US-ADM-02, US-ADM-03 |
-| FR-A03 | US-ADM-04, US-ADM-05 |
-| FR-A04 | US-ADM-06 |
-| FR-A05 | US-ADM-07 |
-| FR-A06 | US-ADM-08 |
-| FR-A07 | US-ADM-09 |
-| FR-ML01 đến FR-ML04 | US-REC-01 |
-| FR-ML05 | US-REC-02 |
-| FR-V1, FR-V2 | US-CHK-05 |
-| FR-V3 | US-ADM-06 |
-| FR-E1 | US-AUTH-03, US-CHK-01 |
-| FR-E2 | US-CHK-02, US-CHK-04, US-CHK-05 |
-| FR-E3 | US-ORD-05 |
-| FR-E4 | US-AUTH-05 |
-| Mục 3.6.4 | TS-CRON-01 |
+| Yêu cầu SRS         | User Story                                 |
+| ------------------- | ------------------------------------------ |
+| FR-01               | US-AUTH-01, US-AUTH-02                     |
+| FR-02               | US-AUTH-03, US-AUTH-04                     |
+| FR-03               | US-AUTH-05                                 |
+| FR-04               | US-CAT-01                                  |
+| FR-05               | US-CART-01, US-CART-02                     |
+| FR-06               | US-CHK-01, US-CHK-02                       |
+| FR-07               | US-CHK-02, US-CHK-04, US-CHK-05, US-CHK-06 |
+| FR-08               | US-ORD-02                                  |
+| FR-09               | US-ORD-03                                  |
+| FR-10               | US-ORD-01                                  |
+| FR-11               | US-ORD-05                                  |
+| FR-12               | US-REC-01                                  |
+| FR-13               | US-ORD-04                                  |
+| FR-14               | US-AUTH-06                                 |
+| FR-15               | US-CAT-02                                  |
+| FR-A01              | US-ADM-01                                  |
+| FR-A02              | US-ADM-02, US-ADM-03                       |
+| FR-A03              | US-ADM-04, US-ADM-05                       |
+| FR-A04              | US-ADM-06, US-ADM-06b                      |
+| FR-A05              | US-ADM-07                                  |
+| FR-A06              | US-ADM-08                                  |
+| FR-A07              | US-ADM-09, US-CHK-03                       |
+| FR-ML01 đến FR-ML04 | US-REC-01                                  |
+| FR-ML05             | US-REC-02                                  |
+| FR-V1, FR-V2        | US-CHK-05                                  |
+| FR-V3               | US-ADM-06b                                 |
+| FR-E1               | US-AUTH-03, US-CHK-01                      |
+| FR-E2               | US-CHK-02, US-CHK-04, US-CHK-05            |
+| FR-E3               | US-ORD-05                                  |
+| FR-E4               | US-AUTH-05                                 |
+| Mục 3.6.4           | TS-CRON-01                                 |
