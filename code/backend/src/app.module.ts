@@ -7,6 +7,7 @@ import { AcceptLanguageResolver, I18nModule, QueryResolver } from 'nestjs-i18n';
 import * as path from 'path';
 import { AuthModule } from './modules/auth/auth.module';
 import { StorageModule } from './modules/storage/storage.module';
+import { RedisModule } from './modules/redis/redis.module';
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { StorageModule } from './modules/storage/storage.module';
     }),
     AuthModule,
     StorageModule,
+    RedisModule,
   ],
   controllers: [AppController],
   providers: [
