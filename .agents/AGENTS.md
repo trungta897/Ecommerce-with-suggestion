@@ -55,3 +55,9 @@
 **Rule**: Bắt buộc sử dụng mô hình **Pub/Sub** (ví dụ thông qua `@nestjs/event-emitter`) cho các tác vụ bất đồng bộ hoặc các logic phụ chạy ngầm (như gửi email, thông báo, ghi log thống kê) nhằm giảm độ kết dính (decoupling) giữa các module.
 - Tuyệt đối không gọi trực tiếp các service phụ từ service chính (ví dụ: cấm gọi `EmailService.send()` trực tiếp bên trong `OrderService.create()`). 
 - Thay vào đó, service chính chỉ phát ra một sự kiện (ví dụ: `order.created`) để các Subscriber tương ứng tự động lắng nghe và xử lý độc lập.
+
+## Sprint Backlogs Update Mandate
+
+**Rule**: Bắt buộc phải tự động cập nhật tiến độ vào các file backlog của sprint tương ứng (ví dụ: \docs/backlogs/sprintX/tasks.md\) mỗi khi hoàn thành xong một task.
+- Tìm kiếm đúng file backlog của sprint hiện tại và đánh dấu \[x]\ vào các công việc vừa được thực hiện xong.
+- Việc này phải diễn ra tự động mà không cần User phải nhắc nhở thêm.
