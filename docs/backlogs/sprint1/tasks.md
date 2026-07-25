@@ -5,6 +5,7 @@
   - [x] Viết API `GET /users/profile` lấy thông tin cá nhân
   - [x] Viết API `PATCH /users/profile` cập nhật thông tin cá nhân (Tên, SDT, Địa chỉ)
   - [x] Tích hợp Frontend UI (`profile/page.tsx`) gọi API thật
+  - [x] Tích hợp Custom Toast Notifications và Hệ thống chọn địa chỉ hành chính VN (`AddressSelector`, `LocationsModule`, `nestjs-i18n`)
 
 - [x] **2. Khởi tạo Backend Module: Categories (US-ADM-02)**
   - [x] Tạo `CategoryController`, `CategoryService`
