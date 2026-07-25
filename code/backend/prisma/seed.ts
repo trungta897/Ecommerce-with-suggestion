@@ -4,30 +4,17 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as readline from 'readline';
 import { parse } from 'csv-parse';
-import {
-  S3Client,
-  PutObjectCommand,
-  HeadBucketCommand,
-  CreateBucketCommand,
-  PutBucketPolicyCommand,
-  ListObjectsV2Command,
-  DeleteObjectsCommand,
-} from '@aws-sdk/client-s3';
+import { v2 as cloudinary } from 'cloudinary';
+import * as streamifier from 'streamifier';
 
 const prisma = new PrismaClient();
 
-// MinIO Setup
-const s3Client = new S3Client({
-  endpoint: 'http://localhost:9000',
-  region: 'us-east-1',
-  credentials: {
-    accessKeyId: 'minioadmin',
-    secretAccessKey: 'minioadmin123',
-  },
-  forcePathStyle: true,
+// Cloudinary Setup
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
 });
-const MINIO_BUCKET = 'datn-products';
-const MINIO_PUBLIC_BASE_URL = 'http://localhost:9000/datn-products';
 
 // Types
 type AmazonProduct = {
@@ -68,113 +55,44 @@ function slugify(text: string) {
     .substring(0, 100);
 }
 
-async function ensureBucket() {
-  try {
-    await s3Client.send(new HeadBucketCommand({ Bucket: MINIO_BUCKET }));
-    console.log(`Bucket ${MINIO_BUCKET} exists`);
-  } catch (e: unknown) {
-    const error = e as Error & {
-      $metadata?: { httpStatusCode?: number };
-      name?: string;
-    };
-    if (error.name === 'NotFound' || error.$metadata?.httpStatusCode === 404) {
-      console.log(`Bucket ${MINIO_BUCKET} not found. Creating...`);
-      await s3Client.send(new CreateBucketCommand({ Bucket: MINIO_BUCKET }));
-      const policy = {
-        Version: '2012-10-17',
-        Statement: [
-          {
-            Effect: 'Allow',
-            Principal: '*',
-            Action: ['s3:GetObject'],
-            Resource: [`arn:aws:s3:::${MINIO_BUCKET}/*`],
-          },
-        ],
-      };
-      await s3Client.send(
-        new PutBucketPolicyCommand({
-          Bucket: MINIO_BUCKET,
-          Policy: JSON.stringify(policy),
-        }),
-      );
-      console.log(`Bucket created and set to public read`);
-    } else {
-      console.log(
-        'Ensure bucket failed, maybe MinIO is not running. Proceeding without MinIO check.',
-      );
-    }
-  }
-}
-
-async function uploadToMinIO(url: string, key: string): Promise<string | null> {
+async function uploadToCloudinary(
+  url: string,
+  key: string,
+): Promise<string | null> {
   try {
     const res = await fetch(url);
     if (!res.ok) throw new Error(`Failed to fetch ${url}: ${res.statusText}`);
     const buffer = await res.arrayBuffer();
 
-    let contentType = 'image/jpeg';
-    if (url.endsWith('.png')) contentType = 'image/png';
-    else if (url.endsWith('.webp')) contentType = 'image/webp';
-
-    await s3Client.send(
-      new PutObjectCommand({
-        Bucket: MINIO_BUCKET,
-        Key: key,
-        Body: Buffer.from(buffer),
-        ContentType: contentType,
-      }),
-    );
-    return `${MINIO_PUBLIC_BASE_URL}/${key}`;
+    return new Promise((resolve) => {
+      const uploadStream = cloudinary.uploader.upload_stream(
+        {
+          folder: 'datn-products',
+          public_id: key.replace('.jpg', ''),
+          resource_type: 'auto',
+          overwrite: true,
+        },
+        (error, result) => {
+          if (error || !result) {
+            console.error(`Upload error for ${key}:`, error?.message);
+            resolve(null);
+          } else {
+            resolve(result.secure_url);
+          }
+        },
+      );
+      streamifier.createReadStream(Buffer.from(buffer)).pipe(uploadStream);
+    });
   } catch (e: any) {
     console.error(`Upload error for ${key}: ${e.message}`);
     return null;
   }
 }
 
-async function emptyBucket() {
-  console.log(`Đang dọn dẹp bucket ${MINIO_BUCKET}...`);
-  try {
-    let isTruncated = true;
-    let continuationToken: string | undefined = undefined;
-
-    while (isTruncated) {
-      const response = await s3Client.send(
-        new ListObjectsV2Command({
-          Bucket: MINIO_BUCKET,
-          ContinuationToken: continuationToken,
-        }),
-      );
-
-      if (response.Contents && response.Contents.length > 0) {
-        const objectsToDelete = response.Contents.map((obj) => ({
-          Key: obj.Key,
-        }));
-        await s3Client.send(
-          new DeleteObjectsCommand({
-            Bucket: MINIO_BUCKET,
-            Delete: { Objects: objectsToDelete },
-          }),
-        );
-        console.log(`  Đã xóa ${objectsToDelete.length} file cũ trong bucket.`);
-      }
-
-      isTruncated = response.IsTruncated ?? false;
-      continuationToken = response.NextContinuationToken;
-    }
-  } catch (error: any) {
-    console.log(
-      `Lỗi khi dọn dẹp bucket (có thể bucket rỗng hoặc chưa tồn tại): ${error.message}`,
-    );
-  }
-}
-
 async function main() {
   console.log(
-    '🚀 Bắt đầu quá trình seed dữ liệu (1.000 sản phẩm + upload MinIO)...',
+    '🚀 Bắt đầu quá trình seed dữ liệu (1.000 sản phẩm + upload Cloudinary)...',
   );
-
-  await ensureBucket();
-  await emptyBucket();
 
   console.log('Đang xóa dữ liệu cũ trong database...');
   await prisma.review.deleteMany();
@@ -305,7 +223,7 @@ async function main() {
   console.log(`Đã load metadata cho ${productsToInsert.length} sản phẩm.`);
 
   console.log(
-    '3. & 4. Xử lý lưu Category, upload ảnh MinIO và insert Product...',
+    '3. & 4. Xử lý lưu Category, upload ảnh Cloudinary và insert Product...',
   );
   const insertedProducts: Record<string, string> = {};
   let categoriesCreated = 0;
@@ -337,10 +255,10 @@ async function main() {
         if (!sourceUrl) continue;
         const variant = img.variant || 'MAIN';
         const key = `${item.parent_asin}/${variant}.jpg`;
-        const minioUrl = await uploadToMinIO(sourceUrl, key);
-        if (minioUrl) {
+        const cloudinaryUrl = await uploadToCloudinary(sourceUrl, key);
+        if (cloudinaryUrl) {
           processedImages.push({
-            url: minioUrl,
+            url: cloudinaryUrl,
             variant: variant,
             isPrimary: variant === 'MAIN' || processedImages.length === 0,
           });

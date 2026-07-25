@@ -8,6 +8,9 @@ import * as path from 'path';
 import { AuthModule } from './modules/auth/auth.module';
 import { StorageModule } from './modules/storage/storage.module';
 import { RedisModule } from './modules/redis/redis.module';
+import { UsersModule } from './modules/users/users.module';
+import { CategoriesModule } from './modules/categories/categories.module';
+import { ProductsModule } from './modules/products/products.module';
 
 @Module({
   imports: [
@@ -31,6 +34,9 @@ import { RedisModule } from './modules/redis/redis.module';
     AuthModule,
     StorageModule,
     RedisModule,
+    UsersModule,
+    CategoriesModule,
+    ProductsModule,
   ],
   controllers: [AppController],
   providers: [
