@@ -13,5 +13,20 @@
   "recentOrders": "Đơn hàng gần đây",
   "noOrders": "Chưa có đơn hàng nào",
   "aiRecommend": "Gợi ý dành cho bạn",
-  "aiRecommendDesc": "Dựa trên lịch sử mua hàng, đây là sản phẩm phù hợp với bạn"
+  "aiRecommendDesc": "Dựa trên lịch sử mua hàng, đây là sản phẩm phù hợp với bạn",
+  "validation": {
+    "fullNameRequired": "Vui lòng cho biết họ và tên của bạn.",
+    "phoneInvalid": "Số điện thoại không hợp lệ (từ 9-11 chữ số).",
+    "provinceRequired": "Vui lòng chọn Tỉnh/Thành phố.",
+    "districtRequired": "Vui lòng chọn Quận/Huyện.",
+    "wardRequired": "Vui lòng chọn Phường/Xã.",
+    "streetRequired": "Vui lòng điền cụ thể số nhà, tên đường."
+  },
+  "toast": {
+    "updateSuccessTitle": "Cập Nhật Thành Công",
+    "updateSuccessMessage": "Hồ sơ cá nhân và địa chỉ liên lạc của bạn đã được lưu lại trong hệ thống.",
+    "updateErrorTitle": "Lỗi Cập Nhật",
+    "updateErrorMessage": "Không thể cập nhật hồ sơ cá nhân lúc này. Vui lòng thử lại sau."
+  },
+  "loading": "Đang tải..."
 }

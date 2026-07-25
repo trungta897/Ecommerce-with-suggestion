@@ -46,6 +46,10 @@ export {
   Home,
   Layers,
   Tag,
+  Info,
+  AlertTriangle,
+  Loader2,
+  Check,
 } from 'lucide-react';
 
 // Export custom icons

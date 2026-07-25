@@ -35,7 +35,7 @@ export function OtpForm() {
             id: '1',
             email: 'user@example.com',
             role: UserRole.CUSTOMER,
-            is_verified: true,
+            isVerified: true,
           },
           'mock-token-after-otp'
         );
@@ -44,7 +44,7 @@ export function OtpForm() {
         throw new Error('Invalid OTP');
       }
     } catch {
-      setError('root', { message: t('login_error') || 'OTP không hợp lệ' });
+      setError('root', { message: t('login_error') });
     }
   };
 

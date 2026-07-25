@@ -4,6 +4,7 @@ import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import { QueryProvider } from '@/providers/query-provider';
+import { ToastProvider } from '@/providers/toast-provider';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import { ClientLayoutWrapper } from '@/components/layout/ClientLayoutWrapper';
 import { HeaderVN } from '@/components/layout/HeaderVN';
@@ -48,9 +49,11 @@ export default async function RootLayout({
             clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || 'mock-client-id'}
           >
             <QueryProvider>
-              <ClientLayoutWrapper header={<HeaderVN />} footer={<FooterVN />}>
-                {children}
-              </ClientLayoutWrapper>
+              <ToastProvider>
+                <ClientLayoutWrapper header={<HeaderVN />} footer={<FooterVN />}>
+                  {children}
+                </ClientLayoutWrapper>
+              </ToastProvider>
             </QueryProvider>
           </GoogleOAuthProvider>
         </NextIntlClientProvider>

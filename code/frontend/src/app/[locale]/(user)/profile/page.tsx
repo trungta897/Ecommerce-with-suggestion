@@ -8,9 +8,12 @@ import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { userService } from '@/services/user-service';
+import { useToast } from '@/providers/toast-provider';
+import { AddressSelector } from '@/components/features/address/AddressSelector';
 
 export default function UserProfilePage() {
   const t = useTranslations('profile');
+  const toast = useToast();
   const { user, logout, setAuth, accessToken } = useAuthStore();
   const [activeSection, setActiveSection] = useState<'info' | 'orders' | 'wishlist' | 'settings'>(
     'info'
@@ -29,6 +32,12 @@ export default function UserProfilePage() {
     address: '',
   });
 
+  const [errors, setErrors] = useState<{
+    fullName?: string;
+    phone?: string;
+    address?: string;
+  }>({});
+
   useEffect(() => {
     if (profile) {
       setFormData({
@@ -36,7 +45,6 @@ export default function UserProfilePage() {
         phone: profile.phone || '',
         address: profile.address || '',
       });
-      // Optionally sync auth store
       if (accessToken) {
         setAuth(
           {
@@ -68,19 +76,43 @@ export default function UserProfilePage() {
           accessToken
         );
       }
-      alert(t('saveSuccess', { defaultValue: 'Cập nhật thành công!' }));
+      toast.success(t('toast.updateSuccessMessage'), t('toast.updateSuccessTitle'));
     },
     onError: () => {
-      alert(t('saveError', { defaultValue: 'Có lỗi xảy ra, vui lòng thử lại.' }));
+      toast.error(t('toast.updateErrorMessage'), t('toast.updateErrorTitle'));
     },
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+    setErrors((prev) => ({ ...prev, [e.target.name]: undefined }));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    const newErrors: { fullName?: string; phone?: string; address?: string } = {};
+    let hasError = false;
+
+    if (!formData.fullName.trim()) {
+      newErrors.fullName = t('validation.fullNameRequired');
+      toast.error(t('validation.fullNameRequired'), t('toast.updateErrorTitle'));
+      hasError = true;
+    } else if (formData.phone && !/^[0-9]{9,11}$/.test(formData.phone.trim())) {
+      newErrors.phone = t('validation.phoneInvalid');
+      toast.error(t('validation.phoneInvalid'), t('toast.updateErrorTitle'));
+      hasError = true;
+    } else if (!formData.address.trim()) {
+      newErrors.address = t('validation.streetRequired');
+      toast.error(t('validation.streetRequired'), t('toast.updateErrorTitle'));
+      hasError = true;
+    }
+
+    if (hasError) {
+      setErrors(newErrors);
+      return;
+    }
+
+    setErrors({});
     updateMutation.mutate(formData);
   };
 
@@ -119,6 +151,7 @@ export default function UserProfilePage() {
               {menuItems.map((item) => (
                 <button
                   key={item.key}
+                  type="button"
                   onClick={() => setActiveSection(item.key)}
                   className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
                     activeSection === item.key
@@ -131,6 +164,7 @@ export default function UserProfilePage() {
                 </button>
               ))}
               <button
+                type="button"
                 onClick={() => logout()}
                 className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-red-500 hover:bg-red-50 transition-colors"
               >
@@ -147,26 +181,28 @@ export default function UserProfilePage() {
             <form onSubmit={handleSubmit} className="bg-white border border-rule rounded-xl p-6">
               <h2 className="text-lg font-bold text-ink mb-6">{t('personalInfo')}</h2>
               {isLoading ? (
-                <div className="text-center py-8 text-ink-2">
-                  {t('loading', { defaultValue: 'Đang tải...' })}
-                </div>
+                <div className="text-center py-8 text-ink-2">{t('loading')}</div>
               ) : (
                 <>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-1">
-                      <label className="text-sm font-medium text-ink">{t('fullName')}</label>
+                      <label className="text-sm font-medium text-ink">{t('fullName')} *</label>
                       <BaseInput
                         name="fullName"
                         placeholder={t('fullName')}
                         value={formData.fullName}
                         onChange={handleChange}
+                        className={errors.fullName ? 'border-red-500' : ''}
                       />
+                      {errors.fullName && (
+                        <p className="text-xs text-red-500 mt-1">{errors.fullName}</p>
+                      )}
                     </div>
                     <div className="space-y-1">
                       <label className="text-sm font-medium text-ink">{t('email')}</label>
                       <BaseInput type="email" value={profile?.email || ''} disabled />
                     </div>
-                    <div className="space-y-1">
+                    <div className="space-y-1 md:col-span-2">
                       <label className="text-sm font-medium text-ink">{t('phone')}</label>
                       <BaseInput
                         name="phone"
@@ -174,15 +210,24 @@ export default function UserProfilePage() {
                         placeholder="0900 000 000"
                         value={formData.phone}
                         onChange={handleChange}
+                        className={errors.phone ? 'border-red-500' : ''}
                       />
+                      {errors.phone && <p className="text-xs text-red-500 mt-1">{errors.phone}</p>}
                     </div>
-                    <div className="space-y-1">
-                      <label className="text-sm font-medium text-ink">{t('address')}</label>
-                      <BaseInput
-                        name="address"
-                        placeholder={t('address')}
-                        value={formData.address}
-                        onChange={handleChange}
+
+                    {/* ADDRESS SELECTOR INTEGRATED HERE */}
+                    <div className="space-y-2 md:col-span-2 pt-2 border-t border-rule">
+                      <label className="text-sm font-bold text-ink">{t('address')} *</label>
+                      <AddressSelector
+                        initialAddress={profile?.address || ''}
+                        onAddressChange={(fullAddress) => {
+                          setFormData((prev) => ({
+                            ...prev,
+                            address: fullAddress,
+                          }));
+                          setErrors((prev) => ({ ...prev, address: undefined }));
+                        }}
+                        error={errors.address}
                       />
                     </div>
                   </div>

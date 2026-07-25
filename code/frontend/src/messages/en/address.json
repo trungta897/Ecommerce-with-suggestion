@@ -1,0 +1,18 @@
+{
+  "province": "Province/City",
+  "provincePlaceholder": "Select Province/City",
+  "searchProvince": "Search Province/City...",
+  "district": "District",
+  "districtPlaceholder": "Select District",
+  "searchDistrict": "Search District...",
+  "ward": "Ward/Commune",
+  "wardPlaceholder": "Select Ward/Commune",
+  "searchWard": "Search Ward/Commune...",
+  "street": "Street address / House number",
+  "streetPlaceholder": "Enter exact house number, street name...",
+  "noResults": "No matching results found",
+  "selectProvinceFirst": "Please select Province/City first",
+  "selectDistrictFirst": "Please select District first",
+  "loading": "Loading location list...",
+  "recordedAddress": "Recorded Address:"
+}

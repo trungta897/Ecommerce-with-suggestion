@@ -114,6 +114,11 @@
     "inactive": "Đã ẩn",
     "edit": "Sửa",
     "hide": "Ẩn",
-    "searchPlaceholder": "Tìm kiếm danh mục..."
+    "searchPlaceholder": "Tìm kiếm danh mục...",
+    "createSuccess": "Tạo danh mục thành công!",
+    "createError": "Tạo danh mục thất bại. Vui lòng kiểm tra lại!",
+    "back": "Quay lại",
+    "saving": "Đang lưu...",
+    "saveCategory": "Lưu Danh Mục"
   }
 }

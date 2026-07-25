@@ -99,5 +99,26 @@
     "pending": "Pending",
     "approved": "Approved",
     "rejected": "Rejected"
+  },
+  "categories": {
+    "title": "Category Management",
+    "add_new": "Add Category",
+    "name": "Category Name",
+    "slug": "Slug",
+    "description": "Description",
+    "image": "Image",
+    "parent": "Parent Category",
+    "status": "Status",
+    "actions": "Actions",
+    "active": "Active",
+    "inactive": "Inactive",
+    "edit": "Edit",
+    "hide": "Hide",
+    "searchPlaceholder": "Search categories...",
+    "createSuccess": "Category created successfully!",
+    "createError": "Failed to create category. Please check again!",
+    "back": "Back",
+    "saving": "Saving...",
+    "saveCategory": "Save Category"
   }
 }
