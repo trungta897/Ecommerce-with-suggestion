@@ -7,23 +7,24 @@ import { Redis } from '@upstash/redis';
 const intlMiddleware = createMiddleware({
   locales: ['vi', 'en'],
   defaultLocale: 'vi',
-  localePrefix: 'as-needed'
+  localePrefix: 'as-needed',
 });
 
 // Khởi tạo Redis & Ratelimit (chỉ khi có cấu hình để tránh lỗi crash)
 const redisUrl = process.env.UPSTASH_REDIS_REST_URL;
 const redisToken = process.env.UPSTASH_REDIS_REST_TOKEN;
 
-const ratelimit = (redisUrl && redisToken)
-  ? new Ratelimit({
-      redis: new Redis({
-        url: redisUrl,
-        token: redisToken,
-      }),
-      // Giới hạn 20 requests / 10 giây mỗi IP
-      limiter: Ratelimit.slidingWindow(20, '10 s'),
-    })
-  : null;
+const ratelimit =
+  redisUrl && redisToken
+    ? new Ratelimit({
+        redis: new Redis({
+          url: redisUrl,
+          token: redisToken,
+        }),
+        // Giới hạn 20 requests / 10 giây mỗi IP
+        limiter: Ratelimit.slidingWindow(20, '10 s'),
+      })
+    : null;
 
 export default async function middleware(request: NextRequest) {
   // 1. Rate Limit Check
@@ -48,5 +49,5 @@ export default async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!api|_next|_vercel|.*\\..*).*)']
+  matcher: ['/((?!api|_next|_vercel|.*\\..*).*)'],
 };

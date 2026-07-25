@@ -7,10 +7,14 @@ export enum UserRole {
 export interface User {
   id: string;
   email: string;
+  fullName?: string;
+  phone?: string;
+  address?: string;
+  avatarUrl?: string;
   role: UserRole;
-  is_verified: boolean;
-  created_at?: string;
-  updated_at?: string;
+  isVerified: boolean;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface AuthResponse {

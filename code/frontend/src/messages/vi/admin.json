@@ -99,5 +99,21 @@
     "pending": "Chờ duyệt",
     "approved": "Đã duyệt",
     "rejected": "Đã từ chối"
+  },
+  "categories": {
+    "title": "Quản lý danh mục",
+    "add_new": "Thêm danh mục",
+    "name": "Tên danh mục",
+    "slug": "Slug",
+    "description": "Mô tả",
+    "image": "Hình ảnh",
+    "parent": "Danh mục cha",
+    "status": "Trạng thái",
+    "actions": "Thao tác",
+    "active": "Hoạt động",
+    "inactive": "Đã ẩn",
+    "edit": "Sửa",
+    "hide": "Ẩn",
+    "searchPlaceholder": "Tìm kiếm danh mục..."
   }
 }

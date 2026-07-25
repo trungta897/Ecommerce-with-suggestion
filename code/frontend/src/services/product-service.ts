@@ -1,62 +1,44 @@
-import { Product, Category } from '@/types';
-import { MOCK_PRODUCTS, CATEGORIES } from '@/lib/mockData';
-import type { Product as MockProduct } from '@/lib/mockData';
+import { Product, Category, ProductImage } from '@/types';
+import { apiClient } from './api-client';
 
-const MOCK_DELAY = 300;
-
-// Hàm giả lập delay để mock hành vi API thật
-const simulateApiDelay = <T>(data: T): Promise<T> =>
-  new Promise((resolve) => setTimeout(() => resolve(data), MOCK_DELAY));
-
-/**
- * Chuyển đổi mock product sang cấu trúc Product type chính thức.
- * Khi tích hợp API thật, hàm này sẽ được loại bỏ.
- */
-const mapMockToProduct = (mock: MockProduct): Product => ({
-  id: String(mock.id),
-  name: mock.name,
-  slug: mock.name.toLowerCase().replace(/ /g, '-'),
-  description: '',
-  price: mock.price,
-  stock: 50,
-  thumbnailUrl: mock.thumbnailUrl,
-  images: [{ url: mock.thumbnailUrl, variant: 'MAIN', isPrimary: true }],
-  avgRating: 4.5,
-  reviewCount: 100,
-  viewCount: 200,
-  soldCount: 50,
-  categoryId: '0',
-  isActive: true,
-  createdAt: new Date().toISOString(),
-});
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const mapProduct = (p: any): Product => {
+  const images: ProductImage[] = Array.isArray(p.images) ? p.images : [];
+  const mainImage = images.find(img => img.isPrimary || img.variant === 'MAIN') || images[0];
+  
+  return {
+    ...p,
+    price: Number(p.price),
+    discountPrice: p.discountPrice ? Number(p.discountPrice) : undefined,
+    thumbnailUrl: mainImage?.url || '/placeholder.png',
+    images
+  };
+};
 
 export const productService = {
-  getAll: (): Promise<Product[]> => {
-    // TODO: return apiClient.get('/products').then(res => res.data.data);
-    return simulateApiDelay(MOCK_PRODUCTS.map(mapMockToProduct));
+  getAll: async (): Promise<Product[]> => {
+    const { data } = await apiClient.get('/products');
+    return Array.isArray(data) ? data.map(mapProduct) : [];
   },
 
-  getById: (id: string): Promise<Product | undefined> => {
-    // TODO: return apiClient.get(`/products/${id}`).then(res => res.data.data);
-    const product = MOCK_PRODUCTS.find((p) => p.id === id);
-    return simulateApiDelay(product ? mapMockToProduct(product) : undefined);
+  getById: async (id: string): Promise<Product | undefined> => {
+    try {
+      const { data } = await apiClient.get(`/products/${id}`);
+      return data ? mapProduct(data) : undefined;
+    } catch {
+      return undefined;
+    }
   },
 
-  getByCategory: (slug: string): Promise<Product[]> => {
-    // TODO: return apiClient.get(`/products?category=${slug}`).then(res => res.data.data);
-    const products = MOCK_PRODUCTS.filter((p) => p.category === slug);
-    return simulateApiDelay(products.map(mapMockToProduct));
+  getByCategory: async (slug: string): Promise<Product[]> => {
+    const { data } = await apiClient.get('/products');
+    const products = Array.isArray(data) ? data : [];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return products.filter((p: any) => p.category?.slug === slug).map(mapProduct);
   },
 
-  getCategories: (): Promise<Category[]> => {
-    // TODO: return apiClient.get('/categories').then(res => res.data.data);
-    return simulateApiDelay(
-      CATEGORIES.map((c) => ({
-        id: String(c.id),
-        name: c.nameKey,
-        description: '',
-        slug: c.slug,
-      }))
-    );
+  getCategories: async (): Promise<Category[]> => {
+    const { data } = await apiClient.get('/categories');
+    return data;
   },
 };

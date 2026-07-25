@@ -14,7 +14,7 @@ export const authService = {
             id: '1',
             email: credentials.email as string,
             role: UserRole.CUSTOMER,
-            is_verified: true,
+            isVerified: true,
           },
           accessToken: 'mock-jwt-token',
           refreshToken: 'mock-refresh-token',

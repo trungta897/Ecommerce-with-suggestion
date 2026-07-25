@@ -5,14 +5,84 @@ import { User, Package, Heart, Settings, LogOut, Sparkles } from '@/components/b
 import { BaseButton, BaseInput } from '@/components/base';
 import { useAuthStore } from '@/store';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { userService } from '@/services/user-service';
 
 export default function UserProfilePage() {
   const t = useTranslations('profile');
-  const { user, logout } = useAuthStore();
+  const { user, logout, setAuth, accessToken } = useAuthStore();
   const [activeSection, setActiveSection] = useState<'info' | 'orders' | 'wishlist' | 'settings'>(
     'info'
   );
+  const queryClient = useQueryClient();
+
+  const { data: profile, isLoading } = useQuery({
+    queryKey: ['profile'],
+    queryFn: userService.getProfile,
+    enabled: !!user,
+  });
+
+  const [formData, setFormData] = useState({
+    fullName: '',
+    phone: '',
+    address: '',
+  });
+
+  useEffect(() => {
+    if (profile) {
+      setFormData({
+        fullName: profile.fullName || '',
+        phone: profile.phone || '',
+        address: profile.address || '',
+      });
+      // Optionally sync auth store
+      if (accessToken) {
+        setAuth(
+          {
+            id: profile.id,
+            email: profile.email,
+            fullName: profile.fullName,
+            role: profile.role,
+            isVerified: profile.isVerified,
+          },
+          accessToken
+        );
+      }
+    }
+  }, [profile, setAuth, accessToken]);
+
+  const updateMutation = useMutation({
+    mutationFn: userService.updateProfile,
+    onSuccess: (updatedProfile) => {
+      queryClient.setQueryData(['profile'], updatedProfile);
+      if (accessToken) {
+        setAuth(
+          {
+            id: updatedProfile.id,
+            email: updatedProfile.email,
+            fullName: updatedProfile.fullName,
+            role: updatedProfile.role,
+            isVerified: updatedProfile.isVerified,
+          },
+          accessToken
+        );
+      }
+      alert(t('saveSuccess', { defaultValue: 'Cập nhật thành công!' }));
+    },
+    onError: () => {
+      alert(t('saveError', { defaultValue: 'Có lỗi xảy ra, vui lòng thử lại.' }));
+    },
+  });
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    updateMutation.mutate(formData);
+  };
 
   const menuItems = [
     { key: 'info' as const, label: t('personalInfo'), icon: User },
@@ -32,11 +102,15 @@ export default function UserProfilePage() {
             {/* Avatar */}
             <div className="flex items-center gap-3 mb-6">
               <div className="w-14 h-14 bg-gradient-to-br from-primary to-red-400 rounded-full flex items-center justify-center text-white font-bold text-xl">
-                {user?.email?.charAt(0).toUpperCase() || 'U'}
+                {profile?.fullName?.charAt(0).toUpperCase() ||
+                  profile?.email?.charAt(0).toUpperCase() ||
+                  'U'}
               </div>
               <div>
-                <h3 className="font-bold text-ink">{user?.email?.split('@')[0] || 'User'}</h3>
-                <p className="text-xs text-ink-2">{user?.email || ''}</p>
+                <h3 className="font-bold text-ink">
+                  {profile?.fullName || profile?.email?.split('@')[0] || 'User'}
+                </h3>
+                <p className="text-xs text-ink-2">{profile?.email || ''}</p>
               </div>
             </div>
 
@@ -70,30 +144,56 @@ export default function UserProfilePage() {
         {/* Main Content */}
         <main className="flex-1 space-y-6">
           {activeSection === 'info' && (
-            <div className="bg-white border border-rule rounded-xl p-6">
+            <form onSubmit={handleSubmit} className="bg-white border border-rule rounded-xl p-6">
               <h2 className="text-lg font-bold text-ink mb-6">{t('personalInfo')}</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <label className="text-sm font-medium text-ink">{t('fullName')}</label>
-                  <BaseInput placeholder={t('fullName')} defaultValue="" />
+              {isLoading ? (
+                <div className="text-center py-8 text-ink-2">
+                  {t('loading', { defaultValue: 'Đang tải...' })}
                 </div>
-                <div className="space-y-1">
-                  <label className="text-sm font-medium text-ink">{t('email')}</label>
-                  <BaseInput type="email" defaultValue={user?.email || ''} disabled />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-sm font-medium text-ink">{t('phone')}</label>
-                  <BaseInput type="tel" placeholder="0900 000 000" />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-sm font-medium text-ink">{t('address')}</label>
-                  <BaseInput placeholder={t('address')} />
-                </div>
-              </div>
-              <div className="mt-6">
-                <BaseButton>{t('saveChanges')}</BaseButton>
-              </div>
-            </div>
+              ) : (
+                <>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <label className="text-sm font-medium text-ink">{t('fullName')}</label>
+                      <BaseInput
+                        name="fullName"
+                        placeholder={t('fullName')}
+                        value={formData.fullName}
+                        onChange={handleChange}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-sm font-medium text-ink">{t('email')}</label>
+                      <BaseInput type="email" value={profile?.email || ''} disabled />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-sm font-medium text-ink">{t('phone')}</label>
+                      <BaseInput
+                        name="phone"
+                        type="tel"
+                        placeholder="0900 000 000"
+                        value={formData.phone}
+                        onChange={handleChange}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-sm font-medium text-ink">{t('address')}</label>
+                      <BaseInput
+                        name="address"
+                        placeholder={t('address')}
+                        value={formData.address}
+                        onChange={handleChange}
+                      />
+                    </div>
+                  </div>
+                  <div className="mt-6">
+                    <BaseButton type="submit" isLoading={updateMutation.isPending}>
+                      {t('saveChanges')}
+                    </BaseButton>
+                  </div>
+                </>
+              )}
+            </form>
           )}
 
           {activeSection === 'orders' && (

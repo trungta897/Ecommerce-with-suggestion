@@ -14,9 +14,9 @@ export default function LoginPage() {
           <h1 className="text-2xl font-bold mb-6">{t('login')}</h1>
           <LoginForm />
           <p className="mt-4 text-center text-sm text-muted-foreground">
-            {t("no_account")}{" "}
+            {t('no_account')}{' '}
             <Link href="/register" className="text-primary hover:underline">
-              {t("register")}
+              {t('register')}
             </Link>
           </p>
         </div>

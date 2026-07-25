@@ -12,14 +12,12 @@ export default function ForgotPasswordPage() {
       <div className="w-full md:w-1/2 flex items-center justify-center bg-background">
         <div className="max-w-md w-full p-6">
           <h1 className="text-2xl font-bold mb-2">{t('forgot_password_title')}</h1>
-          <p className="text-sm text-muted-foreground mb-6">
-            {t('forgot_password_description')}
-          </p>
+          <p className="text-sm text-muted-foreground mb-6">{t('forgot_password_description')}</p>
           <ForgotPasswordForm />
-          
+
           <p className="mt-6 text-center text-sm text-muted-foreground">
             <Link href="/login" className="text-primary hover:underline">
-              {t('back_to_login') || "Quay lại Đăng nhập"}
+              {t('back_to_login') || 'Quay lại Đăng nhập'}
             </Link>
           </p>
         </div>

@@ -11,8 +11,8 @@ if (!fs.existsSync(viDir) || !fs.existsSync(enDir)) {
   process.exit(0);
 }
 
-const viFiles = fs.readdirSync(viDir).filter(f => f.endsWith('.json'));
-const enFiles = fs.readdirSync(enDir).filter(f => f.endsWith('.json'));
+const viFiles = fs.readdirSync(viDir).filter((f) => f.endsWith('.json'));
+const enFiles = fs.readdirSync(enDir).filter((f) => f.endsWith('.json'));
 
 let hasError = false;
 
@@ -21,7 +21,7 @@ function compareKeys(obj1, obj2, filePath, prefix = '', lang1 = 'vi', lang2 = 'e
   const keys1 = Object.keys(obj1);
   const keys2 = Object.keys(obj2);
 
-  keys1.forEach(key => {
+  keys1.forEach((key) => {
     const fullKey = prefix ? `${prefix}.${key}` : key;
     if (!keys2.includes(key)) {
       console.error(`❌ [LỖI i18n] Thiếu key '${fullKey}' trong file '${lang2}/${filePath}'`);
@@ -30,7 +30,9 @@ function compareKeys(obj1, obj2, filePath, prefix = '', lang1 = 'vi', lang2 = 'e
       if (typeof obj2[key] === 'object' && obj2[key] !== null) {
         compareKeys(obj1[key], obj2[key], filePath, fullKey, lang1, lang2);
       } else {
-        console.error(`❌ [LỖI i18n] Kiểu dữ liệu không khớp cho key '${fullKey}' trong '${lang2}/${filePath}'`);
+        console.error(
+          `❌ [LỖI i18n] Kiểu dữ liệu không khớp cho key '${fullKey}' trong '${lang2}/${filePath}'`
+        );
         hasError = true;
       }
     }
@@ -38,21 +40,21 @@ function compareKeys(obj1, obj2, filePath, prefix = '', lang1 = 'vi', lang2 = 'e
 }
 
 // Kiểm tra vi -> en
-viFiles.forEach(file => {
+viFiles.forEach((file) => {
   if (!enFiles.includes(file)) {
     console.error(`❌ [LỖI i18n] File '${file}' tồn tại trong 'vi' nhưng thiếu trong 'en'`);
     hasError = true;
     return;
   }
-  
+
   const viData = JSON.parse(fs.readFileSync(path.join(viDir, file), 'utf8'));
   const enData = JSON.parse(fs.readFileSync(path.join(enDir, file), 'utf8'));
-  
+
   compareKeys(viData, enData, file, '', 'vi', 'en');
 });
 
 // Kiểm tra en -> vi
-enFiles.forEach(file => {
+enFiles.forEach((file) => {
   if (!viFiles.includes(file)) {
     console.error(`❌ [LỖI i18n] File '${file}' tồn tại trong 'en' nhưng thiếu trong 'vi'`);
     hasError = true;
@@ -60,12 +62,14 @@ enFiles.forEach(file => {
   }
   const viData = JSON.parse(fs.readFileSync(path.join(viDir, file), 'utf8'));
   const enData = JSON.parse(fs.readFileSync(path.join(enDir, file), 'utf8'));
-  
+
   compareKeys(enData, viData, file, '', 'en', 'vi');
 });
 
 if (hasError) {
-  console.error('\n🛑 Git Commit Bị Chặn! Vui lòng sửa các lỗi i18n bên trên trước khi commit lại.');
+  console.error(
+    '\n🛑 Git Commit Bị Chặn! Vui lòng sửa các lỗi i18n bên trên trước khi commit lại.'
+  );
   process.exit(1);
 } else {
   console.log('✅ [i18n] Tất cả các file ngôn ngữ đã khớp hoàn hảo!');

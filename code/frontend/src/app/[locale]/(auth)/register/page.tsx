@@ -14,9 +14,9 @@ export default function RegisterPage() {
           <h1 className="text-2xl font-bold mb-6">{t('register')}</h1>
           <RegisterForm />
           <p className="mt-4 text-center text-sm text-muted-foreground">
-            {t("has_account")}{" "}
+            {t('has_account')}{' '}
             <Link href="/login" className="text-primary hover:underline">
-              {t("login")}
+              {t('login')}
             </Link>
           </p>
         </div>

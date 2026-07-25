@@ -8,7 +8,6 @@ export default function HeroVN() {
     <section className="w-full max-w-7xl mx-auto px-[var(--space-4)] py-[var(--space-6)]">
       {/* Bento Grid Layout for Hero */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-[var(--space-4)] min-h-[480px]">
-        
         {/* Main Large Banner (2/3 width) */}
         <div className="md:col-span-2 relative rounded-2xl overflow-hidden bg-[var(--color-paper-2)] border border-[var(--color-rule)] group">
           <div className="absolute inset-0 bg-gradient-to-r from-[var(--color-ink)]/80 to-transparent z-10 p-[var(--space-8)] flex flex-col justify-center">
@@ -26,7 +25,7 @@ export default function HeroVN() {
           </div>
           {/* Placeholder for image */}
           <div className="absolute inset-0 bg-[var(--color-paper-3)] transition-transform duration-700 group-hover:scale-105" />
-          
+
           {/* AI Assistant Floating Button */}
           <button className="absolute bottom-[var(--space-4)] right-[var(--space-4)] z-20 bg-gradient-to-r from-[var(--color-ai-gradient-start)] to-[var(--color-ai-gradient-end)] text-white px-[var(--space-4)] py-[var(--space-2)] rounded-full font-semibold shadow-lg hover:shadow-xl transition-all hover:-translate-y-1">
             {t('ai_assistant')}
@@ -59,7 +58,6 @@ export default function HeroVN() {
             <div className="absolute inset-0 bg-[var(--color-paper-3)] opacity-50 transition-transform duration-700 group-hover:scale-105" />
           </div>
         </div>
-
       </div>
     </section>
   );

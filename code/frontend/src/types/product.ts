@@ -11,6 +11,7 @@ export interface Category {
   description?: string;
   imageUrl?: string;
   parentId?: string;
+  isActive?: boolean;
 }
 
 export interface Product {
