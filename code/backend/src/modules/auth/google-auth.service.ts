@@ -7,6 +7,7 @@ import { GoogleLoginDto } from './dto/google-login.dto';
 import { GoogleCompleteDto } from './dto/google-complete.dto';
 import { BcryptHelper } from '../../common/utils/bcrypt.util';
 import { v4 as uuidv4 } from 'uuid';
+import { I18nService, I18nContext } from 'nestjs-i18n';
 
 @Injectable()
 export class GoogleAuthService {
@@ -16,11 +17,13 @@ export class GoogleAuthService {
     private prisma: PrismaService,
     private jwtService: JwtService,
     private redisService: RedisService,
+    private i18n: I18nService,
   ) {
     this.googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
   }
 
   async verifyGoogleToken(dto: GoogleLoginDto) {
+    const lang = I18nContext.current()?.lang || 'vi';
     try {
       const ticket = await this.googleClient.verifyIdToken({
         idToken: dto.credential,
@@ -30,7 +33,7 @@ export class GoogleAuthService {
       const payload = ticket.getPayload();
       if (!payload || !payload.email) {
         throw new BadRequestException(
-          'Token Google không hợp lệ hoặc thiếu email.',
+          this.i18n.t('auth.GOOGLE_INVALID_TOKEN', { lang }),
         );
       }
 
@@ -81,24 +84,28 @@ export class GoogleAuthService {
           statusCode: HttpStatus.ACCEPTED,
           action: 'REQUIRE_PASSWORD',
           tempToken,
-          message: 'Vui lòng hoàn tất thông tin đăng ký.',
+          message: this.i18n.t('auth.GOOGLE_COMPLETE_INFO', { lang }),
           email,
           fullName: name,
         };
       }
     } catch (error: unknown) {
+      if (error instanceof BadRequestException) throw error;
       const message = error instanceof Error ? error.message : String(error);
-      throw new BadRequestException('Xác thực Google thất bại: ' + message);
+      throw new BadRequestException(
+        this.i18n.t('auth.GOOGLE_FAILED', { lang, args: { error: message } }),
+      );
     }
   }
 
   async completeRegistration(dto: GoogleCompleteDto) {
+    const lang = I18nContext.current()?.lang || 'vi';
     const cachedData = await this.redisService.get(
       `GOOGLE_TEMP:${dto.tempToken}`,
     );
     if (!cachedData) {
       throw new BadRequestException(
-        'Phiên làm việc đã hết hạn hoặc không hợp lệ.',
+        this.i18n.t('auth.SESSION_EXPIRED', { lang }),
       );
     }
 

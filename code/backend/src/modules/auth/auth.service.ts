@@ -56,33 +56,30 @@ export class AuthService {
     await this.mailService.sendOtpEmail(dto.email, otp, 'register');
 
     return {
-      message: 'Vui lòng kiểm tra email để nhận mã xác thực.',
+      message: this.i18n.t('auth.REGISTER_CHECK_EMAIL', { lang }),
       email: newUser.email,
     };
   }
 
   async verifyEmail(dto: VerifyEmailDto) {
+    const lang = I18nContext.current()?.lang || 'vi';
     const redisKey = `OTP:REGISTER:${dto.email}`;
     const failKey = `OTP:FAIL:${dto.email}`;
 
     const fails = await this.redisService.get(failKey);
     if (fails && parseInt(fails, 10) >= 3) {
-      throw new BadRequestException(
-        'Bạn đã nhập sai quá nhiều lần. Vui lòng gửi lại mã OTP mới.',
-      );
+      throw new BadRequestException(this.i18n.t('auth.OTP_EXCEEDED', { lang }));
     }
 
     const savedOtp = await this.redisService.get(redisKey);
     if (!savedOtp) {
-      throw new BadRequestException(
-        'Mã xác thực đã hết hạn hoặc không tồn tại.',
-      );
+      throw new BadRequestException(this.i18n.t('auth.OTP_EXPIRED', { lang }));
     }
 
     if (savedOtp !== dto.otp) {
       await this.redisService.incr(failKey);
       await this.redisService.set(failKey, '1', 300); // Wait, incr doesn't set TTL if it exists, but let's just keep it simple. Actually, we should set EX if not exists.
-      throw new BadRequestException('Mã xác thực không đúng.');
+      throw new BadRequestException(this.i18n.t('auth.OTP_INVALID', { lang }));
     }
 
     await this.prisma.user.update({
@@ -93,39 +90,41 @@ export class AuthService {
     await this.redisService.del(redisKey);
     await this.redisService.del(failKey);
 
-    return { message: 'Xác thực email thành công.' };
+    return { message: this.i18n.t('auth.VERIFY_SUCCESS', { lang }) };
   }
 
   async forgotPassword(dto: ForgotPasswordDto) {
+    const lang = I18nContext.current()?.lang || 'vi';
     const user = await this.prisma.user.findUnique({
       where: { email: dto.email },
     });
     if (!user) {
-      return { message: 'Nếu email tồn tại, một mã OTP sẽ được gửi đến bạn.' };
+      return { message: this.i18n.t('auth.FORGOT_SENT', { lang }) };
     }
 
     const otp = this.generateOtp();
     await this.redisService.set(`OTP:FORGOT:${dto.email}`, otp, 300);
     await this.mailService.sendOtpEmail(dto.email, otp, 'forgot_password');
 
-    return { message: 'Nếu email tồn tại, một mã OTP sẽ được gửi đến bạn.' };
+    return { message: this.i18n.t('auth.FORGOT_SENT', { lang }) };
   }
 
   async resetPassword(dto: ResetPasswordDto) {
+    const lang = I18nContext.current()?.lang || 'vi';
     const redisKey = `OTP:FORGOT:${dto.email}`;
     const failKey = `OTP:FAIL_FORGOT:${dto.email}`;
 
     const fails = await this.redisService.get(failKey);
     if (fails && parseInt(fails, 10) >= 3) {
-      throw new BadRequestException(
-        'Bạn đã nhập sai quá nhiều lần. Vui lòng gửi lại mã mới.',
-      );
+      throw new BadRequestException(this.i18n.t('auth.OTP_EXCEEDED', { lang }));
     }
 
     const savedOtp = await this.redisService.get(redisKey);
     if (!savedOtp || savedOtp !== dto.otp) {
       await this.redisService.incr(failKey);
-      throw new BadRequestException('Mã OTP không hợp lệ hoặc đã hết hạn.');
+      throw new BadRequestException(
+        this.i18n.t('auth.RESET_INVALID_OTP', { lang }),
+      );
     }
 
     const passwordHash = await BcryptHelper.hashPassword(dto.newPassword);
@@ -137,7 +136,7 @@ export class AuthService {
     await this.redisService.del(redisKey);
     await this.redisService.del(failKey);
 
-    return { message: 'Đặt lại mật khẩu thành công.' };
+    return { message: this.i18n.t('auth.RESET_SUCCESS', { lang }) };
   }
 
   async login(dto: LoginDto) {
@@ -155,14 +154,12 @@ export class AuthService {
 
     if (!user.isVerified) {
       throw new BadRequestException(
-        'Vui lòng xác thực email trước khi đăng nhập.',
+        this.i18n.t('auth.UNVERIFIED_ACCOUNT', { lang }),
       );
     }
 
     if (!user.passwordHash) {
-      throw new BadRequestException(
-        'Tài khoản này được đăng ký qua Google. Vui lòng đăng nhập bằng Google.',
-      );
+      throw new BadRequestException(this.i18n.t('auth.GOOGLE_ONLY', { lang }));
     }
 
     // Compare password

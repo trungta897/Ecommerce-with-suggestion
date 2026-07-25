@@ -1,10 +1,14 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
+import { I18nService, I18nContext } from 'nestjs-i18n';
 
 @Injectable()
 export class UsersService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly i18n: I18nService,
+  ) {}
 
   async getProfile(userId: string) {
     const user = await this.prisma.user.findUnique({
@@ -24,7 +28,10 @@ export class UsersService {
     });
 
     if (!user) {
-      throw new NotFoundException('User not found');
+      const lang = I18nContext.current()?.lang || 'vi';
+      throw new NotFoundException(
+        this.i18n.t('users.USER_NOT_FOUND', { lang }),
+      );
     }
     return user;
   }
@@ -35,7 +42,10 @@ export class UsersService {
     });
 
     if (!user) {
-      throw new NotFoundException('User not found');
+      const lang = I18nContext.current()?.lang || 'vi';
+      throw new NotFoundException(
+        this.i18n.t('users.USER_NOT_FOUND', { lang }),
+      );
     }
 
     const updatedUser = await this.prisma.user.update({

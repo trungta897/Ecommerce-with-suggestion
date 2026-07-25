@@ -1,0 +1,5 @@
+{
+  "PROV_NOT_FOUND": "Không tìm thấy thông tin Tỉnh/Thành phố yêu cầu.",
+  "DIST_NOT_FOUND": "Không tìm thấy thông tin Quận/Huyện yêu cầu trong hệ thống.",
+  "WARD_NOT_FOUND": "Không tìm thấy Phường/Xã yêu cầu trong hệ thống."
+}

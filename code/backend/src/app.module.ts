@@ -11,6 +11,7 @@ import { RedisModule } from './modules/redis/redis.module';
 import { UsersModule } from './modules/users/users.module';
 import { CategoriesModule } from './modules/categories/categories.module';
 import { ProductsModule } from './modules/products/products.module';
+import { LocationsModule } from './modules/locations/locations.module';
 
 @Module({
   imports: [
@@ -23,7 +24,7 @@ import { ProductsModule } from './modules/products/products.module';
     I18nModule.forRoot({
       fallbackLanguage: 'vi',
       loaderOptions: {
-        path: path.join(__dirname, '/i18n/'),
+        path: path.join(__dirname, '/common/i18n/'),
         watch: true,
       },
       resolvers: [
@@ -37,6 +38,7 @@ import { ProductsModule } from './modules/products/products.module';
     UsersModule,
     CategoriesModule,
     ProductsModule,
+    LocationsModule,
   ],
   controllers: [AppController],
   providers: [
