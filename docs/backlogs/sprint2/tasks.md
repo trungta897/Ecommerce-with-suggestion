@@ -3,7 +3,7 @@
 - [ ] **1. Khởi tạo Backend Module: Cart (Giỏ hàng) (US-CART-01, US-CART-02)**
   - [ ] Tạo `CartController`, `CartService`
   - [ ] Viết API Thêm/Sửa/Xóa sản phẩm trong giỏ hàng (lưu vào Redis hoặc DB)
-  - [ ] Tích hợp Frontend UI (`cart/page.tsx`)
+  - [x] Tích hợp Frontend UI (`cart/page.tsx`, tối ưu responsive grid layout, đa ngôn ngữ i18n & thông báo Toast)
 
 - [ ] **2. Khởi tạo Backend Module: Orders (Đơn hàng) (US-ORD-01, US-ORD-02)**
   - [ ] Tạo `OrderController`, `OrderService`

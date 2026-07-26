@@ -23,3 +23,4 @@
   - [x] Viết API public: `GET /products/:slug` (Lấy chi tiết)
   - [x] Thay thế Mock Data trong `product-service.ts` ở Frontend bằng `fetch/axios` gọi API thật.
   - [x] Kiểm tra hiển thị Frontend ở trang chủ, trang danh mục và trang chi tiết.
+  - [x] Quy hoạch trang chủ (Homepage) thành 5 danh mục công nghệ hiện đại (Laptop, Linh kiện, Tai nghe, PC, Điện thoại), giới hạn 10 sản phẩm kèm liên kết "Hiển thị tất cả" tới từng trang chi tiết danh mục.
