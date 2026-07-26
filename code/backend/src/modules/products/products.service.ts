@@ -28,9 +28,11 @@ export class ProductsService {
     });
   }
 
-  async findOne(id: string) {
-    const product = await this.prisma.product.findUnique({
-      where: { id },
+  async findOne(idOrSlug: string) {
+    const product = await this.prisma.product.findFirst({
+      where: {
+        OR: [{ id: idOrSlug }, { slug: idOrSlug }],
+      },
       include: { category: true },
     });
     if (!product) throw new NotFoundException('Product not found');
@@ -51,17 +53,17 @@ export class ProductsService {
   }
 
   async update(id: string, dto: UpdateProductDto) {
-    await this.findOne(id);
+    const existingProduct = await this.findOne(id);
     if (dto.slug) {
       const existing = await this.prisma.product.findUnique({
         where: { slug: dto.slug },
       });
-      if (existing && existing.id !== id) {
+      if (existing && existing.id !== existingProduct.id) {
         throw new ConflictException('Slug already exists');
       }
     }
     return this.prisma.product.update({
-      where: { id },
+      where: { id: existingProduct.id },
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       data: dto as any,
       include: { category: true },
@@ -69,9 +71,9 @@ export class ProductsService {
   }
 
   async remove(id: string) {
-    await this.findOne(id);
+    const existingProduct = await this.findOne(id);
     return this.prisma.product.update({
-      where: { id },
+      where: { id: existingProduct.id },
       data: { isActive: false },
     });
   }

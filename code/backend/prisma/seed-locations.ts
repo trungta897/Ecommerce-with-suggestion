@@ -4,31 +4,30 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient() as any;
 
 interface RawWard {
-  code: string;
+  code: string | number;
   name: string;
-  name_with_type: string;
-  parent_code: string;
+  name_with_type?: string;
+  parent_code?: string;
 }
 
 interface RawDistrict {
-  code: string;
+  code: string | number;
   name: string;
-  name_with_type: string;
-  parent_code: string;
+  name_with_type?: string;
+  parent_code?: string;
   wards?: RawWard[];
 }
 
 interface RawProvince {
-  code: string;
+  code: string | number;
   name: string;
-  name_with_type: string;
+  name_with_type?: string;
   districts?: RawDistrict[];
 }
 
-const PRIMARY_URL =
-  'https://raw.githubusercontent.com/kenzouno1/Vietnamese-provinces-database/master/data_with_wards.json';
+const PRIMARY_URL = 'https://provinces.open-api.vn/api/?depth=3';
 const BACKUP_URL =
-  'https://cdn.jsdelivr.net/gh/kenzouno1/Vietnamese-provinces-database@master/data_with_wards.json';
+  'https://raw.githubusercontent.com/madnh/vietnam-provinces/master/data.json';
 
 async function fetchProvincesData(): Promise<RawProvince[]> {
   console.log('📡 Đang tải bộ dữ liệu Hành chính Việt Nam từ internet...');
