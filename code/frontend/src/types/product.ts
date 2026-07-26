@@ -31,15 +31,17 @@ export interface Product {
   soldCount: number;
   categoryId: string;
   category?: Category;
+  tags?: string[];
+  aiScore?: number;
   isActive: boolean;
   createdAt: string;
 }
 
 export interface Review {
-  id: number;
+  id: string; // UUID from Prisma
   user_id: string; // Since user id is UUID
-  product_id: number;
-  order_id: number;
+  product_id: string;
+  order_id?: string;
   rating: number;
   comment: string;
   status: 'visible' | 'hidden';

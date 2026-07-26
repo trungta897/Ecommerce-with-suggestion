@@ -50,6 +50,12 @@ export {
   AlertTriangle,
   Loader2,
   Check,
+  Laptop,
+  Cpu,
+  Headphones,
+  Monitor,
+  Smartphone,
+  ArrowRight,
 } from 'lucide-react';
 
 // Export custom icons

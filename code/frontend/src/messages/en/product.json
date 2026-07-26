@@ -20,5 +20,13 @@
   "commentLabel": "Comment",
   "submitReview": "Submit Review",
   "reviewSuccess": "Review submitted successfully",
-  "notFound": "Product not found"
+  "notFound": "Product not found",
+  "discount": "Save {percent}%",
+  "showingCount": "Showing {count} products",
+  "filterProducts": "Filter products",
+  "showAllCount": "Show all ({total} products)",
+  "showAll": "Show all products",
+  "addedToCartSuccess": "Successfully added \"{name}\" to your cart!",
+  "addedToCartTitle": "Success",
+  "redirectingToCheckout": "Redirecting to checkout..."
 }

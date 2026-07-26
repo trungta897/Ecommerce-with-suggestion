@@ -36,7 +36,8 @@
     "inactive": "Inactive",
     "edit": "Edit",
     "hide": "Hide",
-    "searchPlaceholder": "Search products..."
+    "searchPlaceholder": "Search products...",
+    "noData": "No data found"
   },
   "orders": {
     "title": "Order Management",
@@ -119,6 +120,7 @@
     "createError": "Failed to create category. Please check again!",
     "back": "Back",
     "saving": "Saving...",
-    "saveCategory": "Save Category"
+    "saveCategory": "Save Category",
+    "noData": "No data found"
   }
 }

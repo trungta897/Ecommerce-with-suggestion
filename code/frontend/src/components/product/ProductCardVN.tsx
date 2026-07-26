@@ -1,36 +1,53 @@
+'use client';
+
 import Link from 'next/link';
 import Image from 'next/image';
-import { Product } from '@/lib/mockData';
+import { useTranslations } from 'next-intl';
+import { Product } from '@/types';
 
 interface ProductCardProps {
   product: Product;
 }
 
 export default function ProductCardVN({ product }: ProductCardProps) {
+  const t = useTranslations('product');
+  const hasDiscount = !!(
+    product.discountPrice && Number(product.discountPrice) < Number(product.price)
+  );
+  const currentPrice = hasDiscount ? Number(product.discountPrice) : Number(product.price);
+  const originalPrice = hasDiscount ? Number(product.price) : undefined;
+  const discountPercentage =
+    hasDiscount && originalPrice
+      ? Math.round(((originalPrice - currentPrice) / originalPrice) * 100)
+      : undefined;
+
+  const formatPrice = (price: number) => {
+    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
+  };
+
   return (
     <Link
-      href={`/products/${product.slug}`}
+      href={`/products/${product.slug || product.id}`}
       className="group bg-white p-4 rounded-xl border border-rule hover:shadow-lg transition-all flex flex-col h-full"
     >
       {/* AI Score Badge */}
       {product.aiScore && (
         <div className="mb-3 inline-flex items-center gap-1 bg-purple-50 text-purple-700 text-xs font-semibold px-2 py-1 rounded-md border border-purple-100 self-start">
-          ✨ {product.aiScore}% Phù hợp
+          ✨ {product.aiScore}% {t('aiMatch')}
         </div>
       )}
 
       {/* Image Area */}
       <div className="relative aspect-square w-full bg-paper-2 rounded-lg mb-4 overflow-hidden">
-        {/* Placeholder if no next/image domain config, using img for now or standard next/image */}
         <Image
-          src={product.thumbnailUrl}
+          src={product.thumbnailUrl || '/placeholder.png'}
           alt={product.name}
           fill
           className="object-cover group-hover:scale-105 transition-transform duration-300"
         />
-        {product.discountPercentage && (
+        {discountPercentage && (
           <div className="absolute top-2 left-2 bg-primary text-primary-foreground text-xs font-bold px-2 py-1 rounded">
-            Giảm {product.discountPercentage}%
+            {t('discount', { percent: discountPercentage })}
           </div>
         )}
       </div>
@@ -58,16 +75,10 @@ export default function ProductCardVN({ product }: ProductCardProps) {
 
         <div className="mt-2">
           <div className="text-primary font-bold text-lg md:text-xl">
-            {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(
-              product.price
-            )}
+            {formatPrice(currentPrice)}
           </div>
-          {product.originalPrice && (
-            <div className="text-muted text-sm line-through mt-1">
-              {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(
-                product.originalPrice
-              )}
-            </div>
+          {originalPrice && (
+            <div className="text-muted text-sm line-through mt-1">{formatPrice(originalPrice)}</div>
           )}
         </div>
       </div>

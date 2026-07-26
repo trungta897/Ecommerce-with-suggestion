@@ -27,5 +27,10 @@
     "privacy_policy": "Chính sách bảo mật",
     "refund_policy": "Chính sách đổi trả",
     "terms_of_use": "Điều khoản sử dụng"
+  },
+  "notFound": {
+    "title": "404 - Không tìm thấy trang",
+    "description": "Đường dẫn bạn truy cập không tồn tại hoặc máy chủ Backend (port 8000) chưa hoạt động.",
+    "backHome": "Quay lại Trang chủ"
   }
 }

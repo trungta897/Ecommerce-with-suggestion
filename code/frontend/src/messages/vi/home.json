@@ -16,11 +16,17 @@
     "view_details": "Xem chi tiết",
     "add_to_cart": "Thêm vào giỏ",
     "view_all": "Xem tất cả",
+    "show_all_products": "Hiển thị tất cả ({total} sản phẩm)",
     "ram": "RAM",
     "rom": "ROM"
   },
   "categories": {
-    "laptop": "Laptop",
+    "laptop": "Laptop & Máy tính xách tay",
+    "components": "Linh kiện & Phụ kiện máy tính",
+    "audio": "Tai nghe & Thiết bị âm thanh",
+    "desktop": "PC & Thiết bị để bàn",
+    "mobile": "Điện thoại & Máy tính bảng",
+    "computers": "Laptop & PC",
     "phone": "Điện thoại di động",
     "tablet": "Máy tính bảng",
     "accessory": "Phụ kiện"

@@ -14,7 +14,8 @@ import {
   Phone,
 } from '@/components/base/icons';
 import { useCartStore } from '@/store';
-import { MOCK_PRODUCTS } from '@/lib/mockData';
+import { useProducts } from '@/hooks/use-products';
+import Image from 'next/image';
 import Link from 'next/link';
 import { useToast } from '@/providers/toast-provider';
 import { AddressSelector } from '@/components/features/address/AddressSelector';
@@ -26,6 +27,7 @@ export default function CheckoutPage() {
   const tCommon = useTranslations('common');
   const toast = useToast();
   const { items, clearCart } = useCartStore();
+  const { data: products = [], isLoading } = useProducts();
   const [currentStep, setCurrentStep] = useState(0);
   const [paymentMethod, setPaymentMethod] = useState<'vnpay' | 'cod'>('cod');
   const [deliveryMethod, setDeliveryMethod] = useState('standard');
@@ -54,21 +56,30 @@ export default function CheckoutPage() {
   const [discount, setDiscount] = useState(0);
   const [appliedVoucher, setAppliedVoucher] = useState(false);
 
+  const getProductPrice = (product?: { price: number; discountPrice?: number }) => {
+    if (!product) return 0;
+    if (product.discountPrice && Number(product.discountPrice) < Number(product.price)) {
+      return Number(product.discountPrice);
+    }
+    return Number(product.price);
+  };
+
   const cartProducts = items
     .map((item) => {
-      const product = MOCK_PRODUCTS.find((p) => Number(p.id) === item.product_id);
+      const product = products.find((p) => p.id === item.product_id);
       return { ...item, product };
     })
     .filter((item) => item.product);
 
   const subtotal = cartProducts.reduce(
-    (sum, item) => sum + (item.product?.price || 0) * item.quantity,
+    (sum, item) => sum + getProductPrice(item.product) * item.quantity,
     0
   );
   const shippingFee = deliveryMethod === 'express' ? 50000 : 30000;
   const total = Math.max(0, subtotal + shippingFee - discount);
 
-  const formatPrice = (price: number) => new Intl.NumberFormat('vi-VN').format(price) + '₫';
+  const formatPrice = (price: number) =>
+    new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
 
   const stepIcons = [Truck, CreditCard, CheckCircle2];
 
@@ -158,7 +169,16 @@ export default function CheckoutPage() {
     );
   }
 
-  if (cartProducts.length === 0) {
+  if (items.length > 0 && isLoading) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-pulse">
+        <div className="h-8 bg-paper-2 rounded w-1/3 mb-8" />
+        <div className="h-96 bg-paper-2 rounded-xl w-full" />
+      </div>
+    );
+  }
+
+  if (items.length === 0 || cartProducts.length === 0) {
     return (
       <div className="max-w-lg mx-auto px-4 py-16 text-center">
         <Package className="w-12 h-12 mx-auto mb-4 text-muted" />
@@ -394,13 +414,20 @@ export default function CheckoutPage() {
                     key={item.product_id}
                     className="flex items-center gap-3 py-2 border-b border-rule last:border-0"
                   >
-                    <div className="w-12 h-12 bg-paper-2 rounded-lg flex-shrink-0" />
+                    <div className="w-12 h-12 bg-paper-2 rounded-lg flex-shrink-0 relative overflow-hidden flex items-center justify-center">
+                      <Image
+                        src={item.product?.thumbnailUrl || ''}
+                        alt={item.product?.name || ''}
+                        fill
+                        className="object-contain"
+                      />
+                    </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-ink truncate">{item.product?.name}</p>
                       <p className="text-xs text-ink-2">x{item.quantity}</p>
                     </div>
                     <span className="text-sm font-semibold text-ink">
-                      {formatPrice((item.product?.price || 0) * item.quantity)}
+                      {formatPrice(getProductPrice(item.product) * item.quantity)}
                     </span>
                   </div>
                 ))}

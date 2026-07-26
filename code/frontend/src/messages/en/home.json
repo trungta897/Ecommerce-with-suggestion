@@ -16,11 +16,17 @@
     "view_details": "View details",
     "add_to_cart": "Add to cart",
     "view_all": "View all",
+    "show_all_products": "Show all ({total} products)",
     "ram": "RAM",
     "rom": "ROM"
   },
   "categories": {
-    "laptop": "Laptops",
+    "laptop": "Laptops & Notebooks",
+    "components": "PC Components & Accessories",
+    "audio": "Headphones & Audio Systems",
+    "desktop": "Desktop PC & Monitors",
+    "mobile": "Smartphones & Tablets",
+    "computers": "Laptops & PC",
     "phone": "Smartphones",
     "tablet": "Tablets",
     "accessory": "Accessories"

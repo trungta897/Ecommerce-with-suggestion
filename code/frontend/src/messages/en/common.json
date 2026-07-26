@@ -27,5 +27,10 @@
     "privacy_policy": "Privacy Policy",
     "refund_policy": "Refund Policy",
     "terms_of_use": "Terms of Use"
+  },
+  "notFound": {
+    "title": "404 - Page Not Found",
+    "description": "The path you are accessing does not exist or the Backend server (port 8000) is offline.",
+    "backHome": "Back to Home"
   }
 }

@@ -1,7 +1,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { MOCK_PRODUCTS } from '@/lib/mockData';
+import { useProduct } from '@/hooks/use-products';
 import {
   Star,
   Minus,
@@ -14,17 +14,38 @@ import {
 import { BaseButton } from '@/components/base';
 import { useCartStore } from '@/store';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { ProductImageCarousel } from '@/components/product/ProductImageCarousel';
+import { useToast } from '@/providers/toast-provider';
 
 export default function ProductDetailPage({ params }: { params: { id: string } }) {
   const t = useTranslations('product');
   const tCommon = useTranslations('common');
   const addItem = useCartStore((state) => state.addItem);
+  const toast = useToast();
+  const router = useRouter();
   const [quantity, setQuantity] = useState(1);
   const [activeTab, setActiveTab] = useState<'description' | 'reviews'>('description');
 
-  const product = MOCK_PRODUCTS.find((p) => p.id === params.id);
+  const { data: product, isLoading } = useProduct(params.id);
+
+  if (isLoading) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-pulse">
+        <div className="h-6 bg-paper-2 rounded w-1/3 mb-6" />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
+          <div className="aspect-square bg-paper-2 rounded-xl" />
+          <div className="space-y-6">
+            <div className="h-10 bg-paper-2 rounded w-3/4" />
+            <div className="h-6 bg-paper-2 rounded w-1/4" />
+            <div className="h-12 bg-paper-2 rounded w-1/2" />
+            <div className="h-32 bg-paper-2 rounded w-full" />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (!product) {
     return (
@@ -37,17 +58,39 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
     );
   }
 
+  const hasDiscount = !!(
+    product.discountPrice && Number(product.discountPrice) < Number(product.price)
+  );
+  const currentPrice = hasDiscount ? Number(product.discountPrice) : Number(product.price);
+  const originalPrice = hasDiscount ? Number(product.price) : undefined;
+  const discountPercentage =
+    hasDiscount && originalPrice
+      ? Math.round(((originalPrice - currentPrice) / originalPrice) * 100)
+      : undefined;
+
   const handleAddToCart = () => {
     addItem({
-      id: 0,
+      id: `${Date.now()}`,
       user_id: '',
-      product_id: Number(product.id),
+      product_id: product.id,
       quantity,
     });
+    toast.success(t('addedToCartSuccess', { name: product.name }), t('addedToCartTitle'));
+  };
+
+  const handleBuyNow = () => {
+    addItem({
+      id: `${Date.now()}`,
+      user_id: '',
+      product_id: product.id,
+      quantity,
+    });
+    toast.success(t('redirectingToCheckout'), t('addedToCartTitle'));
+    router.push('/checkout');
   };
 
   const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('vi-VN').format(price) + '₫';
+    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
   };
 
   return (
@@ -58,13 +101,17 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
           {tCommon('home')}
         </Link>
         <ChevronRight className="w-4 h-4" />
-        <Link
-          href={`/category/${product.category}`}
-          className="hover:text-primary transition-colors capitalize"
-        >
-          {product.category}
-        </Link>
-        <ChevronRight className="w-4 h-4" />
+        {product.category ? (
+          <>
+            <Link
+              href={`/category/${product.category.slug}`}
+              className="hover:text-primary transition-colors capitalize"
+            >
+              {product.category.name}
+            </Link>
+            <ChevronRight className="w-4 h-4" />
+          </>
+        ) : null}
         <span className="text-ink font-medium truncate">{product.name}</span>
       </nav>
 
@@ -95,9 +142,11 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
           <h1 className="text-2xl lg:text-3xl font-bold text-ink">{product.name}</h1>
 
           {/* Brand */}
-          <p className="text-ink-2">
-            {t('brand')}: <span className="font-semibold text-ink">{product.brand}</span>
-          </p>
+          {product.brand && (
+            <p className="text-ink-2">
+              {t('brand')}: <span className="font-semibold text-ink">{product.brand}</span>
+            </p>
+          )}
 
           {/* Rating */}
           <div className="flex items-center gap-2">
@@ -105,24 +154,28 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
               {[1, 2, 3, 4, 5].map((star) => (
                 <Star
                   key={star}
-                  className={`w-5 h-5 ${star <= 4 ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`}
+                  className={`w-5 h-5 ${star <= Math.round(product.avgRating || 5) ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`}
                 />
               ))}
             </div>
-            <span className="text-sm text-ink-2">(24 {t('reviews')})</span>
+            <span className="text-sm text-ink-2">
+              ({product.reviewCount || 0} {t('reviews')})
+            </span>
           </div>
 
           {/* Price */}
           <div className="flex items-end gap-3">
-            <span className="text-3xl font-bold text-primary">{formatPrice(product.price)}</span>
-            {product.originalPrice && (
+            <span className="text-3xl font-bold text-primary">{formatPrice(currentPrice)}</span>
+            {originalPrice && (
               <>
                 <span className="text-lg text-muted line-through">
-                  {formatPrice(product.originalPrice)}
+                  {formatPrice(originalPrice)}
                 </span>
-                <span className="px-2 py-0.5 bg-red-100 text-red-600 text-sm font-semibold rounded">
-                  -{product.discountPercentage}%
-                </span>
+                {discountPercentage && (
+                  <span className="px-2 py-0.5 bg-red-100 text-red-600 text-sm font-semibold rounded">
+                    -{discountPercentage}%
+                  </span>
+                )}
               </>
             )}
           </div>
@@ -175,7 +228,7 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
               </BaseButton>
             </div>
 
-            <BaseButton size="lg" variant="outline" className="w-full">
+            <BaseButton size="lg" variant="outline" className="w-full" onClick={handleBuyNow}>
               {t('buyNow')}
             </BaseButton>
           </div>
@@ -203,20 +256,14 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
                 : 'border-transparent text-ink-2 hover:text-ink'
             }`}
           >
-            {t('reviews')} (24)
+            {t('reviews')} ({product.reviewCount || 0})
           </button>
         </div>
 
         <div className="py-8">
           {activeTab === 'description' ? (
             <div className="prose max-w-none text-ink-2 leading-relaxed space-y-4">
-              <p>{product.name}</p>
-              <ul className="list-disc pl-5 space-y-2">
-                <li>Chip xử lý mạnh mẽ, đa nhiệm mượt mà</li>
-                <li>Màn hình sắc nét, công nghệ hiển thị tiên tiến</li>
-                <li>Pin dung lượng lớn, sử dụng cả ngày dài</li>
-                <li>Camera chất lượng cao, chụp ảnh chuyên nghiệp</li>
-              </ul>
+              <p className="whitespace-pre-line">{product.description || product.name}</p>
             </div>
           ) : (
             <div className="space-y-6">
@@ -226,41 +273,8 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
                   <Sparkles className="w-5 h-5" />
                   {t('aiSummary')}
                 </h3>
-                <ul className="list-disc list-inside text-sm text-ink-2 space-y-1">
-                  <li>Camera chụp đêm rất tốt</li>
-                  <li>Pin sử dụng được 2 ngày liên tục</li>
-                  <li>Thiết kế sang trọng, cao cấp</li>
-                </ul>
+                <p className="text-sm text-ink-2">{t('noReviews')}</p>
               </div>
-
-              {/* Mock Reviews */}
-              {[
-                {
-                  name: 'Nguyễn Văn A',
-                  rating: 5,
-                  comment: 'Sản phẩm tuyệt vời, giao hàng nhanh!',
-                },
-                {
-                  name: 'Trần Thị B',
-                  rating: 4,
-                  comment: 'Chất lượng tốt, đúng mô tả. Pin khá trâu.',
-                },
-              ].map((review, idx) => (
-                <div key={idx} className="border border-rule rounded-xl p-5">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="font-semibold text-ink">{review.name}</span>
-                    <div className="flex items-center gap-0.5">
-                      {[1, 2, 3, 4, 5].map((star) => (
-                        <Star
-                          key={star}
-                          className={`w-4 h-4 ${star <= review.rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                  <p className="text-sm text-ink-2">{review.comment}</p>
-                </div>
-              ))}
             </div>
           )}
         </div>

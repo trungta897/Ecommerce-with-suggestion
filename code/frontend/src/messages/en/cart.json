@@ -14,5 +14,7 @@
   "shippingNote": "Calculated at checkout",
   "orderTotal": "Order Total",
   "checkout": "Proceed to Checkout",
-  "itemCount": "{count} items"
+  "itemCount": "{count} items",
+  "orderSummary": "Order Summary",
+  "itemRemoved": "Item removed from your cart!"
 }

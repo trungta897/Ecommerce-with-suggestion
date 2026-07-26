@@ -36,7 +36,8 @@
     "inactive": "Ngừng bán",
     "edit": "Sửa",
     "hide": "Ẩn",
-    "searchPlaceholder": "Tìm kiếm sản phẩm..."
+    "searchPlaceholder": "Tìm kiếm sản phẩm...",
+    "noData": "Không có dữ liệu"
   },
   "orders": {
     "title": "Quản lý đơn hàng",
@@ -119,6 +120,7 @@
     "createError": "Tạo danh mục thất bại. Vui lòng kiểm tra lại!",
     "back": "Quay lại",
     "saving": "Đang lưu...",
-    "saveCategory": "Lưu Danh Mục"
+    "saveCategory": "Lưu Danh Mục",
+    "noData": "Không có dữ liệu"
   }
 }

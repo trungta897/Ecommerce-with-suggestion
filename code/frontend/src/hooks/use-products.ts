@@ -2,10 +2,10 @@ import { useQuery } from '@tanstack/react-query';
 import { productService } from '@/services/product-service';
 import { queryKeys } from './query-keys';
 
-export function useProducts() {
+export function useProducts(all?: boolean) {
   return useQuery({
-    queryKey: queryKeys.products.all,
-    queryFn: productService.getAll,
+    queryKey: all ? [...queryKeys.products.all, { all }] : queryKeys.products.all,
+    queryFn: () => productService.getAll(all),
   });
 }
 

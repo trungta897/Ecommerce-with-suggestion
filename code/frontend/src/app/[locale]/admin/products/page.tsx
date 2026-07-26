@@ -1,14 +1,18 @@
+'use client';
+
 import { useTranslations } from 'next-intl';
 import { BaseButton, BaseInput } from '@/components/base';
 import { Plus, Edit, EyeOff, Search } from '@/components/base/icons';
-import { MOCK_PRODUCTS } from '@/lib/mockData';
+import { useProducts } from '@/hooks/use-products';
 import Link from 'next/link';
 import Image from 'next/image';
 
 export default function AdminProductsPage() {
   const t = useTranslations('admin.products');
+  const { data: products = [], isLoading } = useProducts(true);
 
-  const formatPrice = (price: number) => new Intl.NumberFormat('vi-VN').format(price) + '₫';
+  const formatPrice = (price: number) =>
+    new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
 
   return (
     <div className="p-6 lg:p-8">
@@ -45,46 +49,71 @@ export default function AdminProductsPage() {
               </tr>
             </thead>
             <tbody>
-              {MOCK_PRODUCTS.map((product) => (
-                <tr
-                  key={product.id}
-                  className="border-b border-rule last:border-0 hover:bg-paper-2 transition-colors"
-                >
-                  <td className="px-5 py-3">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-paper-2 rounded-lg flex-shrink-0 overflow-hidden relative">
-                        <Image
-                          src={product.thumbnailUrl}
-                          alt={product.name}
-                          fill
-                          className="object-contain"
-                        />
-                      </div>
-                      <span className="font-medium text-ink truncate max-w-[200px]">
-                        {product.name}
-                      </span>
-                    </div>
-                  </td>
-                  <td className="px-5 py-3 text-ink-2 capitalize">{product.category}</td>
-                  <td className="px-5 py-3 font-semibold text-ink">{formatPrice(product.price)}</td>
-                  <td className="px-5 py-3 text-ink-2">50</td>
-                  <td className="px-5 py-3">
-                    <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800">
-                      {t('active')}
-                    </span>
-                  </td>
-                  <td className="px-5 py-3">
-                    <div className="flex items-center gap-2">
-                      <button className="p-1.5 rounded-lg hover:bg-paper-2 text-ink-2 hover:text-primary transition-colors">
-                        <Edit className="w-4 h-4" />
-                      </button>
-                      <button className="p-1.5 rounded-lg hover:bg-paper-2 text-ink-2 hover:text-orange-500 transition-colors">
-                        <EyeOff className="w-4 h-4" />
-                      </button>
-                    </div>
+              {isLoading && (
+                <tr>
+                  <td colSpan={6} className="px-5 py-8 text-center text-ink-2 animate-pulse">
+                    ...
                   </td>
                 </tr>
-              ))}
+              )}
+              {!isLoading && products.length === 0 && (
+                <tr>
+                  <td colSpan={6} className="px-5 py-8 text-center text-ink-2">
+                    {t('noData')}
+                  </td>
+                </tr>
+              )}
+              {!isLoading &&
+                products.map((product) => (
+                  <tr
+                    key={product.id}
+                    className="border-b border-rule last:border-0 hover:bg-paper-2 transition-colors"
+                  >
+                    <td className="px-5 py-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-paper-2 rounded-lg flex-shrink-0 overflow-hidden relative">
+                          <Image
+                            src={product.thumbnailUrl || '/placeholder.png'}
+                            alt={product.name}
+                            fill
+                            className="object-contain"
+                          />
+                        </div>
+                        <span className="font-medium text-ink truncate max-w-[200px]">
+                          {product.name}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-5 py-3 text-ink-2 capitalize">
+                      {product.category?.name || product.category?.slug || '-'}
+                    </td>
+                    <td className="px-5 py-3 font-semibold text-ink">
+                      {formatPrice(product.price)}
+                    </td>
+                    <td className="px-5 py-3 text-ink-2">{product.stock || 0}</td>
+                    <td className="px-5 py-3">
+                      <span
+                        className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
+                          product.isActive !== false
+                            ? 'bg-green-100 text-green-800'
+                            : 'bg-red-100 text-red-800'
+                        }`}
+                      >
+                        {product.isActive !== false ? t('active') : t('inactive')}
+                      </span>
+                    </td>
+                    <td className="px-5 py-3">
+                      <div className="flex items-center gap-2">
+                        <button className="p-1.5 rounded-lg hover:bg-paper-2 text-ink-2 hover:text-primary transition-colors">
+                          <Edit className="w-4 h-4" />
+                        </button>
+                        <button className="p-1.5 rounded-lg hover:bg-paper-2 text-ink-2 hover:text-orange-500 transition-colors">
+                          <EyeOff className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
             </tbody>
           </table>
         </div>

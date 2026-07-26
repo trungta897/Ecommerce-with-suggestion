@@ -6,30 +6,63 @@ import Image from 'next/image';
 import { ShoppingCart, Minus, Plus, Trash2, ChevronRight } from '@/components/base/icons';
 import { BaseButton } from '@/components/base';
 import { useCartStore } from '@/store';
-import { MOCK_PRODUCTS } from '@/lib/mockData';
+import { useProducts } from '@/hooks/use-products';
+import { useToast } from '@/providers/toast-provider';
 
 export default function CartPage() {
   const t = useTranslations('cart');
   const tCommon = useTranslations('common');
   const { items, removeItem, updateQuantity } = useCartStore();
+  const toast = useToast();
+  const { data: products = [], isLoading } = useProducts();
+
+  const handleRemoveItem = (productId: string) => {
+    removeItem(productId);
+    toast.success(t('itemRemoved'));
+  };
 
   const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('vi-VN').format(price) + '₫';
+    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
+  };
+
+  const getProductPrice = (product?: { price: number; discountPrice?: number }) => {
+    if (!product) return 0;
+    if (product.discountPrice && Number(product.discountPrice) < Number(product.price)) {
+      return Number(product.discountPrice);
+    }
+    return Number(product.price);
   };
 
   // Map cart items to product data
   const cartProducts = items
     .map((item) => {
-      const product = MOCK_PRODUCTS.find((p) => Number(p.id) === item.product_id);
+      const product = products.find((p) => p.id === item.product_id);
       return { ...item, product };
     })
     .filter((item) => item.product);
 
   const subtotal = cartProducts.reduce((sum, item) => {
-    return sum + (item.product?.price || 0) * item.quantity;
+    return sum + getProductPrice(item.product) * item.quantity;
   }, 0);
 
-  if (cartProducts.length === 0) {
+  if (items.length > 0 && isLoading) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-pulse">
+        <div className="h-6 bg-paper-2 rounded w-1/4 mb-6" />
+        <div className="h-8 bg-paper-2 rounded w-1/3 mb-8" />
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10">
+          <div className="lg:col-span-8 space-y-4">
+            {[1, 2].map((i) => (
+              <div key={i} className="h-32 bg-paper-2 rounded-xl" />
+            ))}
+          </div>
+          <div className="lg:col-span-4 h-64 bg-paper-2 rounded-xl" />
+        </div>
+      </div>
+    );
+  }
+
+  if (items.length === 0 || cartProducts.length === 0) {
     return (
       <div className="max-w-7xl mx-auto px-4 py-16 text-center">
         <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-paper-2 flex items-center justify-center">
@@ -59,9 +92,9 @@ export default function CartPage() {
         {t('title')} ({cartProducts.length})
       </h1>
 
-      <div className="flex flex-col lg:flex-row gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10">
         {/* Cart Items */}
-        <div className="flex-1 space-y-4">
+        <div className="lg:col-span-8 space-y-4">
           {cartProducts.map((item) => (
             <div
               key={item.product_id}
@@ -80,14 +113,15 @@ export default function CartPage() {
                 <h3 className="font-semibold text-ink truncate">{item.product?.name}</h3>
                 <p className="text-sm text-ink-2 capitalize">{item.product?.brand}</p>
                 <p className="text-lg font-bold text-primary mt-1">
-                  {formatPrice(item.product?.price || 0)}
+                  {formatPrice(getProductPrice(item.product))}
                 </p>
               </div>
 
               <div className="flex flex-col items-end justify-between">
                 <button
-                  onClick={() => removeItem(item.product_id)}
+                  onClick={() => handleRemoveItem(item.product_id)}
                   className="p-1 text-muted hover:text-red-500 transition-colors"
+                  aria-label={t('remove')}
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
@@ -113,11 +147,9 @@ export default function CartPage() {
         </div>
 
         {/* Order Summary */}
-        <div className="lg:w-80">
+        <div className="lg:col-span-4">
           <div className="bg-white border border-rule rounded-xl p-6 sticky top-4">
-            <h3 className="text-lg font-bold text-ink mb-4">
-              {t('orderSummary') || t('subtotal')}
-            </h3>
+            <h3 className="text-lg font-bold text-ink mb-4">{t('orderSummary')}</h3>
 
             <div className="space-y-3 text-sm">
               <div className="flex justify-between">

@@ -20,5 +20,13 @@
   "commentLabel": "Nhận xét",
   "submitReview": "Gửi đánh giá",
   "reviewSuccess": "Đánh giá đã được gửi thành công",
-  "notFound": "Không tìm thấy sản phẩm"
+  "notFound": "Không tìm thấy sản phẩm",
+  "discount": "Giảm {percent}%",
+  "showingCount": "Hiển thị {count} sản phẩm",
+  "filterProducts": "Lọc sản phẩm",
+  "showAllCount": "Hiển thị tất cả ({total} sản phẩm)",
+  "showAll": "Hiển thị tất cả sản phẩm",
+  "addedToCartSuccess": "Đã thêm \"{name}\" vào giỏ hàng thành công!",
+  "addedToCartTitle": "Thành công",
+  "redirectingToCheckout": "Đang chuyển đến trang thanh toán..."
 }

@@ -4,20 +4,21 @@ import { apiClient } from './api-client';
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const mapProduct = (p: any): Product => {
   const images: ProductImage[] = Array.isArray(p.images) ? p.images : [];
-  const mainImage = images.find(img => img.isPrimary || img.variant === 'MAIN') || images[0];
-  
+  const mainImage = images.find((img) => img.isPrimary || img.variant === 'MAIN') || images[0];
+
   return {
     ...p,
     price: Number(p.price),
     discountPrice: p.discountPrice ? Number(p.discountPrice) : undefined,
     thumbnailUrl: mainImage?.url || '/placeholder.png',
-    images
+    images,
   };
 };
 
 export const productService = {
-  getAll: async (): Promise<Product[]> => {
-    const { data } = await apiClient.get('/products');
+  getAll: async (all?: boolean): Promise<Product[]> => {
+    const url = all ? '/products?all=true' : '/products';
+    const { data } = await apiClient.get(url);
     return Array.isArray(data) ? data.map(mapProduct) : [];
   },
 

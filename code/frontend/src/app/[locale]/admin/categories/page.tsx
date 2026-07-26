@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
@@ -73,7 +73,7 @@ export default function AdminCategoriesPage() {
               ) : categories.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="px-5 py-8 text-center text-ink-2">
-                    Không có dữ liệu
+                    {t('noData')}
                   </td>
                 </tr>
               ) : (

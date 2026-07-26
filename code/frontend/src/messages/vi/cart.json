@@ -14,5 +14,7 @@
   "shippingNote": "Tính khi thanh toán",
   "orderTotal": "Tổng cộng",
   "checkout": "Tiến hành thanh toán",
-  "itemCount": "{count} sản phẩm"
+  "itemCount": "{count} sản phẩm",
+  "orderSummary": "Tóm tắt đơn hàng",
+  "itemRemoved": "Đã xóa sản phẩm khỏi giỏ hàng!"
 }
