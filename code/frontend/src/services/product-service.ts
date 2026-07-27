@@ -1,5 +1,6 @@
 import { Product, Category, ProductImage } from '@/types';
 import { apiClient } from './api-client';
+import { classifyProduct, SMART_SLUGS, SmartSlug } from '@/utils/classify-product';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const mapProduct = (p: any): Product => {
@@ -33,9 +34,15 @@ export const productService = {
 
   getByCategory: async (slug: string): Promise<Product[]> => {
     const { data } = await apiClient.get('/products');
-    const products = Array.isArray(data) ? data : [];
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return products.filter((p: any) => p.category?.slug === slug).map(mapProduct);
+    const products: Product[] = Array.isArray(data) ? data.map(mapProduct) : [];
+
+    // Nếu slug không nằm trong 11 Smart Slugs → lọc theo category.slug gốc từ DB
+    if (!SMART_SLUGS.includes(slug as SmartSlug)) {
+      return products.filter((p) => p.category?.slug === slug);
+    }
+
+    // Pure Tag Matching: dùng cùng hàm classifyProduct với trang chủ
+    return products.filter((p) => classifyProduct(p) === slug);
   },
 
   getCategories: async (): Promise<Category[]> => {

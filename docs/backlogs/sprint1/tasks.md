@@ -23,4 +23,4 @@
   - [x] Viết API public: `GET /products/:slug` (Lấy chi tiết)
   - [x] Thay thế Mock Data trong `product-service.ts` ở Frontend bằng `fetch/axios` gọi API thật.
   - [x] Kiểm tra hiển thị Frontend ở trang chủ, trang danh mục và trang chi tiết.
-  - [x] Quy hoạch trang chủ (Homepage) thành 5 danh mục công nghệ hiện đại (Laptop, Linh kiện, Tai nghe, PC, Điện thoại), giới hạn 10 sản phẩm kèm liên kết "Hiển thị tất cả" tới từng trang chi tiết danh mục.
+  - [x] Quy hoạch trang chủ và trang danh mục thành 11 chuyên mục E-commerce. Áp dụng thuật toán **Pure Amazon Tag Matching** (`product.tags`) — loại bỏ hoàn toàn regex trên tên sản phẩm, tách logic phân loại ra `src/utils/classify-product.ts` làm nguồn sự thật duy nhất cho cả trang chủ (`page.tsx`) và trang danh mục (`product-service.ts`). Đảm bảo 100% Zero Overlap.

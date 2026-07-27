@@ -56,6 +56,16 @@ export {
   Monitor,
   Smartphone,
   ArrowRight,
+  CircuitBoard,
+  HardDrive,
+  Power,
+  Plug,
+  Fan,
+  Box,
+  Keyboard,
+  Mouse,
+  Wifi,
+  Router,
 } from 'lucide-react';
 
 // Export custom icons
