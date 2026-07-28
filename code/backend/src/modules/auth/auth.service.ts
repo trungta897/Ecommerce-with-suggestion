@@ -187,4 +187,11 @@ export class AuthService {
       },
     };
   }
+
+  logout(): { message: string } {
+    const lang = I18nContext.current()?.lang || 'vi';
+    return {
+      message: this.i18n.t('auth.LOGOUT_SUCCESS', { lang }),
+    };
+  }
 }

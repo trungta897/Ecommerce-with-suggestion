@@ -1,4 +1,12 @@
-import { Controller, Post, Body, HttpCode, HttpStatus } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  HttpCode,
+  HttpStatus,
+  Res,
+} from '@nestjs/common';
+import type { Response } from 'express';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
@@ -41,19 +49,68 @@ export class AuthController {
 
   @HttpCode(HttpStatus.OK)
   @Post('login')
-  async login(@Body() dto: LoginDto) {
-    return this.authService.login(dto);
+  async login(
+    @Body() dto: LoginDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const result = await this.authService.login(dto);
+    if (result?.accessToken) {
+      this.setAuthCookie(res, result.accessToken);
+    }
+    return result;
   }
 
   @HttpCode(HttpStatus.OK)
   @Post('google')
-  async googleAuth(@Body() dto: GoogleLoginDto) {
-    return this.googleAuthService.verifyGoogleToken(dto);
+  async googleAuth(
+    @Body() dto: GoogleLoginDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const result = await this.googleAuthService.verifyGoogleToken(dto);
+    if (
+      result &&
+      'accessToken' in result &&
+      typeof result.accessToken === 'string'
+    ) {
+      this.setAuthCookie(res, result.accessToken);
+    }
+    return result;
   }
 
   @HttpCode(HttpStatus.OK)
   @Post('google/complete')
-  async googleComplete(@Body() dto: GoogleCompleteDto) {
-    return this.googleAuthService.completeRegistration(dto);
+  async googleComplete(
+    @Body() dto: GoogleCompleteDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const result = await this.googleAuthService.completeRegistration(dto);
+    if (
+      result &&
+      'accessToken' in result &&
+      typeof result.accessToken === 'string'
+    ) {
+      this.setAuthCookie(res, result.accessToken);
+    }
+    return result;
+  }
+
+  @HttpCode(HttpStatus.OK)
+  @Post('logout')
+  logout(@Res({ passthrough: true }) res: Response): { message: string } {
+    res.clearCookie('access_token', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+    });
+    return this.authService.logout();
+  }
+
+  private setAuthCookie(res: Response, accessToken: string) {
+    res.cookie('access_token', accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    });
   }
 }
