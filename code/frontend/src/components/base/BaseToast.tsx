@@ -51,25 +51,25 @@ export const BaseToast: React.FC<BaseToastProps> = ({ toast, onClose }) => {
     success: {
       icon: <CheckCircle2 className="w-5 h-5 text-green-500 flex-shrink-0" />,
       border: 'border-green-500/30',
-      bg: 'bg-white dark:bg-gray-900',
+      bg: 'bg-white',
       progress: 'bg-green-500',
     },
     error: {
       icon: <XCircle className="w-5 h-5 text-red-500 flex-shrink-0" />,
       border: 'border-red-500/30',
-      bg: 'bg-white dark:bg-gray-900',
+      bg: 'bg-white',
       progress: 'bg-red-500',
     },
     warning: {
       icon: <AlertTriangle className="w-5 h-5 text-amber-500 flex-shrink-0" />,
       border: 'border-amber-500/30',
-      bg: 'bg-white dark:bg-gray-900',
+      bg: 'bg-white',
       progress: 'bg-amber-500',
     },
     info: {
       icon: <Info className="w-5 h-5 text-blue-500 flex-shrink-0" />,
       border: 'border-blue-500/30',
-      bg: 'bg-white dark:bg-gray-900',
+      bg: 'bg-white',
       progress: 'bg-blue-500',
     },
   }[toast.type];
@@ -87,25 +87,19 @@ export const BaseToast: React.FC<BaseToastProps> = ({ toast, onClose }) => {
     >
       <div className="mr-3 mt-0.5">{config.icon}</div>
       <div className="flex-1 pr-6">
-        {toast.title && (
-          <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-1">
-            {toast.title}
-          </h4>
-        )}
-        <p className="text-sm text-gray-700 dark:text-gray-200 leading-relaxed break-words">
-          {toast.message}
-        </p>
+        {toast.title && <h4 className="text-sm font-semibold text-gray-900 mb-1">{toast.title}</h4>}
+        <p className="text-sm text-gray-700 leading-relaxed break-words">{toast.message}</p>
       </div>
       <button
         onClick={handleClose}
-        className="absolute top-3 right-3 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
+        className="absolute top-3 right-3 text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-lg hover:bg-gray-100"
         aria-label="Close toast"
       >
         <X className="w-4 h-4" />
       </button>
 
       {/* Progress bar */}
-      <div className="absolute bottom-0 left-0 right-0 h-1 bg-gray-100 dark:bg-gray-800 rounded-b-xl overflow-hidden">
+      <div className="absolute bottom-0 left-0 right-0 h-1 bg-gray-100 rounded-b-xl overflow-hidden">
         <div
           className={`h-full transition-all duration-75 ease-linear ${config.progress}`}
           style={{ width: `${progress}%` }}

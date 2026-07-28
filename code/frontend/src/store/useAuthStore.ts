@@ -17,7 +17,16 @@ export const useAuthStore = create<AuthState>()(
       accessToken: null,
       isAuthenticated: false,
       setAuth: (user, accessToken) => set({ user, accessToken, isAuthenticated: true }),
-      logout: () => set({ user: null, accessToken: null, isAuthenticated: false }),
+      logout: () => {
+        if (typeof window !== 'undefined') {
+          const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+          fetch(`${apiUrl}/auth/logout`, {
+            method: 'POST',
+            credentials: 'include',
+          }).catch(() => {});
+        }
+        set({ user: null, accessToken: null, isAuthenticated: false });
+      },
     }),
     {
       name: 'auth-storage',

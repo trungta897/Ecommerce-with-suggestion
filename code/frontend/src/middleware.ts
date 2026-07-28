@@ -44,7 +44,35 @@ export default async function middleware(request: NextRequest) {
     }
   }
 
-  // 2. Chuyển cho next-intl xử lý đa ngôn ngữ
+  // 2. Kiểm tra HttpOnly Cookie (Route Protection Server-Side)
+  const pathname = request.nextUrl.pathname;
+  const pathWithoutLocale = pathname.replace(/^\/(vi|en)(\/|$)/, '/').replace(/\/$/, '') || '/';
+
+  const protectedRoutes = ['/profile', '/orders', '/checkout'];
+  const authRoutes = ['/login', '/register', '/forgot-password', '/reset-password'];
+
+  const isProtectedRoute = protectedRoutes.some((route) => pathWithoutLocale.startsWith(route));
+  const isAuthRoute = authRoutes.some(
+    (route) => pathWithoutLocale === route || pathWithoutLocale.startsWith(`${route}/`)
+  );
+
+  const accessToken = request.cookies.get('access_token')?.value;
+
+  const localeMatch = pathname.match(/^\/(vi|en)(\/|$)/);
+  const currentLocale = localeMatch ? localeMatch[1] : 'vi';
+  const localePrefix = localeMatch ? `/${currentLocale}` : '';
+
+  if (isProtectedRoute && !accessToken) {
+    const loginUrl = new URL(`${localePrefix}/login`, request.url);
+    return NextResponse.redirect(loginUrl);
+  }
+
+  if (isAuthRoute && accessToken) {
+    const homeUrl = new URL(`${localePrefix || '/'}`, request.url);
+    return NextResponse.redirect(homeUrl);
+  }
+
+  // 3. Chuyển cho next-intl xử lý đa ngôn ngữ
   return intlMiddleware(request);
 }
 

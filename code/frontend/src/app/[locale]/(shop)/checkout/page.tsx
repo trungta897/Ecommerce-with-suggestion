@@ -154,8 +154,8 @@ export default function CheckoutPage() {
   if (orderPlaced) {
     return (
       <div className="max-w-lg mx-auto px-4 py-16 text-center">
-        <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-green-100 dark:bg-green-900/40 flex items-center justify-center animate-in zoom-in duration-300">
-          <CheckCircle2 className="w-10 h-10 text-green-600 dark:text-green-400" />
+        <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-green-100 flex items-center justify-center animate-in zoom-in duration-300">
+          <CheckCircle2 className="w-10 h-10 text-green-600" />
         </div>
         <h2 className="text-2xl font-bold text-ink mb-2">{t('orderSuccess')}</h2>
         <p className="text-ink-2 mb-2">{t('orderSuccessDesc')}</p>
@@ -238,7 +238,7 @@ export default function CheckoutPage() {
         <div className="flex-1">
           {/* Step 1: Shipping Info */}
           {currentStep === 0 && (
-            <div className="bg-white dark:bg-gray-800 border border-rule rounded-xl p-6 space-y-6 shadow-sm">
+            <div className="bg-white border border-rule rounded-xl p-6 space-y-6 shadow-sm">
               <h2 className="text-lg font-bold text-ink mb-4 border-b border-rule pb-3">
                 {t('shippingInfo')}
               </h2>
@@ -301,7 +301,7 @@ export default function CheckoutPage() {
                     key={method}
                     className={`flex items-center gap-3 p-3.5 rounded-xl border cursor-pointer transition-all ${
                       deliveryMethod === method
-                        ? 'border-primary bg-primary/5 dark:bg-primary/10 font-medium'
+                        ? 'border-primary bg-primary/5 font-medium'
                         : 'border-rule hover:border-ink-2'
                     }`}
                   >
@@ -325,7 +325,7 @@ export default function CheckoutPage() {
 
           {/* Step 2: Payment */}
           {currentStep === 1 && (
-            <div className="bg-white dark:bg-gray-800 border border-rule rounded-xl p-6 space-y-6 shadow-sm">
+            <div className="bg-white border border-rule rounded-xl p-6 space-y-6 shadow-sm">
               <h2 className="text-lg font-bold text-ink mb-4 border-b border-rule pb-3">
                 {t('paymentMethod')}
               </h2>
@@ -335,7 +335,7 @@ export default function CheckoutPage() {
                     key={method}
                     className={`flex items-center gap-3.5 p-4 rounded-xl border cursor-pointer transition-all ${
                       paymentMethod === method
-                        ? 'border-primary bg-primary/5 dark:bg-primary/10 font-semibold text-primary'
+                        ? 'border-primary bg-primary/5 font-semibold text-primary'
                         : 'border-rule hover:border-ink-2 text-ink'
                     }`}
                   >
@@ -370,7 +370,7 @@ export default function CheckoutPage() {
                   </BaseButton>
                 </div>
                 {appliedVoucher && (
-                  <p className="text-xs font-medium text-green-600 dark:text-green-400">
+                  <p className="text-xs font-medium text-green-600">
                     ✓ Đã áp dụng giảm {formatPrice(discount)}
                   </p>
                 )}
@@ -380,14 +380,14 @@ export default function CheckoutPage() {
 
           {/* Step 3: Confirm */}
           {currentStep === 2 && (
-            <div className="bg-white dark:bg-gray-800 border border-rule rounded-xl p-6 space-y-6 shadow-sm">
+            <div className="bg-white border border-rule rounded-xl p-6 space-y-6 shadow-sm">
               <h2 className="text-lg font-bold text-ink mb-2 border-b border-rule pb-3">
                 {t('step3')}
               </h2>
 
               {/* Summary Box of Recipient Info */}
-              <div className="p-4 bg-indigo-50/60 dark:bg-gray-700/50 border border-indigo-100 dark:border-gray-600 rounded-xl space-y-2 text-xs text-ink-2">
-                <h3 className="font-bold text-sm text-indigo-900 dark:text-indigo-300 mb-2 flex items-center gap-2">
+              <div className="p-4 bg-indigo-50/60 border border-indigo-100 rounded-xl space-y-2 text-xs text-ink-2">
+                <h3 className="font-bold text-sm text-indigo-900 mb-2 flex items-center gap-2">
                   <User className="w-4 h-4 text-indigo-500" />
                   {t('shippingInfo')}
                 </h3>
@@ -399,11 +399,9 @@ export default function CheckoutPage() {
                   <Phone className="w-3.5 h-3.5 text-gray-400" />
                   <span>{shippingData.phone}</span>
                 </div>
-                <div className="flex items-start gap-2 text-ink pt-1 border-t border-indigo-100 dark:border-gray-600">
+                <div className="flex items-start gap-2 text-ink pt-1 border-t border-indigo-100">
                   <MapPin className="w-3.5 h-3.5 text-indigo-500 mt-0.5 flex-shrink-0" />
-                  <span className="font-medium text-indigo-950 dark:text-indigo-200">
-                    {shippingData.address}
-                  </span>
+                  <span className="font-medium text-indigo-950">{shippingData.address}</span>
                 </div>
               </div>
 
@@ -454,7 +452,7 @@ export default function CheckoutPage() {
 
         {/* Order Summary Sidebar */}
         <div className="lg:w-80">
-          <div className="bg-white dark:bg-gray-800 border border-rule rounded-xl p-6 sticky top-4 shadow-sm">
+          <div className="bg-white border border-rule rounded-xl p-6 sticky top-4 shadow-sm">
             <h3 className="text-lg font-bold text-ink mb-4 border-b border-rule pb-3">
               {t('orderSummary')}
             </h3>
@@ -469,9 +467,7 @@ export default function CheckoutPage() {
               </div>
               <div className="flex justify-between">
                 <span className="text-ink-2">{t('discount')}</span>
-                <span className="font-semibold text-green-600 dark:text-green-400">
-                  -{formatPrice(discount)}
-                </span>
+                <span className="font-semibold text-green-600">-{formatPrice(discount)}</span>
               </div>
               <div className="border-t border-rule pt-3 mt-3">
                 <div className="flex justify-between items-center">

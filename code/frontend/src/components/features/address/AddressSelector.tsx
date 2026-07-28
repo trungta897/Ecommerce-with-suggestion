@@ -163,7 +163,7 @@ export const AddressSelector: React.FC<AddressSelectorProps> = ({
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         {/* PROVINCE DROPDOWN */}
         <div className="relative" ref={provRef}>
-          <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+          <label className="block text-xs font-semibold text-gray-700 mb-1">
             {t('province')} *
           </label>
           <button
@@ -174,17 +174,13 @@ export const AddressSelector: React.FC<AddressSelectorProps> = ({
               setOpenDist(false);
               setOpenWard(false);
             }}
-            className={`w-full flex items-center justify-between px-3 py-2.5 bg-white dark:bg-gray-800 border rounded-xl text-sm font-medium transition-colors text-left ${
+            className={`w-full flex items-center justify-between px-3 py-2.5 bg-white border rounded-xl text-sm font-medium transition-colors text-left ${
               openProv
                 ? 'border-indigo-600 ring-2 ring-indigo-500/20'
-                : 'border-gray-300 dark:border-gray-700 hover:border-gray-400'
+                : 'border-gray-300 hover:border-gray-400'
             } ${disabled ? 'opacity-60 cursor-not-allowed bg-gray-50' : ''}`}
           >
-            <span
-              className={
-                selectedProvince ? 'text-gray-900 dark:text-white truncate' : 'text-gray-400'
-              }
-            >
+            <span className={selectedProvince ? 'text-gray-900 truncate' : 'text-gray-400'}>
               {loadingProvinces
                 ? t('loading')
                 : selectedProvince
@@ -203,7 +199,7 @@ export const AddressSelector: React.FC<AddressSelectorProps> = ({
           </button>
 
           {openProv && (
-            <div className="absolute left-0 right-0 z-40 mt-1.5 p-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl max-h-60 overflow-y-auto">
+            <div className="absolute left-0 right-0 z-40 mt-1.5 p-2 bg-white border border-gray-200 rounded-xl shadow-xl max-h-60 overflow-y-auto">
               <div className="relative mb-2">
                 <Search className="absolute left-2.5 top-2.5 w-4 h-4 text-gray-400" />
                 <input
@@ -211,7 +207,7 @@ export const AddressSelector: React.FC<AddressSelectorProps> = ({
                   placeholder={t('searchProvince')}
                   value={searchProv}
                   onChange={(e) => setSearchProv(e.target.value)}
-                  className="w-full pl-8 pr-3 py-1.5 text-xs bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500 text-gray-900 dark:text-white"
+                  className="w-full pl-8 pr-3 py-1.5 text-xs bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500 text-gray-900"
                 />
               </div>
               {filteredProvinces.length === 0 ? (
@@ -233,8 +229,8 @@ export const AddressSelector: React.FC<AddressSelectorProps> = ({
                         }}
                         className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium text-left transition-colors ${
                           isSelected
-                            ? 'bg-indigo-50 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 font-semibold'
-                            : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50'
+                            ? 'bg-indigo-50 text-indigo-600 font-semibold'
+                            : 'text-gray-700 hover:bg-gray-100'
                         }`}
                       >
                         <span>{p.fullName}</span>
@@ -250,7 +246,7 @@ export const AddressSelector: React.FC<AddressSelectorProps> = ({
 
         {/* DISTRICT DROPDOWN */}
         <div className="relative" ref={distRef}>
-          <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+          <label className="block text-xs font-semibold text-gray-700 mb-1">
             {t('district')} *
           </label>
           <button
@@ -261,22 +257,14 @@ export const AddressSelector: React.FC<AddressSelectorProps> = ({
               setOpenProv(false);
               setOpenWard(false);
             }}
-            className={`w-full flex items-center justify-between px-3 py-2.5 bg-white dark:bg-gray-800 border rounded-xl text-sm font-medium transition-colors text-left ${
+            className={`w-full flex items-center justify-between px-3 py-2.5 bg-white border rounded-xl text-sm font-medium transition-colors text-left ${
               openDist
                 ? 'border-indigo-600 ring-2 ring-indigo-500/20'
-                : 'border-gray-300 dark:border-gray-700 hover:border-gray-400'
-            } ${
-              disabled || !selectedProvince
-                ? 'opacity-50 cursor-not-allowed bg-gray-50 dark:bg-gray-900/40'
-                : ''
-            }`}
+                : 'border-gray-300 hover:border-gray-400'
+            } ${disabled || !selectedProvince ? 'opacity-50 cursor-not-allowed bg-gray-50' : ''}`}
           >
             <span
-              className={
-                selectedDistrict
-                  ? 'text-gray-900 dark:text-white truncate'
-                  : 'text-gray-400 truncate'
-              }
+              className={selectedDistrict ? 'text-gray-900 truncate' : 'text-gray-400 truncate'}
             >
               {loadingDistricts
                 ? t('loading')
@@ -298,7 +286,7 @@ export const AddressSelector: React.FC<AddressSelectorProps> = ({
           </button>
 
           {openDist && selectedProvince && (
-            <div className="absolute left-0 right-0 z-40 mt-1.5 p-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl max-h-60 overflow-y-auto">
+            <div className="absolute left-0 right-0 z-40 mt-1.5 p-2 bg-white border border-gray-200 rounded-xl shadow-xl max-h-60 overflow-y-auto">
               <div className="relative mb-2">
                 <Search className="absolute left-2.5 top-2.5 w-4 h-4 text-gray-400" />
                 <input
@@ -306,7 +294,7 @@ export const AddressSelector: React.FC<AddressSelectorProps> = ({
                   placeholder={t('searchDistrict')}
                   value={searchDist}
                   onChange={(e) => setSearchDist(e.target.value)}
-                  className="w-full pl-8 pr-3 py-1.5 text-xs bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500 text-gray-900 dark:text-white"
+                  className="w-full pl-8 pr-3 py-1.5 text-xs bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500 text-gray-900"
                 />
               </div>
               {filteredDistricts.length === 0 ? (
@@ -327,8 +315,8 @@ export const AddressSelector: React.FC<AddressSelectorProps> = ({
                         }}
                         className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium text-left transition-colors ${
                           isSelected
-                            ? 'bg-indigo-50 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 font-semibold'
-                            : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50'
+                            ? 'bg-indigo-50 text-indigo-600 font-semibold'
+                            : 'text-gray-700 hover:bg-gray-100'
                         }`}
                       >
                         <span>{d.fullName}</span>
@@ -344,9 +332,7 @@ export const AddressSelector: React.FC<AddressSelectorProps> = ({
 
         {/* WARD DROPDOWN */}
         <div className="relative" ref={wardRef}>
-          <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
-            {t('ward')} *
-          </label>
+          <label className="block text-xs font-semibold text-gray-700 mb-1">{t('ward')} *</label>
           <button
             type="button"
             disabled={disabled || !selectedDistrict || loadingWards}
@@ -355,21 +341,13 @@ export const AddressSelector: React.FC<AddressSelectorProps> = ({
               setOpenProv(false);
               setOpenDist(false);
             }}
-            className={`w-full flex items-center justify-between px-3 py-2.5 bg-white dark:bg-gray-800 border rounded-xl text-sm font-medium transition-colors text-left ${
+            className={`w-full flex items-center justify-between px-3 py-2.5 bg-white border rounded-xl text-sm font-medium transition-colors text-left ${
               openWard
                 ? 'border-indigo-600 ring-2 ring-indigo-500/20'
-                : 'border-gray-300 dark:border-gray-700 hover:border-gray-400'
-            } ${
-              disabled || !selectedDistrict
-                ? 'opacity-50 cursor-not-allowed bg-gray-50 dark:bg-gray-900/40'
-                : ''
-            }`}
+                : 'border-gray-300 hover:border-gray-400'
+            } ${disabled || !selectedDistrict ? 'opacity-50 cursor-not-allowed bg-gray-50' : ''}`}
           >
-            <span
-              className={
-                selectedWard ? 'text-gray-900 dark:text-white truncate' : 'text-gray-400 truncate'
-              }
-            >
+            <span className={selectedWard ? 'text-gray-900 truncate' : 'text-gray-400 truncate'}>
               {loadingWards
                 ? t('loading')
                 : !selectedDistrict
@@ -390,7 +368,7 @@ export const AddressSelector: React.FC<AddressSelectorProps> = ({
           </button>
 
           {openWard && selectedDistrict && (
-            <div className="absolute left-0 right-0 z-40 mt-1.5 p-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl max-h-60 overflow-y-auto">
+            <div className="absolute left-0 right-0 z-40 mt-1.5 p-2 bg-white border border-gray-200 rounded-xl shadow-xl max-h-60 overflow-y-auto">
               <div className="relative mb-2">
                 <Search className="absolute left-2.5 top-2.5 w-4 h-4 text-gray-400" />
                 <input
@@ -398,7 +376,7 @@ export const AddressSelector: React.FC<AddressSelectorProps> = ({
                   placeholder={t('searchWard')}
                   value={searchWard}
                   onChange={(e) => setSearchWard(e.target.value)}
-                  className="w-full pl-8 pr-3 py-1.5 text-xs bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500 text-gray-900 dark:text-white"
+                  className="w-full pl-8 pr-3 py-1.5 text-xs bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500 text-gray-900"
                 />
               </div>
               {filteredWards.length === 0 ? (
@@ -418,8 +396,8 @@ export const AddressSelector: React.FC<AddressSelectorProps> = ({
                         }}
                         className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium text-left transition-colors ${
                           isSelected
-                            ? 'bg-indigo-50 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 font-semibold'
-                            : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50'
+                            ? 'bg-indigo-50 text-indigo-600 font-semibold'
+                            : 'text-gray-700 hover:bg-gray-100'
                         }`}
                       >
                         <span>{w.fullName}</span>
@@ -436,17 +414,15 @@ export const AddressSelector: React.FC<AddressSelectorProps> = ({
 
       {/* STREET INPUT */}
       <div>
-        <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
-          {t('street')} *
-        </label>
+        <label className="block text-xs font-semibold text-gray-700 mb-1">{t('street')} *</label>
         <input
           type="text"
           disabled={disabled}
           placeholder={t('streetPlaceholder')}
           value={street}
           onChange={(e) => setStreet(e.target.value)}
-          className={`w-full px-3.5 py-2.5 bg-white dark:bg-gray-800 border rounded-xl text-sm transition-colors text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 ${
-            error ? 'border-red-500' : 'border-gray-300 dark:border-gray-700 hover:border-gray-400'
+          className={`w-full px-3.5 py-2.5 bg-white border rounded-xl text-sm transition-colors text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 ${
+            error ? 'border-red-500' : 'border-gray-300 hover:border-gray-400'
           }`}
         />
         {error && <p className="mt-1.5 text-xs font-medium text-red-500">{error}</p>}
@@ -454,13 +430,11 @@ export const AddressSelector: React.FC<AddressSelectorProps> = ({
 
       {/* FULL ADDRESS PREVIEW BOX */}
       {(selectedProvince || initialAddress) && (
-        <div className="flex items-start p-3 bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700/80 rounded-xl text-xs text-gray-600 dark:text-gray-300 shadow-inner">
+        <div className="flex items-start p-3 bg-gray-50 border border-gray-200 rounded-xl text-xs text-gray-600 shadow-inner">
           <MapPin className="w-4 h-4 text-indigo-500 flex-shrink-0 mr-2 mt-0.5" />
           <div className="flex-1">
-            <span className="font-semibold text-gray-800 dark:text-gray-200 mr-1">
-              {t('recordedAddress')}
-            </span>
-            <span className="font-medium text-indigo-700 dark:text-indigo-400">
+            <span className="font-semibold text-gray-800 mr-1">{t('recordedAddress')}</span>
+            <span className="font-medium text-indigo-700">
               {[
                 street.trim(),
                 selectedWard?.fullName,

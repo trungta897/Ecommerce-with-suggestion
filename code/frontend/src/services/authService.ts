@@ -1,4 +1,5 @@
 import { AuthResponse, UserRole } from '@/types';
+import { apiClient } from './api-client';
 
 export const authService = {
   login: async (credentials: Record<string, unknown>): Promise<AuthResponse> => {
@@ -26,5 +27,13 @@ export const authService = {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   register: async (userData: Record<string, unknown>): Promise<void> => {
     return new Promise((resolve) => setTimeout(resolve, 1000));
+  },
+
+  logout: async (): Promise<void> => {
+    try {
+      await apiClient.post('/auth/logout');
+    } catch {
+      // Bỏ qua nếu server offline hoặc đang dùng UI mock
+    }
   },
 };
