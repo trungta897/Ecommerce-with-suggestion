@@ -10,7 +10,7 @@ Dự án yêu cầu giao diện không được "sơ sài". Bắt buộc phải 
   - **AI Highlight (Gradient Tím/Xanh)**: BẮT BUỘC dùng cho các tính năng liên quan đến AI (AI Summary, AI Match, Smart Filter) để tách biệt với UI thông thường.
   - **Background**: Sáng sủa, nhiều khoảng trắng (Light Tech Gray/White).
 - **Cấu trúc Bố cục (Layout)**: Mật độ thông tin cao (Dense layout) đặc trưng của bán lẻ điện máy Việt Nam, nhưng giữ các góc bo mềm mại và spacing chuẩn của UI quốc tế (như CozyCommerce).
-- **Dark Mode / Glassmorphism**: Ưu tiên hỗ trợ Dark Mode tinh tế hoặc sử dụng các hiệu ứng Glassmorphism (làm mờ kính, độ trong suốt) để tăng độ sang trọng.
+- **Glassmorphism & Light Theme**: Thiết kế tập trung vào giao diện nền sáng tinh tế, sử dụng các hiệu ứng Glassmorphism (làm mờ kính, độ trong suốt) để tăng độ sang trọng cho thẻ (card) và các thành phần nổi.
 - **Micro-animations**: Áp dụng các hình thức vi tương tác (micro-animations) khi người dùng hover vào button, card, hoặc khi chuyển trang.
 
 ## 2. Typography (Kiểu chữ)
