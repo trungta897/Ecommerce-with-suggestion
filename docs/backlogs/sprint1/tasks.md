@@ -23,7 +23,7 @@
   - [x] Viết API public: `GET /products/:slug` (Lấy chi tiết)
   - [x] Thay thế Mock Data trong `product-service.ts` ở Frontend bằng `fetch/axios` gọi API thật.
   - [x] Kiểm tra hiển thị Frontend ở trang chủ, trang danh mục và trang chi tiết.
-  - [x] Quy hoạch trang chủ và trang danh mục thành 11 chuyên mục E-commerce. Áp dụng thuật toán **Pure Amazon Tag Matching** (`product.tags`) — loại bỏ hoàn toàn regex trên tên sản phẩm, tách logic phân loại ra `src/utils/classify-product.ts` làm nguồn sự thật duy nhất cho cả trang chủ (`page.tsx`) và trang danh mục (`product-service.ts`). Đảm bảo 100% Zero Overlap.
+  - [x] Quy hoạch trang chủ và trang danh mục thành 11 chuyên mục E-commerce. Áp dụng thuật toán **Pure Amazon Tag Matching** (`product.tags`) — loại bỏ hoàn toàn regex trên tên sản phẩm. Chuẩn hóa cấu trúc theo đúng Project Structure Mandate: các hằng số phân loại (`SMART_SLUGS`, `TAG_TO_SLUG`, `DEFAULT_SMART_SLUG`) đặt tại `src/constants/product.ts`, còn logic phân loại tại `src/utils/classify-product.ts` được refactor để vận hành hoàn toàn động (dynamic reduce), loại bỏ triệt để magic strings. Thiết lập **Constants Separation Mandate** trong `.agents/AGENTS.md` để đảm bảo vĩnh viễn không lặp lại lỗi để hằng số trong utils hay quên thư mục constants. Đảm bảo 100% Zero Overlap.
 
 - [x] **5. Nâng cấp bảo mật Authentication & Route Protection (US-AUTH)**
   - [x] Tích hợp mô hình Hybrid Auth (HttpOnly Cookies + Bearer Token) giữa Next.js và NestJS

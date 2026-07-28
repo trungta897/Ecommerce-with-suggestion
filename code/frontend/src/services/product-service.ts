@@ -1,6 +1,7 @@
 import { Product, Category, ProductImage } from '@/types';
 import { apiClient } from './api-client';
-import { classifyProduct, SMART_SLUGS, SmartSlug } from '@/utils/classify-product';
+import { classifyProduct } from '@/utils/classify-product';
+import { SMART_SLUGS, SmartSlug } from '@/constants';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const mapProduct = (p: any): Product => {

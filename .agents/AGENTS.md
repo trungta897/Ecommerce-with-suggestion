@@ -61,3 +61,10 @@
 **Rule**: Bắt buộc phải tự động cập nhật tiến độ vào các file backlog của sprint tương ứng (ví dụ: \docs/backlogs/sprintX/tasks.md\) mỗi khi hoàn thành xong một task.
 - Tìm kiếm đúng file backlog của sprint hiện tại và đánh dấu \[x]\ vào các công việc vừa được thực hiện xong.
 - Việc này phải diễn ra tự động mà không cần User phải nhắc nhở thêm.
+
+## Constants Separation & No Magic Strings Mandate
+
+**Rule**: Tuyệt đối KHÔNG gộp các khai báo hằng số (constants), danh sách cố định (arrays, option lists), hay bản đồ cấu hình tĩnh (static maps/dictionaries/default strings) vào bên trong các thư mục hoặc file xử lý logic như `src/utils/`, `src/services/` hoặc `src/components/`.
+- **Frontend (Next.js)**: Tất cả hằng số dùng chung bắt buộc phải được định nghĩa tại thư mục `src/constants/` (phân lập theo từng module riêng, ví dụ: `src/constants/product.ts`) và được quản lý/re-export thông qua file index (`src/constants/index.ts`).
+- **Backend (NestJS)**: Mọi hằng số chung (Mã lỗi, giá trị cấu hình mặc định, regex...) bắt buộc lưu tại `src/common/constants/` hoặc các file `.constant.ts` thuộc từng module chuyên biệt.
+- **Single Source of Truth & Dynamic Logic**: Các hàm tiện ích và service xử lý logic (tại `utils/` hay `services/`) chỉ được phép import hằng số từ thư mục `constants` để tính toán động (ví dụ: dùng `.reduce()` hay `.map()` từ mảng hằng số), tuyệt đối không định nghĩa lại hay hardcode các giá trị chuỗi/số (magic string / magic number) ngay bên trong code logic.
