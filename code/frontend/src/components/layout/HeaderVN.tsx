@@ -1,6 +1,6 @@
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
-import { ShoppingCart, Heart, User, Menu, Sparkles } from '@/components/base/icons';
+import { ShoppingCart, User, Menu, Sparkles } from '@/components/base/icons';
 
 export function HeaderVN() {
   const t = useTranslations('common.header');
@@ -46,51 +46,59 @@ export function HeaderVN() {
             <span className="text-2xl font-bold font-display tracking-tight text-ink">DATN</span>
           </Link>
 
-          {/* AI Search Bar (Desktop) */}
-          <div className="hidden lg:flex flex-1 max-w-2xl mx-8 relative group">
-            <div className="absolute -inset-0.5 bg-gradient-ai rounded-full blur opacity-25 group-hover:opacity-50 transition duration-300"></div>
-            <input
-              type="text"
-              placeholder={t('ai_search')}
-              className="relative w-full rounded-full border-2 border-transparent bg-white py-2.5 pl-5 pr-12 text-sm focus:border-purple-400 focus:outline-none shadow-sm"
-            />
-            <button className="absolute right-3 top-1/2 -translate-y-1/2 text-purple-600 hover:text-purple-800 transition-colors">
-              <Sparkles className="h-5 w-5" />
-            </button>
+          {/* Search Bar (Desktop) */}
+          <div className="hidden lg:flex flex-1 max-w-3xl mx-8 flex-col">
+            <div className="relative group w-full">
+              <div className="absolute -inset-0.5 bg-gradient-ai rounded-full blur opacity-25 group-hover:opacity-40 transition duration-300"></div>
+              <input
+                type="text"
+                placeholder={t('ai_search')}
+                className="relative w-full rounded-full border border-rule bg-paper-1 py-2.5 pl-5 pr-12 text-sm focus:border-primary focus:outline-none shadow-sm transition-all"
+              />
+              <button className="absolute right-1.5 top-1/2 -translate-y-1/2 bg-primary text-white p-1.5 rounded-full hover:bg-primary/90 transition-colors flex items-center justify-center">
+                <Sparkles className="h-4 w-4" />
+              </button>
+            </div>
+            {/* Suggested Keywords */}
+            <div className="flex items-center gap-4 px-3 mt-2">
+              {['iphone 16', 'macbook pro', 'laptop gaming', 'samsung s24', 'loa bluetooth'].map(
+                (kw) => (
+                  <Link
+                    key={kw}
+                    href={`/search?q=${kw}`}
+                    className="text-xs font-medium text-ink-2 hover:text-primary transition-colors whitespace-nowrap"
+                  >
+                    {kw}
+                  </Link>
+                )
+              )}
+            </div>
           </div>
 
           {/* Action Icons */}
-          <div className="flex items-center gap-5">
-            {isLoggedIn && (
-              <Link
-                href="/profile"
-                className="text-ink-2 transition hover:text-primary hidden sm:block"
-                aria-label={t('sign_in')} // Consider changing translation key to 'profile' later
-              >
-                <User className="h-6 w-6" />
-              </Link>
-            )}
+          <div className="flex items-center gap-3">
             <Link
-              href="/wishlist"
-              className="text-ink-2 transition hover:text-primary hidden sm:block relative"
-              aria-label={t('wishlist')}
+              href={isLoggedIn ? '/profile' : '/login'}
+              className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium text-ink-2 hover:bg-paper-2 hover:text-primary transition-colors hidden sm:flex"
             >
-              <Heart className="h-6 w-6" />
-              <span className="absolute -top-1.5 -right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
-                0
-              </span>
+              <User className="h-5 w-5" />
+              <span>{isLoggedIn ? 'Tài khoản' : 'Đăng nhập'}</span>
             </Link>
+
             <Link
               href="/cart"
-              className="text-ink-2 transition hover:text-primary relative"
-              aria-label={t('cart')}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-paper-2 border border-rule text-sm font-bold text-ink hover:border-primary hover:text-primary transition-all group relative shadow-sm"
             >
-              <ShoppingCart className="h-6 w-6" />
-              <span className="absolute -top-1.5 -right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
-                2
-              </span>
+              <div className="relative">
+                <ShoppingCart className="h-5 w-5" />
+                <span className="absolute -top-2 -right-2 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white group-hover:scale-110 transition-transform">
+                  2
+                </span>
+              </div>
+              <span className="hidden md:inline">Giỏ hàng</span>
             </Link>
-            <button className="lg:hidden text-ink-2 transition hover:text-primary">
+
+            <button className="lg:hidden text-ink-2 p-2 hover:bg-paper-2 rounded-lg transition-colors">
               <Menu className="h-6 w-6" />
             </button>
           </div>

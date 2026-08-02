@@ -7,9 +7,14 @@ import { Product } from '@/types';
 
 interface ProductCardProps {
   product: Product;
+  isFlashSale?: boolean;
+  flashSaleData?: {
+    sold: number;
+    total: number;
+  };
 }
 
-export default function ProductCardVN({ product }: ProductCardProps) {
+export default function ProductCardVN({ product, isFlashSale, flashSaleData }: ProductCardProps) {
   const t = useTranslations('product');
   const hasDiscount = !!(
     product.discountPrice && Number(product.discountPrice) < Number(product.price)
@@ -45,8 +50,13 @@ export default function ProductCardVN({ product }: ProductCardProps) {
           fill
           className="object-cover group-hover:scale-105 transition-transform duration-300"
         />
-        {discountPercentage && (
+        {discountPercentage && !isFlashSale && (
           <div className="absolute top-2 left-2 bg-primary text-primary-foreground text-xs font-bold px-2 py-1 rounded">
+            {t('discount', { percent: discountPercentage })}
+          </div>
+        )}
+        {discountPercentage && isFlashSale && (
+          <div className="absolute top-0 right-0 bg-red-600 text-white text-xs font-bold px-2 py-1.5 rounded-bl-lg shadow-md z-10">
             {t('discount', { percent: discountPercentage })}
           </div>
         )}
@@ -74,11 +84,33 @@ export default function ProductCardVN({ product }: ProductCardProps) {
         </div>
 
         <div className="mt-2">
-          <div className="text-primary font-bold text-lg md:text-xl">
-            {formatPrice(currentPrice)}
+          <div className="flex items-end gap-2 flex-wrap">
+            <div
+              className={
+                isFlashSale
+                  ? 'text-red-600 font-bold text-lg md:text-xl'
+                  : 'text-primary font-bold text-lg md:text-xl'
+              }
+            >
+              {formatPrice(currentPrice)}
+            </div>
+            {originalPrice && (
+              <div className="text-muted text-sm line-through mb-0.5">
+                {formatPrice(originalPrice)}
+              </div>
+            )}
           </div>
-          {originalPrice && (
-            <div className="text-muted text-sm line-through mt-1">{formatPrice(originalPrice)}</div>
+
+          {isFlashSale && flashSaleData && (
+            <div className="mt-3 relative w-full h-5 bg-red-100 rounded-full overflow-hidden flex items-center justify-center">
+              <div
+                className="absolute top-0 left-0 h-full bg-gradient-to-r from-red-500 to-orange-500 rounded-full"
+                style={{ width: `${(flashSaleData.sold / flashSaleData.total) * 100}%` }}
+              ></div>
+              <span className="relative z-10 text-[10px] font-bold text-white shadow-sm flex items-center gap-1">
+                🔥 Còn {flashSaleData.total - flashSaleData.sold}/{flashSaleData.total} suất
+              </span>
+            </div>
           )}
         </div>
       </div>

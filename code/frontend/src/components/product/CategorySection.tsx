@@ -24,7 +24,7 @@ export default function CategorySection({
   const totalProducts = products.length;
 
   return (
-    <section className="mb-12 bg-white p-4 md:p-6 rounded-2xl shadow-sm border border-rule transition-all hover:shadow-md">
+    <section className="bg-white p-4 md:p-6 rounded-2xl shadow-sm border border-rule transition-all hover:shadow-md">
       <div className="flex justify-between items-center mb-6 pb-4 border-b border-rule">
         <div className="flex items-center gap-3">
           {icon && (

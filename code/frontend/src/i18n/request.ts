@@ -10,7 +10,7 @@ export default getRequestConfig(async ({ locale }) => {
   if (!locales.includes(currentLocale)) notFound();
 
   // Load namespaces concurrently for better performance
-  const [common, auth, product, home, admin, cart, profile, checkout, order, address] =
+  const [common, auth, product, home, admin, cart, profile, checkout, order, address, errorMsg] =
     await Promise.all([
       import(`../messages/${currentLocale}/common.json`),
       import(`../messages/${currentLocale}/auth.json`),
@@ -22,6 +22,7 @@ export default getRequestConfig(async ({ locale }) => {
       import(`../messages/${currentLocale}/checkout.json`),
       import(`../messages/${currentLocale}/order.json`),
       import(`../messages/${currentLocale}/address.json`),
+      import(`../messages/${currentLocale}/error.json`),
     ]);
 
   return {
@@ -37,6 +38,7 @@ export default getRequestConfig(async ({ locale }) => {
       checkout: checkout.default,
       order: order.default,
       address: address.default,
+      error: errorMsg.default,
     },
   };
 });

@@ -55,6 +55,7 @@ export {
   Headphones,
   Monitor,
   Smartphone,
+  Tablet,
   ArrowRight,
   CircuitBoard,
   HardDrive,
@@ -66,6 +67,11 @@ export {
   Mouse,
   Wifi,
   Router,
+  Usb,
+  Zap,
+  Timer,
+  Watch,
+  Tv,
 } from 'lucide-react';
 
 // Export custom icons

@@ -5,7 +5,7 @@ export function NewsletterVN() {
   const t = useTranslations('home.newsletter');
 
   return (
-    <section className="pb-16 overflow-hidden">
+    <section className="overflow-hidden mb-8">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="relative overflow-hidden rounded-2xl bg-gray-900 py-16 px-6 sm:px-12 lg:px-16 flex flex-col lg:flex-row items-center justify-between gap-10">
           {/* Decorative shapes */}

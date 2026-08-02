@@ -28,12 +28,19 @@ const ratelimit =
 
 export default async function middleware(request: NextRequest) {
   // 1. Rate Limit Check
-  if (ratelimit) {
+  if (ratelimit && !request.nextUrl.pathname.includes('/too-many-requests')) {
     const ip = request.ip ?? '127.0.0.1';
     const { success, limit, reset, remaining } = await ratelimit.limit(ip);
 
     if (!success) {
-      return new NextResponse('Too Many Requests', {
+      const url = request.nextUrl.clone();
+
+      // Keep locale if it exists, otherwise prepend /vi
+      const localeMatch = request.nextUrl.pathname.match(/^\/(vi|en)(\/|$)/);
+      const currentLocale = localeMatch ? localeMatch[1] : 'vi';
+      url.pathname = `/${currentLocale}/too-many-requests`;
+
+      return NextResponse.rewrite(url, {
         status: 429,
         headers: {
           'X-RateLimit-Limit': limit.toString(),
