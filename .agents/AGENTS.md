@@ -68,3 +68,10 @@
 - **Frontend (Next.js)**: Tất cả hằng số dùng chung bắt buộc phải được định nghĩa tại thư mục `src/constants/` (phân lập theo từng module riêng, ví dụ: `src/constants/product.ts`) và được quản lý/re-export thông qua file index (`src/constants/index.ts`).
 - **Backend (NestJS)**: Mọi hằng số chung (Mã lỗi, giá trị cấu hình mặc định, regex...) bắt buộc lưu tại `src/common/constants/` hoặc các file `.constant.ts` thuộc từng module chuyên biệt.
 - **Single Source of Truth & Dynamic Logic**: Các hàm tiện ích và service xử lý logic (tại `utils/` hay `services/`) chỉ được phép import hằng số từ thư mục `constants` để tính toán động (ví dụ: dùng `.reduce()` hay `.map()` từ mảng hằng số), tuyệt đối không định nghĩa lại hay hardcode các giá trị chuỗi/số (magic string / magic number) ngay bên trong code logic.
+
+## Pre-Commit Summary Mandate
+
+**Rule**: Bắt buộc tạo một bản tổng kết (summary) những thay đổi so với commit trước đó, TRƯỚC KHI thực hiện lệnh commit lên GitHub.
+- Bản tổng kết này phải được lưu vào một file nằm trong thư mục `summary/` của dự án.
+- Tên file tổng kết nên chứa timestamp hoặc thông tin commit (ví dụ: `summary_YYYYMMDD_HHMMSS.md`).
+- Nội dung tóm tắt rõ ràng các file đã sửa đổi, tính năng đã thêm hoặc lỗi đã sửa để tiện theo dõi.
