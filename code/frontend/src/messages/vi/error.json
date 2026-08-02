@@ -1,0 +1,20 @@
+{
+  "404": {
+    "title": "404",
+    "subtitle": "Không tìm thấy trang",
+    "description": "Trang bạn đang tìm kiếm có thể đã bị xóa, đổi tên hoặc tạm thời không truy cập được.",
+    "back_home": "Trở về trang chủ"
+  },
+  "500": {
+    "title": "500",
+    "subtitle": "Đã có lỗi xảy ra!",
+    "description": "Hệ thống đang gặp sự cố. Chúng tôi đang nỗ lực khắc phục trong thời gian sớm nhất.",
+    "retry": "Thử lại"
+  },
+  "429": {
+    "title": "429 - Quá Nhiều Yêu Cầu",
+    "subtitle": "Vui lòng chậm lại",
+    "description": "Bạn đã gửi quá nhiều yêu cầu trong một thời gian ngắn. Vui lòng đợi một lát trước khi thử lại.",
+    "reload": "Tải lại trang"
+  }
+}

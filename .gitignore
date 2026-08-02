@@ -1,0 +1,15 @@
+# Internal planning documents
+plans/
+
+# Machine Learning Data
+ml/data/*.csv
+ml/data/*.jsonl
+ml/data/*.json
+node_modules/
+
+.env
+.env.*
+
+.grapuco
+
+summary

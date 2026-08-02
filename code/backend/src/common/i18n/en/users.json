@@ -1,0 +1,5 @@
+{
+  "USER_NOT_FOUND": "User profile information could not be found.",
+  "UPDATE_SUCCESS": "User profile and shipping address updated successfully!",
+  "UNAUTHORIZED_ACTION": "You do not have permission to modify another user profile."
+}

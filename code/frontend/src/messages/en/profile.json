@@ -1,0 +1,32 @@
+{
+  "title": "My Account",
+  "personalInfo": "Personal Information",
+  "myOrders": "My Orders",
+  "wishlist": "Wishlist",
+  "settings": "Settings",
+  "logout": "Sign Out",
+  "fullName": "Full Name",
+  "email": "Email",
+  "phone": "Phone Number",
+  "address": "Address",
+  "saveChanges": "Save Changes",
+  "recentOrders": "Recent Orders",
+  "noOrders": "No orders yet",
+  "aiRecommend": "Recommended for you",
+  "aiRecommendDesc": "Based on your purchase history, these products are a great fit for you",
+  "validation": {
+    "fullNameRequired": "Please enter your full real name.",
+    "phoneInvalid": "Invalid phone number format (9-11 digits).",
+    "provinceRequired": "Please select a Province/City.",
+    "districtRequired": "Please select a District.",
+    "wardRequired": "Please select a Ward/Commune.",
+    "streetRequired": "Please enter your specific house number and street."
+  },
+  "toast": {
+    "updateSuccessTitle": "Update Successful",
+    "updateSuccessMessage": "Your profile information and shipping address have been saved.",
+    "updateErrorTitle": "Update Failed",
+    "updateErrorMessage": "Unable to update profile at this time. Please try again later."
+  },
+  "loading": "Loading..."
+}

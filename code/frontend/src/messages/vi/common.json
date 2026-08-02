@@ -1,0 +1,36 @@
+{
+  "welcome": "Chào mừng đến với website bán hàng",
+  "home": "Trang chủ",
+  "products": "Sản phẩm",
+  "cart": "Giỏ hàng",
+  "language": "Ngôn ngữ",
+  "vi": "Tiếng Việt",
+  "en": "English",
+  "searchPlaceholder": "Tìm kiếm sản phẩm...",
+  "header": {
+    "promo_text": "Miễn phí giao hàng cho đơn từ 2.000.000đ",
+    "create_account": "Đăng ký",
+    "sign_in": "Đăng nhập",
+    "search": "Tìm kiếm",
+    "ai_search": "✨ Nhập nhu cầu, AI sẽ tìm giúp bạn...",
+    "wishlist": "Yêu thích",
+    "cart": "Giỏ hàng"
+  },
+  "footer": {
+    "help_support": "Hỗ trợ khách hàng",
+    "address": "685 Market Street, Las Vegas, LA 95820, United States.",
+    "phone": "(+099) 532-786-9843",
+    "email": "support@example.com",
+    "account": "Tài khoản",
+    "login_register": "Đăng nhập / Đăng ký",
+    "quick_link": "Liên kết nhanh",
+    "privacy_policy": "Chính sách bảo mật",
+    "refund_policy": "Chính sách đổi trả",
+    "terms_of_use": "Điều khoản sử dụng"
+  },
+  "notFound": {
+    "title": "404 - Không tìm thấy trang",
+    "description": "Đường dẫn bạn truy cập không tồn tại hoặc máy chủ Backend (port 8000) chưa hoạt động.",
+    "backHome": "Quay lại Trang chủ"
+  }
+}

@@ -1,0 +1,5 @@
+{
+  "PROV_NOT_FOUND": "Requested Province/City information not found.",
+  "DIST_NOT_FOUND": "Requested District information not found.",
+  "WARD_NOT_FOUND": "Requested Ward/Commune information not found."
+}

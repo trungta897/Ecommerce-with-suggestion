@@ -1,0 +1,36 @@
+{
+  "welcome": "Welcome to our ecommerce website",
+  "home": "Home",
+  "products": "Products",
+  "cart": "Cart",
+  "language": "Language",
+  "vi": "Tiếng Việt",
+  "en": "English",
+  "searchPlaceholder": "Search for products...",
+  "header": {
+    "promo_text": "Get free delivery on orders over $80",
+    "create_account": "Create an account",
+    "sign_in": "Sign In",
+    "search": "Search",
+    "ai_search": "✨ Type what you need, AI will find it...",
+    "wishlist": "Wishlist",
+    "cart": "Cart"
+  },
+  "footer": {
+    "help_support": "Help & Support",
+    "address": "685 Market Street, Las Vegas, LA 95820, United States.",
+    "phone": "(+099) 532-786-9843",
+    "email": "support@example.com",
+    "account": "Account",
+    "login_register": "Login / Register",
+    "quick_link": "Quick Link",
+    "privacy_policy": "Privacy Policy",
+    "refund_policy": "Refund Policy",
+    "terms_of_use": "Terms of Use"
+  },
+  "notFound": {
+    "title": "404 - Page Not Found",
+    "description": "The path you are accessing does not exist or the Backend server (port 8000) is offline.",
+    "backHome": "Back to Home"
+  }
+}

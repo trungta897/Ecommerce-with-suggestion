@@ -1,0 +1,18 @@
+{
+  "province": "Tỉnh/Thành phố",
+  "provincePlaceholder": "Chọn Tỉnh/Thành phố",
+  "searchProvince": "Tìm kiếm Tỉnh/Thành...",
+  "district": "Quận/Huyện",
+  "districtPlaceholder": "Chọn Quận/Huyện",
+  "searchDistrict": "Tìm kiếm Quận/Huyện...",
+  "ward": "Phường/Xã",
+  "wardPlaceholder": "Chọn Phường/Xã",
+  "searchWard": "Tìm kiếm Phường/Xã...",
+  "street": "Số nhà, tên đường / Thôn, xóm",
+  "streetPlaceholder": "Nhập chính xác số nhà, ngõ/hẻm, tên đường...",
+  "noResults": "Không tìm thấy kết quả phù hợp",
+  "selectProvinceFirst": "Vui lòng chọn Tỉnh/Thành phố trước",
+  "selectDistrictFirst": "Vui lòng chọn Quận/Huyện trước",
+  "loading": "Đang tải danh sách...",
+  "recordedAddress": "Địa chỉ được ghi nhận:"
+}

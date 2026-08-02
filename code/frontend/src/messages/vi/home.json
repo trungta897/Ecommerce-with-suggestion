@@ -1,0 +1,79 @@
+{
+  "hero": {
+    "main_banner_title": "MacBook Pro M3 Max",
+    "main_banner_subtitle": "Sức mạnh tối thượng cho dân chuyên nghiệp",
+    "main_banner_cta": "Đặt trước ngay",
+    "sub_banner_1_title": "iPhone 15 Pro",
+    "sub_banner_1_subtitle": "Chất liệu Titanium",
+    "sub_banner_2_title": "AirPods Pro",
+    "sub_banner_2_subtitle": "Kỳ diệu như chưa từng nghe",
+    "ai_assistant": "✨ Trợ lý AI"
+  },
+  "product": {
+    "recommended_title": "Dành riêng cho bạn",
+    "recommended_subtitle": "Các sản phẩm được AI tuyển chọn",
+    "ai_match": "✨ AI Gợi ý cho bạn",
+    "view_details": "Xem chi tiết",
+    "add_to_cart": "Thêm vào giỏ",
+    "view_all": "Xem tất cả",
+    "show_all_products": "Hiển thị tất cả ({total} sản phẩm)",
+    "ram": "RAM",
+    "rom": "ROM"
+  },
+  "categories": {
+    "dien-thoai-tablet": "Điện thoại & Tablet",
+    "dien-thoai": "Điện thoại",
+    "may-tinh-bang": "Máy tính bảng",
+    "laptop-group": "Laptop",
+    "laptop": "Laptop",
+    "pc-group": "Máy tính để bàn",
+    "may-tinh-de-ban": "PC",
+    "linh-kien-may-tinh": "Linh kiện máy tính",
+    "cpu": "CPU - Bộ vi xử lý",
+    "mainboard": "Mainboard - Bo mạch chủ",
+    "vga": "VGA - Card màn hình",
+    "ram": "RAM máy tính",
+    "o-cung": "Ổ cứng trong (HDD/SSD)",
+    "nguon": "Nguồn máy tính (PSU)",
+    "vo-case": "Vỏ máy tính (Case)",
+    "tan-nhiet": "Tản nhiệt PC",
+    "man-hinh-group": "Màn hình máy tính",
+    "man-hinh": "Màn hình",
+    "luu-tru-gan-ngoai": "Lưu trữ gắn ngoài & Thẻ nhớ",
+    "the-nho": "Thẻ nhớ & Đầu đọc thẻ",
+    "o-cung-ngoai": "Ổ cứng gắn ngoài",
+    "usb": "USB",
+    "o-dia-quang": "Ổ đĩa quang",
+    "phu-kien": "Phụ kiện & Thiết bị khác",
+    "phu-kien-laptop": "Phụ kiện Laptop",
+    "cap-hub": "Cáp & Hub chuyển đổi",
+    "tai-nghe-am-thanh": "Tai nghe & Âm thanh",
+    "may-anh": "Máy ảnh & Phụ kiện",
+    "linh-kien-khac": "Linh kiện khác"
+  },
+  "sections": {
+    "best_sellers_title": "Bán chạy nhất",
+    "best_sellers_subtitle": "Sản phẩm được mua nhiều nhất",
+    "on_sale_title": "Đang giảm giá",
+    "on_sale_subtitle": "Ưu đãi đặc biệt dành cho bạn",
+    "flash_sale_title": "Giờ Vàng Giá Sốc",
+    "flash_sale_subtitle": "Số lượng có hạn, chớp ngay kẻo lỡ",
+    "top_categories": "Danh mục nổi bật"
+  },
+  "features": {
+    "free_shipping": "Giao hàng miễn phí",
+    "free_shipping_desc": "Cho mọi đơn hàng từ 2.000.000đ",
+    "returns": "Đổi trả 1-1",
+    "returns_desc": "Trong vòng 7 ngày đầu",
+    "secure_payment": "Thanh toán an toàn 100%",
+    "secure_payment_desc": "Đảm bảo tính bảo mật tuyệt đối",
+    "support": "Hỗ trợ 24/7",
+    "support_desc": "Bất cứ nơi đâu & bất cứ lúc nào"
+  },
+  "newsletter": {
+    "title": "Đừng Bỏ Lỡ Các Ưu Đãi Mới Nhất",
+    "desc": "Đăng ký để nhận thông tin về sản phẩm và mã giảm giá",
+    "placeholder": "Nhập email của bạn",
+    "subscribe": "Đăng ký"
+  }
+}

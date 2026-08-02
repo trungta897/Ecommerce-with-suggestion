@@ -1,0 +1,5 @@
+{
+  "USER_NOT_FOUND": "Không tìm thấy thông tin hồ sơ người dùng trong hệ thống.",
+  "UPDATE_SUCCESS": "Cập nhật hồ sơ cá nhân và thông tin địa chỉ nhận hàng thành công!",
+  "UNAUTHORIZED_ACTION": "Bạn không có quyền thực hiện thao tác này trên hồ sơ người dùng khác."
+}
