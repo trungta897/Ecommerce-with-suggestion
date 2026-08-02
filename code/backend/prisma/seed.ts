@@ -6,6 +6,11 @@ import * as readline from 'readline';
 import { parse } from 'csv-parse';
 import { v2 as cloudinary } from 'cloudinary';
 import * as streamifier from 'streamifier';
+import {
+  CATEGORY_TREE,
+  DEFAULT_CATEGORY_SLUG,
+  classifyProduct,
+} from '../src/common/constants/product.constant';
 
 const prisma = new PrismaClient();
 
@@ -168,7 +173,9 @@ async function main() {
   }
   rlMeta0.close();
   metaStream0.close();
-  console.log(`Tìm thấy ${targetAsins.size} ASIN thuộc nhóm linh kiện PC.`);
+  console.log(
+    `Tìm thấy ${targetAsins.size} ASIN thuộc nhóm thiết bị Điện tử & PC.`,
+  );
 
   console.log(
     '1. Đang phân tích train.csv và test.csv để chọn 1.000 sản phẩm top reviews (đã lọc)...',
@@ -225,24 +232,50 @@ async function main() {
   console.log(
     '3. & 4. Xử lý lưu Category, upload ảnh Cloudinary và insert Product...',
   );
-  const insertedProducts: Record<string, string> = {};
+
+  // Pre-seed Categories from CATEGORY_TREE
+  console.log('--- Đang tạo danh mục theo mô hình phân cấp...');
+  const categoryCache: Record<string, string> = {};
   let categoriesCreated = 0;
+
+  for (const parent of CATEGORY_TREE) {
+    const parentCat = await prisma.category.create({
+      data: { name: parent.name, slug: parent.slug },
+    });
+    categoriesCreated++;
+    categoryCache[parent.slug] = parentCat.id;
+
+    if (parent.children && parent.children.length > 0) {
+      for (const child of parent.children) {
+        const childCat = await prisma.category.create({
+          data: {
+            name: child.name,
+            slug: child.slug,
+            parentId: parentCat.id,
+          },
+        });
+        categoriesCreated++;
+        categoryCache[child.slug] = childCat.id;
+      }
+    }
+  }
+  console.log(`--- Đã tạo ${categoriesCreated} danh mục cha/con.`);
+
+  const insertedProducts: Record<string, string> = {};
   let imagesUploaded = 0;
 
   for (let i = 0; i < productsToInsert.length; i++) {
     const item = productsToInsert[i];
 
-    const catName = item.main_category || 'Electronics';
-    const catSlug = slugify(catName) || 'electronics';
-    let category = await prisma.category.findUnique({
-      where: { slug: catSlug },
-    });
-    if (!category) {
-      category = await prisma.category.create({
-        data: { name: catName, slug: catSlug },
-      });
-      categoriesCreated++;
-    }
+    const catSlug = classifyProduct(
+      item.categories || [],
+      item.title,
+      typeof item.description === 'string'
+        ? item.description
+        : item.description?.join(' '),
+    );
+    const categoryId =
+      categoryCache[catSlug] || categoryCache[DEFAULT_CATEGORY_SLUG];
 
     const processedImages: {
       url: string;
@@ -287,7 +320,7 @@ async function main() {
 
     const product = await prisma.product.create({
       data: {
-        categoryId: category.id,
+        categoryId: categoryId,
         name: item.title ? item.title.substring(0, 190) : 'Unknown Product',
         slug:
           slugify(item.title || Math.random().toString()) +

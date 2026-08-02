@@ -4,7 +4,7 @@ import { Injectable } from '@nestjs/common';
 import { UserRole } from '@prisma/client';
 import { Request } from 'express';
 
-export interface JwtPayload {
+interface JwtPayload {
   sub: string;
   email: string;
   role: UserRole;
