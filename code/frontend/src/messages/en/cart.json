@@ -16,5 +16,11 @@
   "checkout": "Proceed to Checkout",
   "itemCount": "{count} items",
   "orderSummary": "Order Summary",
-  "itemRemoved": "Item removed from your cart!"
+  "itemRemoved": "Item removed from your cart!",
+  "addedSuccess": "Added to cart successfully!",
+  "updateSuccess": "Cart updated successfully!",
+  "mergeSuccess": "Cart has been synced!",
+  "itemSkipped": "Some items could not be synced (out of stock or inactive).",
+  "exceedStock": "Quantity exceeds available stock.",
+  "inactiveItem": "Product is inactive."
 }

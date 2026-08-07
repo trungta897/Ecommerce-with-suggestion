@@ -22,7 +22,8 @@ import Link from 'next/link';
 export default function Home() {
   const tCat = useTranslations('home.categories');
   const tSec = useTranslations('home.sections');
-  const { data: products = [], isLoading } = useProducts();
+  const { data: productsResponse, isLoading } = useProducts();
+  const products = productsResponse?.data || [];
 
   const categoriesMap = classifyAllProducts(products);
 

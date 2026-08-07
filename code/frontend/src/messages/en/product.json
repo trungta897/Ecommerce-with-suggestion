@@ -27,6 +27,8 @@
   "showAllCount": "Show all ({total} products)",
   "showAll": "Show all products",
   "addedToCartSuccess": "Successfully added \"{name}\" to your cart!",
+  "addedToCartFailed": "Failed to add to cart",
   "addedToCartTitle": "Success",
-  "redirectingToCheckout": "Redirecting to checkout..."
+  "redirectingToCheckout": "Redirecting to checkout...",
+  "flashSaleLeft": "🔥 {left}/{total} left"
 }

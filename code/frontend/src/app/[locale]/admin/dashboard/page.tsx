@@ -1,16 +1,18 @@
-import { useTranslations } from 'next-intl';
+'use client';
+
+import { useLocale, useTranslations } from 'next-intl';
 import { TrendingUp, ShoppingBag, Package, Users, Clock } from '@/components/base/icons';
+import { formatPrice } from '@/utils/format';
 import Link from 'next/link';
 
 export default function AdminDashboardPage() {
+  const locale = useLocale();
   const t = useTranslations('admin.dashboard');
-
-  const formatPrice = (price: number) => new Intl.NumberFormat('vi-VN').format(price) + '₫';
 
   const stats = [
     {
       key: 'revenue',
-      value: formatPrice(245800000),
+      value: formatPrice(245800000, locale),
       change: '+12.5%',
       icon: TrendingUp,
       color: 'from-green-500 to-emerald-600',
@@ -122,7 +124,7 @@ export default function AdminDashboardPage() {
           </div>
           <div className="bg-white/10 rounded-lg p-4 backdrop-blur-sm">
             <p className="text-sm text-white/80">Avg. Order Value</p>
-            <p className="text-xl font-bold">{formatPrice(1575000)}</p>
+            <p className="text-xl font-bold">{formatPrice(1575000, locale)}</p>
           </div>
         </div>
       </div>
@@ -154,7 +156,9 @@ export default function AdminDashboardPage() {
                 >
                   <td className="px-5 py-3 font-semibold text-ink">{order.id}</td>
                   <td className="px-5 py-3 text-ink-2">{order.customer}</td>
-                  <td className="px-5 py-3 font-semibold text-ink">{formatPrice(order.total)}</td>
+                  <td className="px-5 py-3 font-semibold text-ink">
+                    {formatPrice(order.total, locale)}
+                  </td>
                   <td className="px-5 py-3">
                     <span
                       className={`px-2.5 py-1 rounded-full text-xs font-semibold ${statusColors[order.status]}`}

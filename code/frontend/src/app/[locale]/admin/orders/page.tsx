@@ -1,12 +1,14 @@
-import { useTranslations } from 'next-intl';
+'use client';
+
+import { useTranslations, useLocale } from 'next-intl';
 import { BaseInput } from '@/components/base';
 import { Search, Eye, CheckCircle2, Clock } from '@/components/base/icons';
+import { formatPrice } from '@/utils/format';
 
 export default function AdminOrdersPage() {
   const t = useTranslations('admin.orders');
   const tOrder = useTranslations('order');
-
-  const formatPrice = (price: number) => new Intl.NumberFormat('vi-VN').format(price) + '₫';
+  const locale = useLocale();
 
   const mockOrders = [
     {
@@ -114,7 +116,9 @@ export default function AdminOrdersPage() {
                       <p className="text-xs text-ink-2">{order.email}</p>
                     </div>
                   </td>
-                  <td className="px-5 py-3 font-semibold text-ink">{formatPrice(order.total)}</td>
+                  <td className="px-5 py-3 font-semibold text-ink">
+                    {formatPrice(order.total, locale)}
+                  </td>
                   <td className="px-5 py-3 text-ink-2 uppercase text-xs font-semibold">
                     {order.payment}
                   </td>

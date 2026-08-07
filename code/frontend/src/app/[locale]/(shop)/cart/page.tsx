@@ -1,28 +1,28 @@
 'use client';
 
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import Link from 'next/link';
 import Image from 'next/image';
 import { ShoppingCart, Minus, Plus, Trash2, ChevronRight } from '@/components/base/icons';
 import { BaseButton } from '@/components/base';
-import { useCartStore } from '@/store';
 import { useProducts } from '@/hooks/use-products';
 import { useToast } from '@/providers/toast-provider';
+import { useCart } from '@/hooks/use-cart';
+import { formatPrice } from '@/utils/format';
 
 export default function CartPage() {
+  const locale = useLocale();
   const t = useTranslations('cart');
   const tCommon = useTranslations('common');
-  const { items, removeItem, updateQuantity } = useCartStore();
+  const { items, removeItem, updateQuantity, isLoading: isCartLoading } = useCart();
   const toast = useToast();
-  const { data: products = [], isLoading } = useProducts();
+  const { data: productsResponse, isLoading: isProductsLoading } = useProducts({ all: true });
+  const products = productsResponse?.data || [];
+  const isLoading = isCartLoading || isProductsLoading;
 
   const handleRemoveItem = (productId: string) => {
     removeItem(productId);
     toast.success(t('itemRemoved'));
-  };
-
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
   };
 
   const getProductPrice = (product?: { price: number; discountPrice?: number }) => {
@@ -36,7 +36,7 @@ export default function CartPage() {
   // Map cart items to product data
   const cartProducts = items
     .map((item) => {
-      const product = products.find((p) => p.id === item.product_id);
+      const product = products.find((p) => p.id === item.product_id) || item.product;
       return { ...item, product };
     })
     .filter((item) => item.product);
@@ -112,9 +112,11 @@ export default function CartPage() {
               <div className="flex-1 min-w-0">
                 <h3 className="font-semibold text-ink truncate">{item.product?.name}</h3>
                 <p className="text-sm text-ink-2 capitalize">{item.product?.brand}</p>
-                <p className="text-lg font-bold text-primary mt-1">
-                  {formatPrice(getProductPrice(item.product))}
-                </p>
+                <div className="hidden sm:block text-right mt-1">
+                  <span className="font-semibold text-primary">
+                    {formatPrice(getProductPrice(item.product), locale)}
+                  </span>
+                </div>
               </div>
 
               <div className="flex flex-col items-end justify-between">
@@ -135,8 +137,14 @@ export default function CartPage() {
                   </button>
                   <span className="w-8 text-center text-sm font-semibold">{item.quantity}</span>
                   <button
-                    onClick={() => updateQuantity(item.product_id, item.quantity + 1)}
+                    onClick={() =>
+                      updateQuantity(
+                        item.product_id,
+                        Math.min(item.quantity + 1, item.product?.stock || Number.MAX_SAFE_INTEGER)
+                      )
+                    }
                     className="p-1.5 hover:bg-paper-2 transition-colors rounded-r-lg"
+                    disabled={item.quantity >= (item.product?.stock || 0)}
                   >
                     <Plus className="w-3 h-3" />
                   </button>
@@ -152,18 +160,20 @@ export default function CartPage() {
             <h3 className="text-lg font-bold text-ink mb-4">{t('orderSummary')}</h3>
 
             <div className="space-y-3 text-sm">
-              <div className="flex justify-between">
+              <div className="flex justify-between items-center">
                 <span className="text-ink-2">{t('subtotal')}</span>
-                <span className="font-semibold text-ink">{formatPrice(subtotal)}</span>
+                <span className="font-semibold text-ink">{formatPrice(subtotal, locale)}</span>
               </div>
-              <div className="flex justify-between">
+              <div className="flex justify-between items-center">
                 <span className="text-ink-2">{t('shipping')}</span>
                 <span className="text-ink-2 text-xs">{t('shippingNote')}</span>
               </div>
-              <div className="border-t border-rule pt-3 mt-3">
-                <div className="flex justify-between">
-                  <span className="text-base font-bold text-ink">{t('orderTotal')}</span>
-                  <span className="text-base font-bold text-primary">{formatPrice(subtotal)}</span>
+              <div className="border-t border-rule pt-4 mt-4">
+                <div className="flex justify-between items-center">
+                  <span className="font-bold text-ink">{t('total')}</span>
+                  <span className="text-base font-bold text-primary">
+                    {formatPrice(subtotal, locale)}
+                  </span>
                 </div>
               </div>
             </div>

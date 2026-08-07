@@ -1,6 +1,6 @@
 'use client';
 
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { BaseButton, BaseInput } from '@/components/base';
 import {
@@ -19,15 +19,18 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useToast } from '@/providers/toast-provider';
 import { AddressSelector } from '@/components/features/address/AddressSelector';
+import { formatPrice } from '@/utils/format';
 
 const STEPS = ['step1', 'step2', 'step3'] as const;
 
 export default function CheckoutPage() {
+  const locale = useLocale();
   const t = useTranslations('checkout');
   const tCommon = useTranslations('common');
   const toast = useToast();
   const { items, clearCart } = useCartStore();
-  const { data: products = [], isLoading } = useProducts();
+  const { data: productsResponse, isLoading } = useProducts({ all: true });
+  const products = productsResponse?.data || [];
   const [currentStep, setCurrentStep] = useState(0);
   const [paymentMethod, setPaymentMethod] = useState<'vnpay' | 'cod'>('cod');
   const [deliveryMethod, setDeliveryMethod] = useState('standard');
@@ -77,9 +80,6 @@ export default function CheckoutPage() {
   );
   const shippingFee = deliveryMethod === 'express' ? 50000 : 30000;
   const total = Math.max(0, subtotal + shippingFee - discount);
-
-  const formatPrice = (price: number) =>
-    new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
 
   const stepIcons = [Truck, CreditCard, CheckCircle2];
 
@@ -315,7 +315,7 @@ export default function CheckoutPage() {
                     />
                     <span className="text-sm text-ink">{t(method as 'standard' | 'express')}</span>
                     <span className="text-sm font-semibold text-primary ml-auto">
-                      {formatPrice(method === 'express' ? 50000 : 30000)}
+                      {method === 'standard' ? t('free') : formatPrice(50000, locale)}
                     </span>
                   </label>
                 ))}
@@ -370,9 +370,21 @@ export default function CheckoutPage() {
                   </BaseButton>
                 </div>
                 {appliedVoucher && (
-                  <p className="text-xs font-medium text-green-600">
-                    ✓ Đã áp dụng giảm {formatPrice(discount)}
-                  </p>
+                  <div className="flex justify-between items-center bg-green-50 text-green-700 p-3 rounded-xl border border-green-200">
+                    <span className="text-sm font-medium">
+                      ✓ Đã áp dụng giảm {formatPrice(discount, locale)}
+                    </span>
+                    <button
+                      onClick={() => {
+                        setDiscount(0);
+                        setAppliedVoucher(false);
+                        setVoucherCode('');
+                      }}
+                      className="text-xs font-bold underline"
+                    >
+                      {t('remove')}
+                    </button>
+                  </div>
                 )}
               </div>
             </div>
@@ -424,9 +436,11 @@ export default function CheckoutPage() {
                       <p className="text-sm font-medium text-ink truncate">{item.product?.name}</p>
                       <p className="text-xs text-ink-2">x{item.quantity}</p>
                     </div>
-                    <span className="text-sm font-semibold text-ink">
-                      {formatPrice(getProductPrice(item.product) * item.quantity)}
-                    </span>
+                    <div className="text-right">
+                      <span className="font-semibold text-primary">
+                        {formatPrice(getProductPrice(item.product) * item.quantity, locale)}
+                      </span>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -457,22 +471,26 @@ export default function CheckoutPage() {
               {t('orderSummary')}
             </h3>
             <div className="space-y-3 text-sm">
-              <div className="flex justify-between">
+              <div className="flex justify-between items-center">
                 <span className="text-ink-2">{t('subtotal')}</span>
-                <span className="font-semibold">{formatPrice(subtotal)}</span>
+                <span className="font-semibold">{formatPrice(subtotal, locale)}</span>
               </div>
-              <div className="flex justify-between">
+              <div className="flex justify-between items-center">
                 <span className="text-ink-2">{t('shippingFee')}</span>
-                <span className="font-semibold">{formatPrice(shippingFee)}</span>
+                <span className="font-semibold">{formatPrice(shippingFee, locale)}</span>
               </div>
-              <div className="flex justify-between">
+              <div className="flex justify-between items-center">
                 <span className="text-ink-2">{t('discount')}</span>
-                <span className="font-semibold text-green-600">-{formatPrice(discount)}</span>
+                <span className="font-semibold text-green-600">
+                  -{formatPrice(discount, locale)}
+                </span>
               </div>
               <div className="border-t border-rule pt-3 mt-3">
-                <div className="flex justify-between items-center">
+                <div className="flex justify-between items-center pt-4 border-t border-rule">
                   <span className="text-base font-bold text-ink">{t('total')}</span>
-                  <span className="text-lg font-bold text-primary">{formatPrice(total)}</span>
+                  <span className="text-lg font-bold text-primary">
+                    {formatPrice(total, locale)}
+                  </span>
                 </div>
               </div>
             </div>

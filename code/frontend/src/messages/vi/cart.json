@@ -16,5 +16,11 @@
   "checkout": "Tiến hành thanh toán",
   "itemCount": "{count} sản phẩm",
   "orderSummary": "Tóm tắt đơn hàng",
-  "itemRemoved": "Đã xóa sản phẩm khỏi giỏ hàng!"
+  "itemRemoved": "Đã xóa sản phẩm khỏi giỏ hàng!",
+  "addedSuccess": "Thêm vào giỏ hàng thành công!",
+  "updateSuccess": "Cập nhật giỏ hàng thành công!",
+  "mergeSuccess": "Giỏ hàng đã được đồng bộ!",
+  "itemSkipped": "Một số sản phẩm không thể đồng bộ (hết hàng hoặc ngừng bán).",
+  "exceedStock": "Vượt quá số lượng tồn kho.",
+  "inactiveItem": "Sản phẩm đã ngừng kinh doanh."
 }

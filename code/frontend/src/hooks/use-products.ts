@@ -1,11 +1,11 @@
 import { useQuery } from '@tanstack/react-query';
-import { productService } from '@/services/product-service';
+import { productService, ProductQueryParams } from '@/services/product-service';
 import { queryKeys } from './query-keys';
 
-export function useProducts(all?: boolean) {
+export function useProducts(params?: ProductQueryParams) {
   return useQuery({
-    queryKey: all ? [...queryKeys.products.all, { all }] : queryKeys.products.all,
-    queryFn: () => productService.getAll(all),
+    queryKey: params ? [...queryKeys.products.all, params] : queryKeys.products.all,
+    queryFn: () => productService.getAll(params),
   });
 }
 
@@ -17,10 +17,18 @@ export function useProduct(id: string) {
   });
 }
 
-export function useProductsByCategory(slug: string) {
+export function useProductBySlug(slug: string) {
   return useQuery({
-    queryKey: queryKeys.products.byCategory(slug),
-    queryFn: () => productService.getByCategory(slug),
+    queryKey: ['products', 'slug', slug],
+    queryFn: () => productService.getBySlug(slug),
+    enabled: !!slug,
+  });
+}
+
+export function useProductsByCategory(slug: string, params?: ProductQueryParams) {
+  return useQuery({
+    queryKey: [...queryKeys.products.byCategory(slug), params],
+    queryFn: () => productService.getByCategory(slug, params),
     enabled: !!slug,
   });
 }

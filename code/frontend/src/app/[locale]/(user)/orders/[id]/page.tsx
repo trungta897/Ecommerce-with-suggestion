@@ -1,13 +1,15 @@
-import { useTranslations } from 'next-intl';
+'use client';
+
+import { useLocale, useTranslations } from 'next-intl';
 import { Package, Truck, CheckCircle2, Clock, ChevronRight } from '@/components/base/icons';
 import { BaseButton } from '@/components/base';
 import Link from 'next/link';
+import { formatPrice } from '@/utils/format';
 
 export default function OrderDetailPage({ params }: { params: { id: string } }) {
+  const locale = useLocale();
   const t = useTranslations('order');
   const tCommon = useTranslations('common');
-
-  const formatPrice = (price: number) => new Intl.NumberFormat('vi-VN').format(price) + '₫';
 
   // Mock order data
   const order = {
@@ -117,7 +119,10 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
           <h3 className="font-bold text-ink mb-4">{t('paymentInfo')}</h3>
           <div className="space-y-2 text-sm text-ink-2">
             <p>{order.paymentMethod === 'cod' ? 'COD' : 'VNPay'}</p>
-            <p className="text-lg font-bold text-primary">{formatPrice(order.total)}</p>
+            <div className="flex justify-between items-center py-4 border-t border-rule mt-4">
+              <span className="text-lg font-bold text-ink">{t('total')}</span>
+              <p className="text-lg font-bold text-primary">{formatPrice(order.total, locale)}</p>
+            </div>
           </div>
         </div>
       </div>
@@ -132,10 +137,12 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
           >
             <div className="w-16 h-16 bg-paper-2 rounded-lg flex-shrink-0" />
             <div className="flex-1">
-              <p className="font-medium text-ink">{item.name}</p>
+              <div className="flex justify-between items-start mb-2">
+                <h4 className="font-semibold text-ink">{item.name}</h4>
+                <span className="font-semibold text-ink">{formatPrice(item.price, locale)}</span>
+              </div>
               <p className="text-sm text-ink-2">x{item.quantity}</p>
             </div>
-            <span className="font-semibold text-ink">{formatPrice(item.price)}</span>
           </div>
         ))}
       </div>

@@ -9,7 +9,8 @@ import { FilterIcon } from '@/components/base/icons';
 export default function CategorySlugPage({ params }: { params: { slug: string } }) {
   const t = useTranslations('home.categories');
   const tProduct = useTranslations('product');
-  const { data: categoryProducts = [], isLoading } = useProductsByCategory(params.slug);
+  const { data: productsResponse, isLoading } = useProductsByCategory(params.slug);
+  const categoryProducts = productsResponse?.data || [];
 
   let categoryTitle = params.slug;
   try {

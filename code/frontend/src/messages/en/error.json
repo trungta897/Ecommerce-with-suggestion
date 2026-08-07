@@ -7,9 +7,12 @@
   },
   "500": {
     "title": "500",
-    "subtitle": "Something went wrong!",
-    "description": "The system is experiencing an issue. We are working hard to fix it as soon as possible.",
-    "retry": "Try again"
+    "subtitle": "Oops! Something went wrong.",
+    "description": "Sorry, there was a technical issue on our end. Our engineering team has been notified and is working to fix it.",
+    "retry": "Try again",
+    "back_home": "Back to Home",
+    "support": "Contact Support",
+    "error_detail": "Error details (for developers only):"
   },
   "429": {
     "title": "429 - Too Many Requests",

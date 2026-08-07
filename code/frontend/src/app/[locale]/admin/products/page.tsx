@@ -1,18 +1,18 @@
 'use client';
 
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { BaseButton, BaseInput } from '@/components/base';
 import { Plus, Edit, EyeOff, Search } from '@/components/base/icons';
+import { formatPrice } from '@/utils/format';
 import { useProducts } from '@/hooks/use-products';
 import Link from 'next/link';
 import Image from 'next/image';
 
 export default function AdminProductsPage() {
+  const locale = useLocale();
   const t = useTranslations('admin.products');
-  const { data: products = [], isLoading } = useProducts(true);
-
-  const formatPrice = (price: number) =>
-    new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
+  const { data: productsResponse, isLoading } = useProducts({ all: true });
+  const products = productsResponse?.data || [];
 
   return (
     <div className="p-6 lg:p-8">
@@ -88,7 +88,7 @@ export default function AdminProductsPage() {
                       {product.category?.name || product.category?.slug || '-'}
                     </td>
                     <td className="px-5 py-3 font-semibold text-ink">
-                      {formatPrice(product.price)}
+                      {formatPrice(product.price, locale)}
                     </td>
                     <td className="px-5 py-3 text-ink-2">{product.stock || 0}</td>
                     <td className="px-5 py-3">

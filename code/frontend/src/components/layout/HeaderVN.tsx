@@ -1,9 +1,15 @@
+'use client';
+
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { ShoppingCart, User, Menu, Sparkles } from '@/components/base/icons';
+import { useCart } from '@/hooks/use-cart';
 
 export function HeaderVN() {
   const t = useTranslations('common.header');
+  const tCommon = useTranslations('common');
+  const { getTotalItems } = useCart();
+  const totalItems = getTotalItems();
 
   // Tạm thời mock trạng thái đăng nhập. Sau này sẽ thay bằng hook useAuth() hoặc Zustand store.
   const isLoggedIn = false;
@@ -82,7 +88,7 @@ export function HeaderVN() {
               className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium text-ink-2 hover:bg-paper-2 hover:text-primary transition-colors hidden sm:flex"
             >
               <User className="h-5 w-5" />
-              <span>{isLoggedIn ? 'Tài khoản' : 'Đăng nhập'}</span>
+              <span>{isLoggedIn ? t('account') : t('sign_in')}</span>
             </Link>
 
             <Link
@@ -91,11 +97,13 @@ export function HeaderVN() {
             >
               <div className="relative">
                 <ShoppingCart className="h-5 w-5" />
-                <span className="absolute -top-2 -right-2 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white group-hover:scale-110 transition-transform">
-                  2
-                </span>
+                {totalItems > 0 && (
+                  <span className="absolute -top-2 -right-2 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white group-hover:scale-110 transition-transform">
+                    {totalItems > 99 ? '99+' : totalItems}
+                  </span>
+                )}
               </div>
-              <span className="hidden md:inline">Giỏ hàng</span>
+              <span className="hidden md:inline">{tCommon('cart')}</span>
             </Link>
 
             <button className="lg:hidden text-ink-2 p-2 hover:bg-paper-2 rounded-lg transition-colors">
