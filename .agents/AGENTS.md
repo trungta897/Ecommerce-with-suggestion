@@ -75,3 +75,9 @@
 - Bản tổng kết này phải được lưu vào một file nằm trong thư mục `summary/` của dự án.
 - Tên file tổng kết nên chứa timestamp hoặc thông tin commit (ví dụ: `summary_YYYYMMDD_HHMMSS.md`).
 - Nội dung tóm tắt rõ ràng các file đã sửa đổi, tính năng đã thêm hoặc lỗi đã sửa để tiện theo dõi.
+
+## Code Formatting & Type Safety Mandate
+
+**Rule**: Tuyệt đối tránh các lỗi liên quan đến dư thừa khoảng trắng (trailing spaces) hoặc ép kiểu không cần thiết (unnecessary type assertions) trong file code (ví dụ dùng `as any` khi Type đã tương thích).
+- Agent **BẮT BUỘC** phải chạy script để format (ví dụ: `npm run format` hoặc `npx prettier --write <file>`) sau khi sửa đổi file code nếu phát sinh các lỗi liên quan tới định dạng (formatting).
+- Agent **BẮT BUỘC** sử dụng kiểu dữ liệu chặt chẽ và chỉ sử dụng ép kiểu (`as`) khi thực sự cần thiết, hạn chế tối đa việc sử dụng kiểu `any`.

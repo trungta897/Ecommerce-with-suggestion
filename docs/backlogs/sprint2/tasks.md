@@ -1,8 +1,8 @@
 # Sprint 2: Giỏ hàng, Đặt hàng & Quản lý Đơn hàng
 
-- [ ] **1. Khởi tạo Backend Module: Cart (Giỏ hàng) (US-CART-01, US-CART-02)**
-  - [ ] Tạo `CartController`, `CartService`
-  - [ ] Viết API Thêm/Sửa/Xóa sản phẩm trong giỏ hàng (lưu vào Redis hoặc DB)
+- [x] **1. Khởi tạo Backend Module: Cart (Giỏ hàng) (US-CART-01, US-CART-02)**
+  - [x] Tạo `CartController`, `CartService`
+  - [x] Viết API Thêm/Sửa/Xóa sản phẩm trong giỏ hàng (lưu DB thông qua Prisma)
   - [x] Tích hợp Frontend UI (`cart/page.tsx`, tối ưu responsive grid layout, đa ngôn ngữ i18n & thông báo Toast)
 
 - [ ] **2. Khởi tạo Backend Module: Orders (Đơn hàng) (US-ORD-01, US-ORD-02)**

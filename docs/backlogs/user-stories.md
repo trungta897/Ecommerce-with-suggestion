@@ -133,16 +133,18 @@ Các công việc phục vụ vận hành kỹ thuật hoặc đánh giá học 
 
 ### US-CART-01 — Thêm sản phẩm vào giỏ
 
-**User Story:** Là người mua, tôi muốn thêm sản phẩm vào giỏ để chuẩn bị đặt hàng. Giỏ hàng đóng vai trò lưu trữ sản phẩm muốn mua, chưa yêu cầu kiểm tra giới hạn tồn kho khắt khe tại bước này.
+**User Story:** Là người mua, tôi muốn thêm sản phẩm vào giỏ để chuẩn bị đặt hàng. Giỏ hàng đóng vai trò lưu trữ sản phẩm muốn mua. Hệ thống kiểm tra tồn kho ngay tại bước thêm vào giỏ để đảm bảo số lượng không vượt quá `stock` hiện có (kiểu Shopee).
 
 **Ưu tiên:** Must  
 **Truy vết:** FR-05, Mục 4.2, Mục 5.3
 
 **Acceptance Criteria:**
 
-1. **Given** sản phẩm đang kinh doanh, **when** người mua thêm sản phẩm, **then** sản phẩm xuất hiện trong giỏ với số lượng đã chọn (reCAPTCHA chỉ kích hoạt khi có nghi ngờ spam).
+1. **Given** sản phẩm đang kinh doanh, **when** người mua thêm sản phẩm, **then** nếu `quantity <= product.stock`, sản phẩm xuất hiện trong giỏ với số lượng đã chọn (reCAPTCHA chỉ kích hoạt khi có nghi ngờ spam). Nếu vượt tồn kho, hệ thống thông báo số lượng còn lại.
 2. **Given** sản phẩm đã có trong giỏ, **when** người mua thêm lại, **then** hệ thống cộng dồn số lượng.
 3. **Given** Guest chưa đăng nhập có Giỏ cục bộ (Local Cart) và đăng nhập vào tài khoản có Giỏ trực tuyến (Online Cart), **when** đăng nhập thành công, **then** hệ thống sẽ gộp (merge) số lượng các sản phẩm của 2 giỏ lại với nhau.
+4. **Given** sản phẩm đã hết hàng (`stock = 0`), **when** người mua thêm vào giỏ, **then** hệ thống từ chối và hiển thị thông báo hết hàng.
+5. **Given** sản phẩm đã ngừng kinh doanh (`isActive = false`), **when** người mua thêm vào giỏ, **then** hệ thống từ chối.
 
 ### US-CART-02 — Cập nhật giỏ hàng
 
@@ -153,8 +155,9 @@ Các công việc phục vụ vận hành kỹ thuật hoặc đánh giá học 
 
 **Acceptance Criteria:**
 
-1. **Given** sản phẩm đang có trong giỏ, **when** người mua cập nhật số lượng, **then** hệ thống cập nhật số lượng và giá trị giỏ.
+1. **Given** sản phẩm đang có trong giỏ, **when** người mua cập nhật số lượng, **then** nếu `quantity <= product.stock`, hệ thống cập nhật số lượng và giá trị giỏ. Nếu vượt tồn kho, hệ thống thông báo số lượng tối đa có thể mua.
 2. **Given** sản phẩm đang có trong giỏ, **when** người mua chọn xóa, **then** sản phẩm được loại khỏi giỏ.
+3. **Given** sản phẩm bị Admin ngừng bán sau khi đã nằm trong giỏ, **when** người mua cập nhật số lượng, **then** hệ thống từ chối và thông báo sản phẩm đã ngừng kinh doanh.
 
 ## 7. Epic CHECKOUT — Đặt hàng và thanh toán
 

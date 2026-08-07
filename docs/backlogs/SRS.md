@@ -154,7 +154,7 @@ flowchart TD
 | FR-02 | Xác thực Email (OTP) | Gửi OTP qua email (Hiệu lực 15 phút). Nhập đúng -> nâng quyền tự động, bắt buộc đổi mật khẩu. Sai 5 lần -> khóa tính năng gửi lại OTP 15 phút. Wording lỗi: *"Mã OTP không chính xác, vui lòng kiểm tra lại"*. | User (Unv) |
 | FR-03 | Quên / Reset Mật khẩu | Gửi link/OTP reset qua email đăng ký. Hết hạn sau 15p. | Guest, User |
 | FR-04 | Tìm kiếm & Lọc SP | Full-text search, lọc theo giá, category, rating. | All |
-| FR-05 | Quản lý Giỏ hàng | Thêm, xóa, cập nhật số lượng SP. | All (Local), User |
+| FR-05 | Quản lý Giỏ hàng | Thêm, xóa, cập nhật số lượng SP. Số lượng trong giỏ không được vượt quá tồn kho (`stock`) của sản phẩm tại thời điểm thao tác. | All (Local), User |
 | FR-06 | Checkout (Luồng Guest) | Guest chọn SP -> Điền form thông tin -> Hệ thống tự động tạo User ngầm, gửi OTP qua email -> Bắt buộc xác thực OTP & Tự đặt mật khẩu -> Tự động redirect về trang checkout và điền lại thông tin. | All |
 | FR-07 | Thanh toán & Nhận hàng | Khách hàng tuỳ chọn phương thức nhận hàng. Thanh toán VNPay (timeout 30 phút). COD sẽ tự động duyệt thành công dựa trên API Webhook đa kênh từ Shipper (GHN, SPX, Grab, Be...). | User (Ver) |
 | FR-08 | Hủy đơn hàng | Cho phép hủy đơn khi trạng thái là `Pending` hoặc `pending_payment`. | User (Ver) |
