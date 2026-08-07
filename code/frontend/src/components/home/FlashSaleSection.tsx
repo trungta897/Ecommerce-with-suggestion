@@ -1,8 +1,8 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Product } from '@/types';
-import ProductCardVN from '@/components/features/product/ProductCardVN';
+import ProductCard from '@/components/features/product/ProductCard';
 import { Zap, Timer, ChevronLeft, ChevronRight } from '@/components/base/icons';
 
 interface FlashSaleSectionProps {
@@ -189,7 +189,7 @@ export default function FlashSaleSection({ products }: FlashSaleSectionProps) {
                     className="w-[240px] md:w-[280px] flex-shrink-0 select-none"
                     draggable={false}
                   >
-                    <ProductCardVN
+                    <ProductCard
                       product={product}
                       isFlashSale={true}
                       flashSaleData={{ total, sold }}

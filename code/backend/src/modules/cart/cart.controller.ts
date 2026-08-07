@@ -62,6 +62,11 @@ export class CartController {
     return this.cartService.removeItem(req.user.userId, productId);
   }
 
+  @Delete()
+  clearCart(@Req() req: RequestWithUser) {
+    return this.cartService.clearCart(req.user.userId);
+  }
+
   @Post('merge')
   mergeCart(@Req() req: RequestWithUser, @Body() dto: MergeCartDto) {
     return this.cartService.mergeCart(req.user.userId, dto);

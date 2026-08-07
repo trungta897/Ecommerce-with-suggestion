@@ -40,6 +40,13 @@ export function useCart() {
     },
   });
 
+  const clearCartMutation = useMutation({
+    mutationFn: cartService.clearCart,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.cart.all });
+    },
+  });
+
   const addItem = async (item: CartItem) => {
     if (isAuthenticated) {
       await addItemMutation.mutateAsync({
@@ -67,8 +74,12 @@ export function useCart() {
     }
   };
 
-  const clearCart = () => {
-    localCart.clearCart();
+  const clearCart = async () => {
+    if (isAuthenticated) {
+      await clearCartMutation.mutateAsync();
+    } else {
+      localCart.clearCart();
+    }
   };
 
   const getTotalItems = () => {

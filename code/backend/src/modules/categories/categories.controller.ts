@@ -8,6 +8,7 @@ import {
   Param,
   UseGuards,
   Query,
+  Headers,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { CategoriesService } from './categories.service';
@@ -25,14 +26,20 @@ export class CategoriesController {
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.categoriesService.findOne(id);
+  findOne(
+    @Param('id') id: string,
+    @Headers('accept-language') lang: string = 'vi',
+  ) {
+    return this.categoriesService.findOne(id, lang);
   }
 
   @UseGuards(AuthGuard('jwt'))
   @Post()
-  create(@Body() createCategoryDto: CreateCategoryDto) {
-    return this.categoriesService.create(createCategoryDto);
+  create(
+    @Body() createCategoryDto: CreateCategoryDto,
+    @Headers('accept-language') lang: string = 'vi',
+  ) {
+    return this.categoriesService.create(createCategoryDto, lang);
   }
 
   @UseGuards(AuthGuard('jwt'))
@@ -40,13 +47,17 @@ export class CategoriesController {
   update(
     @Param('id') id: string,
     @Body() updateCategoryDto: UpdateCategoryDto,
+    @Headers('accept-language') lang: string = 'vi',
   ) {
-    return this.categoriesService.update(id, updateCategoryDto);
+    return this.categoriesService.update(id, updateCategoryDto, lang);
   }
 
   @UseGuards(AuthGuard('jwt'))
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.categoriesService.remove(id);
+  remove(
+    @Param('id') id: string,
+    @Headers('accept-language') lang: string = 'vi',
+  ) {
+    return this.categoriesService.remove(id, lang);
   }
 }

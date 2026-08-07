@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import {
@@ -16,7 +16,7 @@ import {
   Keyboard,
 } from '@/components/base/icons';
 
-export default function HeroVN() {
+export default function Hero() {
   const t = useTranslations('home.hero');
   const tCat = useTranslations('home.categories');
 

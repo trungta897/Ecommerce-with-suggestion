@@ -4,8 +4,9 @@ import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { ShoppingCart, User, Menu, Sparkles } from '@/components/base/icons';
 import { useCart } from '@/hooks/use-cart';
+import { HEADER_SUGGESTED_KEYWORDS } from '@/constants';
 
-export function HeaderVN() {
+export function Header() {
   const t = useTranslations('common.header');
   const tCommon = useTranslations('common');
   const { getTotalItems } = useCart();
@@ -67,17 +68,15 @@ export function HeaderVN() {
             </div>
             {/* Suggested Keywords */}
             <div className="flex items-center gap-4 px-3 mt-2">
-              {['iphone 16', 'macbook pro', 'laptop gaming', 'samsung s24', 'loa bluetooth'].map(
-                (kw) => (
-                  <Link
-                    key={kw}
-                    href={`/search?q=${kw}`}
-                    className="text-xs font-medium text-ink-2 hover:text-primary transition-colors whitespace-nowrap"
-                  >
-                    {kw}
-                  </Link>
-                )
-              )}
+              {HEADER_SUGGESTED_KEYWORDS.map((kw) => (
+                <Link
+                  key={kw}
+                  href={`/search?q=${kw}`}
+                  className="text-xs font-medium text-ink-2 hover:text-primary transition-colors whitespace-nowrap"
+                >
+                  {kw}
+                </Link>
+              ))}
             </div>
           </div>
 

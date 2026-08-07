@@ -45,6 +45,10 @@ export const cartService = {
     await apiClient.delete(`/cart/${productId}`);
   },
 
+  clearCart: async (): Promise<void> => {
+    await apiClient.delete('/cart');
+  },
+
   mergeCart: async (dto: MergeCartDto): Promise<MergeCartResponse> => {
     const { data } = await apiClient.post<MergeCartResponse>('/cart/merge', dto);
     return data;

@@ -1,9 +1,9 @@
-'use client';
+﻿'use client';
 
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { Product } from '@/types';
-import ProductCardVN from './ProductCardVN';
+import ProductCard from './ProductCard';
 import { ArrowRight } from '@/components/base/icons';
 
 interface CategorySectionProps {
@@ -46,7 +46,7 @@ export default function CategorySection({
 
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-4 mb-6">
         {displayedProducts.map((product) => (
-          <ProductCardVN key={product.id} product={product} />
+          <ProductCard key={product.id} product={product} />
         ))}
       </div>
 

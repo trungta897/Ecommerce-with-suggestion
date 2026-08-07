@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import Link from 'next/link';
 import Image from 'next/image';
@@ -9,7 +9,7 @@ import { useToast } from '@/providers/toast-provider';
 import { formatPrice } from '@/utils/format';
 import { Product } from '@/types';
 
-interface ProductCardVNProps {
+interface ProductCardProps {
   product: Product;
   isFlashSale?: boolean;
   flashSaleData?: {
@@ -18,7 +18,7 @@ interface ProductCardVNProps {
   };
 }
 
-export default function ProductCardVN({ product, isFlashSale, flashSaleData }: ProductCardVNProps) {
+export default function ProductCard({ product, isFlashSale, flashSaleData }: ProductCardProps) {
   const locale = useLocale();
   const t = useTranslations('product');
   const { addItem } = useCart();

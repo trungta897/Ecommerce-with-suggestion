@@ -1,0 +1,13 @@
+{
+  "sidebar": {
+    "ai_assistant": "✨ Trợ lý AI Tìm kiếm",
+    "ai_placeholder": "Bạn cần máy để làm gì? (VD: chơi game, học tập, đồ họa...)",
+    "ai_filter_btn": "Lọc thông minh",
+    "brands": "Hãng sản xuất",
+    "price_range": "Mức giá",
+    "price_under_10": "Dưới 10 triệu",
+    "price_10_20": "10 - 20 triệu",
+    "price_20_30": "20 - 30 triệu",
+    "price_over_30": "Trên 30 triệu"
+  }
+}

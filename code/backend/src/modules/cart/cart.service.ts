@@ -32,10 +32,14 @@ export class CartService {
     const cartKey = `cart:${userId}`;
     const cartData = await this.redisService.hgetall(cartKey);
 
-    if (Object.keys(cartData).length === 0) {
+    if (!cartData['_initialized']) {
       const dbItems = await this.prisma.cartItem.findMany({
         where: { userId },
       });
+
+      await this.redisService.hset(cartKey, '_initialized', '1');
+      cartData['_initialized'] = '1';
+
       for (const item of dbItems) {
         await this.redisService.hset(
           cartKey,
@@ -45,7 +49,11 @@ export class CartService {
         cartData[item.productId] = item.quantity.toString();
       }
     }
-    return cartData;
+
+    const result = { ...cartData };
+    delete result['_initialized'];
+
+    return result;
   }
 
   async getCart(userId: string): Promise<CartItemWithProduct[]> {
@@ -188,6 +196,13 @@ export class CartService {
   ): Promise<{ success: boolean }> {
     const cartKey = `cart:${userId}`;
     await this.redisService.hdel(cartKey, productId);
+    await this.redisService.sadd('cart_updates', userId);
+    return { success: true };
+  }
+
+  async clearCart(userId: string): Promise<{ success: boolean }> {
+    const cartKey = `cart:${userId}`;
+    await this.redisService.del(cartKey);
     await this.redisService.sadd('cart_updates', userId);
     return { success: true };
   }

@@ -1,4 +1,4 @@
-import { useTranslations } from 'next-intl';
+﻿import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import {
   MapPin,
@@ -10,7 +10,7 @@ import {
   Briefcase,
 } from '@/components/base/icons';
 
-export function FooterVN() {
+export function Footer() {
   const t = useTranslations('common.footer');
 
   return (
