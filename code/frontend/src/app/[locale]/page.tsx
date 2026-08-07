@@ -4,7 +4,7 @@ import HeroVN from '@/components/home/HeroVN';
 import FlashSaleSection from '@/components/home/FlashSaleSection';
 import { FeaturesVN } from '@/components/home/FeaturesVN';
 import { NewsletterVN } from '@/components/home/NewsletterVN';
-import CategorySection from '@/components/product/CategorySection';
+import CategorySection from '@/components/features/product/CategorySection';
 import { useProducts } from '@/hooks/use-products';
 import { useTranslations } from 'next-intl';
 import { classifyAllProducts } from '@/utils/classify-product';

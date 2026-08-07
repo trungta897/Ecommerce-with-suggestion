@@ -16,7 +16,7 @@ import { useCart } from '@/hooks/use-cart';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { ProductImageCarousel } from '@/components/product/ProductImageCarousel';
+import { ProductImageCarousel } from '@/components/features/product/ProductImageCarousel';
 import { useToast } from '@/providers/toast-provider';
 import { formatPrice } from '@/utils/format';
 

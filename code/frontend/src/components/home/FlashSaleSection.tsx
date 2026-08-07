@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Product } from '@/types';
-import ProductCardVN from '@/components/product/ProductCardVN';
+import ProductCardVN from '@/components/features/product/ProductCardVN';
 import { Zap, Timer, ChevronLeft, ChevronRight } from '@/components/base/icons';
 
 interface FlashSaleSectionProps {

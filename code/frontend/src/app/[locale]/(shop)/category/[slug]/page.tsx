@@ -2,7 +2,7 @@
 
 import { useTranslations } from 'next-intl';
 import FilterSidebarVN from '@/components/category/FilterSidebarVN';
-import ProductCardVN from '@/components/product/ProductCardVN';
+import ProductCardVN from '@/components/features/product/ProductCardVN';
 import { useProductsByCategory } from '@/hooks/use-products';
 import { FilterIcon } from '@/components/base/icons';
 
