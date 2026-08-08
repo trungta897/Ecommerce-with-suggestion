@@ -21,10 +21,21 @@ apiClient.interceptors.request.use((config) => {
 
 apiClient.interceptors.response.use(
   (response) => response,
-  (error) => {
+  async (error) => {
+    // [ERROR HANDLING] Xử lý lỗi bất đồng bộ và cơ chế fallback/retry
+    const config = error.config;
+    if (!config || !config.retry) {
+      config.retry = 0;
+    }
+
     if (error.response?.status === 401) {
       useAuthStore.getState().logout();
+    } else if (config.retry < 3 && error.response?.status >= 500) {
+      config.retry += 1;
+      await new Promise((resolve) => setTimeout(resolve, 1000 * config.retry));
+      return apiClient(config);
     }
+
     return Promise.reject(error);
   }
 );

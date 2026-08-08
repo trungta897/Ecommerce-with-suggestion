@@ -46,6 +46,7 @@ export class ProductsService {
 
     const [data, total] = await Promise.all([
       // [EAGER LOADING] Sử dụng include để lấy kèm category, tránh lỗi N+1 Query
+      // [PAGINATION] Cơ chế phân trang được áp dụng thông qua skip và take
       this.prisma.product.findMany({
         where,
         include: {

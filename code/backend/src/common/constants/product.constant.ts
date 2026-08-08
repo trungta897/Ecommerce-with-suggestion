@@ -65,7 +65,8 @@ export const CATEGORY_TREE: CategoryNode[] = [
   },
 ];
 
-export const DEFAULT_CATEGORY_SLUG = 'linh-kien-khac';
+export const DEFAULT_CATEGORY_SLUG =
+  process.env.DEFAULT_CATEGORY_SLUG || 'linh-kien-khac';
 
 const LAPTOP_EXCLUSION_TAGS = [
   'Laptop Accessories',

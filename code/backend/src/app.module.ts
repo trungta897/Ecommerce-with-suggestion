@@ -16,6 +16,7 @@ import { CartModule } from './modules/cart/cart.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { DatabaseModule } from './database/database.module';
 import { ConfigModule } from '@nestjs/config';
+import { MailModule } from './modules/mail/mail.module';
 
 @Module({
   imports: [
@@ -49,6 +50,7 @@ import { ConfigModule } from '@nestjs/config';
     ProductsModule,
     LocationsModule,
     CartModule,
+    MailModule,
   ],
   controllers: [AppController],
   providers: [

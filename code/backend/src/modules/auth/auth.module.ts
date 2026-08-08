@@ -5,8 +5,6 @@ import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { GoogleAuthService } from './google-auth.service';
-import { MailModule } from '../mail/mail.module';
-import { RedisModule } from '../redis/redis.module';
 
 @Module({
   imports: [
@@ -17,8 +15,6 @@ import { RedisModule } from '../redis/redis.module';
         expiresIn: '7d', // 7 days
       },
     }),
-    MailModule,
-    RedisModule,
   ],
   controllers: [AuthController],
   providers: [AuthService, JwtStrategy, GoogleAuthService],

@@ -18,6 +18,7 @@ export class CategoriesService {
     private i18n: I18nService,
   ) {}
 
+  // [CACHING] Sử dụng Redis để lưu trữ danh mục
   async findAll(includeInactive = false) {
     const cacheKey = `categories:all:inactive=${includeInactive}`;
     const cached = await this.redis.get(cacheKey);

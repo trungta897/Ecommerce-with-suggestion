@@ -37,6 +37,7 @@ async function bootstrap() {
     new PrismaExceptionFilter(),
   );
 
+  // [SWAGGER] Thiết lập tài liệu API tự động
   const config = new DocumentBuilder()
     .setTitle('E-Commerce API')
     .setDescription('API documentation for the E-Commerce system')
