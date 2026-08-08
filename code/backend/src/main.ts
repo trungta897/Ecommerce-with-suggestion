@@ -2,6 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { I18nValidationExceptionFilter, I18nValidationPipe } from 'nestjs-i18n';
 import cookieParser from 'cookie-parser';
+import { PrismaExceptionFilter } from './common/filters/prisma-exception.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -29,6 +30,7 @@ async function bootstrap() {
     new I18nValidationExceptionFilter({
       detailedErrors: false,
     }),
+    new PrismaExceptionFilter(),
   );
 
   await app.listen(process.env.PORT ?? 8000);

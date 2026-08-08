@@ -1,9 +1,11 @@
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
 import { Package, Clock } from '@/components/base/icons';
 import Link from 'next/link';
+import { formatPrice } from '@/utils/format';
 
 export default function OrderHistoryPage() {
   const t = useTranslations('order');
+  const locale = useLocale();
 
   const statusColors: Record<string, string> = {
     pending: 'bg-yellow-100 text-yellow-800',
@@ -18,11 +20,11 @@ export default function OrderHistoryPage() {
     cancelled: 'bg-red-100 text-red-800',
   };
 
-  // Mock orders
+  // Mock orders (assuming backend returns USD if that's the system currency)
   const mockOrders = [
-    { id: 'ORD-240701', date: '01/07/2026', status: 'completed', total: 29590000, items: 1 },
-    { id: 'ORD-240715', date: '15/07/2026', status: 'delivering', total: 51980000, items: 2 },
-    { id: 'ORD-240720', date: '20/07/2026', status: 'pending', total: 5990000, items: 1 },
+    { id: 'ORD-240701', date: '01/07/2026', status: 'completed', total: 1183, items: 1 },
+    { id: 'ORD-240715', date: '15/07/2026', status: 'delivering', total: 2079, items: 2 },
+    { id: 'ORD-240720', date: '20/07/2026', status: 'pending', total: 239, items: 1 },
   ];
 
   const tabs = ['allOrders', 'pending', 'delivering', 'completed', 'cancelled'] as const;
@@ -75,7 +77,7 @@ export default function OrderHistoryPage() {
                     {t(`statusLabels.${order.status}` as Parameters<typeof t>[0])}
                   </span>
                   <span className="text-lg font-bold text-primary">
-                    {new Intl.NumberFormat('vi-VN').format(order.total)}₫
+                    {formatPrice(order.total, locale)}
                   </span>
                 </div>
               </div>

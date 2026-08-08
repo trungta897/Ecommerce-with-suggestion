@@ -7,7 +7,9 @@ import { useTranslations } from 'next-intl';
 import { loginSchema, LoginFormData } from '@/schemas';
 import { BaseInput, BaseButton } from '@/components/base';
 import { authService } from '@/services/authService';
+import { cartService } from '@/services/cart-service';
 import { useAuthStore } from '@/store';
+import { useCartStore } from '@/store/useCartStore';
 import { useRouter } from 'next/navigation';
 import { GoogleLogin, CredentialResponse } from '@react-oauth/google';
 
@@ -29,6 +31,22 @@ export function LoginForm() {
     try {
       const response = await authService.login(data);
       setAuth(response.user, response.accessToken);
+
+      const localItems = useCartStore.getState().items;
+      if (localItems.length > 0) {
+        useCartStore.getState().setMerging(true);
+        try {
+          await cartService.mergeCart({
+            items: localItems.map((i) => ({ productId: i.product_id, quantity: i.quantity })),
+          });
+          useCartStore.getState().clearCart();
+        } catch (error) {
+          console.error('Merge cart failed', error);
+        } finally {
+          useCartStore.getState().setMerging(false);
+        }
+      }
+
       router.push('/');
     } catch {
       setError('root', { message: t('login_error') || 'Đăng nhập thất bại' });

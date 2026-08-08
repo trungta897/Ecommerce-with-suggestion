@@ -1,8 +1,12 @@
-'use client';
+﻿'use client';
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
+import { ShoppingCart } from '@/components/base/icons';
+import { useCart } from '@/hooks/use-cart';
+import { useToast } from '@/providers/toast-provider';
+import { formatPrice } from '@/utils/format';
 import { Product } from '@/types';
 
 interface ProductCardProps {
@@ -14,8 +18,12 @@ interface ProductCardProps {
   };
 }
 
-export default function ProductCardVN({ product, isFlashSale, flashSaleData }: ProductCardProps) {
+export default function ProductCard({ product, isFlashSale, flashSaleData }: ProductCardProps) {
+  const locale = useLocale();
   const t = useTranslations('product');
+  const { addItem } = useCart();
+  const toast = useToast();
+
   const hasDiscount = !!(
     product.discountPrice && Number(product.discountPrice) < Number(product.price)
   );
@@ -26,8 +34,20 @@ export default function ProductCardVN({ product, isFlashSale, flashSaleData }: P
       ? Math.round(((originalPrice - currentPrice) / originalPrice) * 100)
       : undefined;
 
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
+  const handleAddToCart = (e: React.MouseEvent) => {
+    e.preventDefault();
+    try {
+      addItem({
+        id: product.id,
+        user_id: '',
+        product_id: product.id,
+        quantity: 1,
+        product,
+      });
+      toast.success(t('addedToCartSuccess', { name: product.name }));
+    } catch {
+      toast.error(t('addedToCartFailed'));
+    }
   };
 
   return (
@@ -84,21 +104,25 @@ export default function ProductCardVN({ product, isFlashSale, flashSaleData }: P
         </div>
 
         <div className="mt-2">
-          <div className="flex items-end gap-2 flex-wrap">
-            <div
-              className={
-                isFlashSale
-                  ? 'text-red-600 font-bold text-lg md:text-xl'
-                  : 'text-primary font-bold text-lg md:text-xl'
-              }
-            >
-              {formatPrice(currentPrice)}
+          {/* Price & Add to cart */}
+          <div className="flex items-end justify-between gap-2">
+            <div>
+              <span className="block text-lg font-bold text-primary">
+                {formatPrice(currentPrice, locale)}
+              </span>
+              {originalPrice && (
+                <span className="block text-sm text-muted line-through">
+                  {formatPrice(originalPrice, locale)}
+                </span>
+              )}
             </div>
-            {originalPrice && (
-              <div className="text-muted text-sm line-through mb-0.5">
-                {formatPrice(originalPrice)}
-              </div>
-            )}
+            <button
+              onClick={handleAddToCart}
+              className="p-2 bg-primary/10 text-primary rounded-full hover:bg-primary hover:text-white transition-colors"
+              aria-label={t('addToCart')}
+            >
+              <ShoppingCart size={20} />
+            </button>
           </div>
 
           {isFlashSale && flashSaleData && (
@@ -108,7 +132,10 @@ export default function ProductCardVN({ product, isFlashSale, flashSaleData }: P
                 style={{ width: `${(flashSaleData.sold / flashSaleData.total) * 100}%` }}
               ></div>
               <span className="relative z-10 text-[10px] font-bold text-white shadow-sm flex items-center gap-1">
-                🔥 Còn {flashSaleData.total - flashSaleData.sold}/{flashSaleData.total} suất
+                {t('flashSaleLeft', {
+                  left: flashSaleData.total - flashSaleData.sold,
+                  total: flashSaleData.total,
+                })}
               </span>
             </div>
           )}

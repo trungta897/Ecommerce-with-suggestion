@@ -306,7 +306,13 @@ async function main() {
       );
     }
 
-    const price = typeof item.price === 'number' ? item.price : 0;
+    const rawPrice = item.price;
+    const price =
+      typeof rawPrice === 'number'
+        ? rawPrice
+        : typeof rawPrice === 'string'
+          ? parseFloat(rawPrice) || 0
+          : 0;
     let fullDesc = '';
     if (Array.isArray(item.features) && item.features.length > 0) {
       fullDesc +=

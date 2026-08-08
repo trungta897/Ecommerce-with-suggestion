@@ -1,6 +1,6 @@
 'use client';
 
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { useProduct } from '@/hooks/use-products';
 import {
   Star,
@@ -12,17 +12,19 @@ import {
   ChevronRight,
 } from '@/components/base/icons';
 import { BaseButton } from '@/components/base';
-import { useCartStore } from '@/store';
+import { useCart } from '@/hooks/use-cart';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { ProductImageCarousel } from '@/components/product/ProductImageCarousel';
+import { ProductImageCarousel } from '@/components/features/product/ProductImageCarousel';
 import { useToast } from '@/providers/toast-provider';
+import { formatPrice } from '@/utils/format';
 
 export default function ProductDetailPage({ params }: { params: { id: string } }) {
+  const locale = useLocale();
   const t = useTranslations('product');
   const tCommon = useTranslations('common');
-  const addItem = useCartStore((state) => state.addItem);
+  const { addItem } = useCart();
   const toast = useToast();
   const router = useRouter();
   const [quantity, setQuantity] = useState(1);
@@ -68,29 +70,35 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
       ? Math.round(((originalPrice - currentPrice) / originalPrice) * 100)
       : undefined;
 
-  const handleAddToCart = () => {
-    addItem({
-      id: `${Date.now()}`,
-      user_id: '',
-      product_id: product.id,
-      quantity,
-    });
-    toast.success(t('addedToCartSuccess', { name: product.name }), t('addedToCartTitle'));
+  const handleAddToCart = async () => {
+    try {
+      await addItem({
+        id: `${Date.now()}`,
+        user_id: '',
+        product_id: product.id,
+        quantity,
+        product,
+      });
+      toast.success(t('addedToCartSuccess', { name: product.name }), t('addedToCartTitle'));
+    } catch {
+      toast.error(t('addedToCartFailed'));
+    }
   };
 
-  const handleBuyNow = () => {
-    addItem({
-      id: `${Date.now()}`,
-      user_id: '',
-      product_id: product.id,
-      quantity,
-    });
-    toast.success(t('redirectingToCheckout'), t('addedToCartTitle'));
-    router.push('/checkout');
-  };
-
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
+  const handleBuyNow = async () => {
+    try {
+      await addItem({
+        id: `${Date.now()}`,
+        user_id: '',
+        product_id: product.id,
+        quantity,
+        product,
+      });
+      toast.success(t('redirectingToCheckout'), t('addedToCartTitle'));
+      router.push('/checkout');
+    } catch {
+      toast.error(t('addedToCartFailed'));
+    }
   };
 
   return (
@@ -165,11 +173,13 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
 
           {/* Price */}
           <div className="flex items-end gap-3">
-            <span className="text-3xl font-bold text-primary">{formatPrice(currentPrice)}</span>
+            <span className="text-3xl font-bold text-primary">
+              {formatPrice(currentPrice, locale)}
+            </span>
             {originalPrice && (
               <>
                 <span className="text-lg text-muted line-through">
-                  {formatPrice(originalPrice)}
+                  {formatPrice(originalPrice, locale)}
                 </span>
                 {discountPercentage && (
                   <span className="px-2 py-0.5 bg-red-100 text-red-600 text-sm font-semibold rounded">
@@ -209,8 +219,11 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
                 </button>
                 <span className="w-12 text-center font-semibold">{quantity}</span>
                 <button
-                  onClick={() => setQuantity(quantity + 1)}
+                  onClick={() =>
+                    setQuantity(Math.min(quantity + 1, product.stock || Number.MAX_SAFE_INTEGER))
+                  }
                   className="p-2 hover:bg-paper-2 transition-colors rounded-r-lg"
+                  disabled={quantity >= (product.stock || 0)}
                 >
                   <Plus className="w-4 h-4" />
                 </button>

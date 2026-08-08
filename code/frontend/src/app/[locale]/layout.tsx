@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+﻿import type { Metadata } from 'next';
 import '../globals.css';
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
@@ -7,8 +7,8 @@ import { QueryProvider } from '@/providers/query-provider';
 import { ToastProvider } from '@/providers/toast-provider';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import { ClientLayoutWrapper } from '@/components/layout/ClientLayoutWrapper';
-import { HeaderVN } from '@/components/layout/HeaderVN';
-import { FooterVN } from '@/components/layout/FooterVN';
+import { Header } from '@/components/layout/Header';
+import { Footer } from '@/components/layout/Footer';
 
 import { Plus_Jakarta_Sans, Inter } from 'next/font/google';
 
@@ -50,7 +50,7 @@ export default async function RootLayout({
           >
             <QueryProvider>
               <ToastProvider>
-                <ClientLayoutWrapper header={<HeaderVN />} footer={<FooterVN />}>
+                <ClientLayoutWrapper header={<Header />} footer={<Footer />}>
                   {children}
                 </ClientLayoutWrapper>
               </ToastProvider>

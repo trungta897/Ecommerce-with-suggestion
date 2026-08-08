@@ -1,11 +1,13 @@
-import { useTranslations } from 'next-intl';
+'use client';
+
+import { useLocale, useTranslations } from 'next-intl';
 import { BaseButton, BaseInput } from '@/components/base';
 import { Search, CheckCircle2, XCircle, Clock } from '@/components/base/icons';
+import { formatPrice } from '@/utils/format';
 
 export default function AdminReturnsPage() {
+  const locale = useLocale();
   const t = useTranslations('admin.returns');
-
-  const formatPrice = (price: number) => new Intl.NumberFormat('vi-VN').format(price) + '₫';
 
   const mockReturns = [
     {
@@ -96,7 +98,9 @@ export default function AdminReturnsPage() {
                 </div>
 
                 <div className="flex flex-col items-end gap-3">
-                  <span className="text-lg font-bold text-primary">{formatPrice(ret.amount)}</span>
+                  <span className="text-lg font-bold text-primary">
+                    {formatPrice(ret.amount, locale)}
+                  </span>
                   {ret.status === 'pending' && (
                     <div className="flex gap-2">
                       <BaseButton size="sm" className="gap-1">

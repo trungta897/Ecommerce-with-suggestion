@@ -1,0 +1,13 @@
+{
+  "sidebar": {
+    "ai_assistant": "✨ AI Search Assistant",
+    "ai_placeholder": "What do you need the machine for? (e.g. gaming, study, design...)",
+    "ai_filter_btn": "Smart Filter",
+    "brands": "Brands",
+    "price_range": "Price Range",
+    "price_under_10": "Under 10M",
+    "price_10_20": "10 - 20M",
+    "price_20_30": "20 - 30M",
+    "price_over_30": "Over 30M"
+  }
+}

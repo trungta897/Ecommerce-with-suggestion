@@ -2,6 +2,23 @@ import { Product, Category, ProductImage } from '@/types';
 import { apiClient } from './api-client';
 import { CATEGORY_TREE, CategoryNode } from '@/constants/product';
 
+export interface ProductsResponse {
+  data: Product[];
+  metadata: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
+}
+
+export interface ProductQueryParams {
+  page?: number;
+  limit?: number;
+  categorySlug?: string;
+  all?: boolean;
+}
+
 const getDescendantSlugs = (slug: string): string[] => {
   const slugs = new Set<string>([slug]);
 
@@ -31,13 +48,19 @@ const getDescendantSlugs = (slug: string): string[] => {
   return Array.from(slugs);
 };
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const mapProduct = (p: any): Product => {
-  const images: ProductImage[] = Array.isArray(p.images) ? p.images : [];
+// Instead of any, we use a structural type that captures what we need from the API response
+interface RawProductResponse extends Omit<Partial<Product>, 'price' | 'discountPrice' | 'images'> {
+  price?: string | number;
+  discountPrice?: string | number;
+  images?: unknown;
+}
+
+const mapProduct = (p: RawProductResponse): Product => {
+  const images: ProductImage[] = Array.isArray(p.images) ? (p.images as ProductImage[]) : [];
   const mainImage = images.find((img) => img.isPrimary || img.variant === 'MAIN') || images[0];
 
   return {
-    ...p,
+    ...(p as unknown as Product),
     price: Number(p.price),
     discountPrice: p.discountPrice ? Number(p.discountPrice) : undefined,
     thumbnailUrl: mainImage?.url || '/placeholder.png',
@@ -46,10 +69,20 @@ const mapProduct = (p: any): Product => {
 };
 
 export const productService = {
-  getAll: async (all?: boolean): Promise<Product[]> => {
-    const url = all ? '/products?all=true' : '/products';
+  getAll: async (params?: ProductQueryParams): Promise<ProductsResponse> => {
+    const searchParams = new URLSearchParams();
+    if (params?.page) searchParams.append('page', params.page.toString());
+    if (params?.limit) searchParams.append('limit', params.limit.toString());
+    if (params?.all) searchParams.append('all', 'true');
+    if (params?.categorySlug) searchParams.append('categorySlug', params.categorySlug);
+
+    const url = `/products?${searchParams.toString()}`;
     const { data } = await apiClient.get(url);
-    return Array.isArray(data) ? data.map(mapProduct) : [];
+
+    return {
+      data: Array.isArray(data.data) ? data.data.map(mapProduct) : [],
+      metadata: data.metadata || { total: 0, page: 1, limit: 10, totalPages: 0 },
+    };
   },
 
   getById: async (id: string): Promise<Product | undefined> => {
@@ -61,12 +94,22 @@ export const productService = {
     }
   },
 
-  getByCategory: async (slug: string): Promise<Product[]> => {
-    const { data } = await apiClient.get('/products');
-    const products: Product[] = Array.isArray(data) ? data.map(mapProduct) : [];
+  getBySlug: async (slug: string): Promise<Product | undefined> => {
+    try {
+      const { data } = await apiClient.get(`/products/slug/${slug}`);
+      return data ? mapProduct(data) : undefined;
+    } catch {
+      return undefined;
+    }
+  },
 
+  getByCategory: async (slug: string, params?: ProductQueryParams): Promise<ProductsResponse> => {
     const allowedSlugs = getDescendantSlugs(slug);
-    return products.filter((p) => p.category?.slug && allowedSlugs.includes(p.category.slug));
+
+    return productService.getAll({
+      ...params,
+      categorySlug: allowedSlugs.join(','),
+    });
   },
 
   getCategories: async (): Promise<Category[]> => {

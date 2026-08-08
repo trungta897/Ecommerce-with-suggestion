@@ -1,0 +1,6 @@
+{
+  "PRODUCT_NOT_FOUND": "Product not found.",
+  "PRODUCT_INACTIVE": "Product is no longer available.",
+  "EXCEED_STOCK": "Quantity exceeds available stock ({stock} remaining).",
+  "ITEM_NOT_FOUND": "Item not found in cart."
+}

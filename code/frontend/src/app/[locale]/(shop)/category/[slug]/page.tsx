@@ -1,15 +1,16 @@
-'use client';
+﻿'use client';
 
 import { useTranslations } from 'next-intl';
-import FilterSidebarVN from '@/components/category/FilterSidebarVN';
-import ProductCardVN from '@/components/product/ProductCardVN';
+import FilterSidebar from '@/components/category/FilterSidebar';
+import ProductCard from '@/components/features/product/ProductCard';
 import { useProductsByCategory } from '@/hooks/use-products';
 import { FilterIcon } from '@/components/base/icons';
 
 export default function CategorySlugPage({ params }: { params: { slug: string } }) {
   const t = useTranslations('home.categories');
   const tProduct = useTranslations('product');
-  const { data: categoryProducts = [], isLoading } = useProductsByCategory(params.slug);
+  const { data: productsResponse, isLoading } = useProductsByCategory(params.slug);
+  const categoryProducts = productsResponse?.data || [];
 
   let categoryTitle = params.slug;
   try {
@@ -32,7 +33,7 @@ export default function CategorySlugPage({ params }: { params: { slug: string } 
       <div className="flex flex-col lg:flex-row gap-8">
         {/* Filters Sidebar - Hidden on mobile, can be toggled via button in real app */}
         <aside className="hidden lg:block w-full lg:w-1/4">
-          <FilterSidebarVN />
+          <FilterSidebar />
         </aside>
 
         {/* Product Grid */}
@@ -56,7 +57,7 @@ export default function CategorySlugPage({ params }: { params: { slug: string } 
           {!isLoading && (
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
               {categoryProducts.map((product) => (
-                <ProductCardVN key={product.id} product={product} />
+                <ProductCard key={product.id} product={product} />
               ))}
               {categoryProducts.length === 0 && (
                 <div className="col-span-full py-12 text-center text-muted">

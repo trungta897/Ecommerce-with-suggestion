@@ -7,9 +7,12 @@
   },
   "500": {
     "title": "500",
-    "subtitle": "Đã có lỗi xảy ra!",
-    "description": "Hệ thống đang gặp sự cố. Chúng tôi đang nỗ lực khắc phục trong thời gian sớm nhất.",
-    "retry": "Thử lại"
+    "subtitle": "Ôi không! Đã xảy ra lỗi.",
+    "description": "Xin lỗi, đã có sự cố kỹ thuật xảy ra từ phía chúng tôi. Đội ngũ kỹ thuật đã được thông báo và đang tiến hành khắc phục.",
+    "retry": "Thử lại trang",
+    "back_home": "Về trang chủ",
+    "support": "Liên hệ hỗ trợ",
+    "error_detail": "Chi tiết lỗi (chỉ dành cho nhà phát triển):"
   },
   "429": {
     "title": "429 - Quá Nhiều Yêu Cầu",

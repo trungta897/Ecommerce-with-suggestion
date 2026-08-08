@@ -1,7 +1,7 @@
-import { useTranslations } from 'next-intl';
+﻿import { useTranslations } from 'next-intl';
 import { Mail } from '@/components/base/icons';
 
-export function NewsletterVN() {
+export function Newsletter() {
   const t = useTranslations('home.newsletter');
 
   return (

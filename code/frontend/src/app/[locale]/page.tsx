@@ -1,10 +1,10 @@
-'use client';
+﻿'use client';
 
-import HeroVN from '@/components/home/HeroVN';
+import Hero from '@/components/home/Hero';
 import FlashSaleSection from '@/components/home/FlashSaleSection';
-import { FeaturesVN } from '@/components/home/FeaturesVN';
-import { NewsletterVN } from '@/components/home/NewsletterVN';
-import CategorySection from '@/components/product/CategorySection';
+import { Features } from '@/components/home/Features';
+import { Newsletter } from '@/components/home/Newsletter';
+import CategorySection from '@/components/features/product/CategorySection';
 import { useProducts } from '@/hooks/use-products';
 import { useTranslations } from 'next-intl';
 import { classifyAllProducts } from '@/utils/classify-product';
@@ -22,7 +22,8 @@ import Link from 'next/link';
 export default function Home() {
   const tCat = useTranslations('home.categories');
   const tSec = useTranslations('home.sections');
-  const { data: products = [], isLoading } = useProducts();
+  const { data: productsResponse, isLoading } = useProducts();
+  const products = productsResponse?.data || [];
 
   const categoriesMap = classifyAllProducts(products);
 
@@ -91,7 +92,7 @@ export default function Home() {
 
   return (
     <div className="flex flex-col gap-6 pb-0 pt-6 bg-[#f4f6f8] min-h-screen">
-      <HeroVN />
+      <Hero />
 
       {/* FLASH SALE SECTION */}
       {onSale.length > 0 && <FlashSaleSection products={onSale} />}
@@ -132,7 +133,7 @@ export default function Home() {
         </div>
       </section>
 
-      <FeaturesVN />
+      <Features />
 
       <section className="container mx-auto px-4 lg:px-8 max-w-7xl">
         {isLoading && (
@@ -157,7 +158,7 @@ export default function Home() {
           })}
       </section>
 
-      <NewsletterVN />
+      <Newsletter />
     </div>
   );
 }

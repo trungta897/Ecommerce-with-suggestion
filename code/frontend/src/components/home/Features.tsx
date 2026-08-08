@@ -1,7 +1,7 @@
-import { useTranslations } from 'next-intl';
+﻿import { useTranslations } from 'next-intl';
 import { Truck, RefreshCcw, ShieldCheck, Headset } from '@/components/base/icons';
 
-export function FeaturesVN() {
+export function Features() {
   const t = useTranslations('home.features');
 
   const features = [
