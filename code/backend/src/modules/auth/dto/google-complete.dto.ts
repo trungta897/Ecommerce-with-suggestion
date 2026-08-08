@@ -1,4 +1,12 @@
-import { IsNotEmpty, IsOptional, IsString, MinLength } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  MinLength,
+  MaxLength,
+  Matches,
+} from 'class-validator';
+import { i18nValidationMessage } from 'nestjs-i18n';
 
 export class GoogleCompleteDto {
   @IsNotEmpty()
@@ -6,7 +14,12 @@ export class GoogleCompleteDto {
   tempToken: string;
 
   @IsNotEmpty()
-  @MinLength(6)
+  @IsString()
+  @MinLength(6, { message: i18nValidationMessage('auth.PASSWORD_TOO_SHORT') })
+  @MaxLength(32)
+  @Matches(/^(?=.*[A-Z])(?=.*[a-z])(?=.*[\d\W]).{6,32}$/, {
+    message: i18nValidationMessage('auth.WEAK_PASSWORD'),
+  })
   password: string;
 
   @IsOptional()

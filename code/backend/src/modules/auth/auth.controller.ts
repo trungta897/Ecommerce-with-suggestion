@@ -66,6 +66,7 @@ export class AuthController {
     return result;
   }
 
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @HttpCode(HttpStatus.OK)
   @Post('google')
   async googleAuth(
@@ -83,6 +84,7 @@ export class AuthController {
     return result;
   }
 
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @HttpCode(HttpStatus.OK)
   @Post('google/complete')
   async googleComplete(
