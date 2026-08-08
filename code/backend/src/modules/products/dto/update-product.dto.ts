@@ -7,6 +7,8 @@ import {
   IsArray,
   IsObject,
   Min,
+  MaxLength,
+  IsUrl,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
@@ -17,14 +19,17 @@ export class UpdateProductDto {
 
   @IsString()
   @IsOptional()
+  @MaxLength(255)
   name?: string;
 
   @IsString()
   @IsOptional()
+  @MaxLength(255)
   slug?: string;
 
   @IsString()
   @IsOptional()
+  @MaxLength(255)
   brand?: string;
 
   @IsString()
@@ -33,7 +38,7 @@ export class UpdateProductDto {
 
   @IsOptional()
   @IsObject()
-  specifications?: any;
+  specifications?: Record<string, unknown>;
 
   @IsOptional()
   @IsArray()
@@ -59,6 +64,7 @@ export class UpdateProductDto {
 
   @IsOptional()
   @IsArray()
+  @IsUrl({}, { each: true })
   images?: string[];
 
   @IsBoolean()

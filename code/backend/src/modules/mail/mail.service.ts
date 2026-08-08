@@ -1,12 +1,17 @@
-import { Injectable, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import * as nodemailer from 'nodemailer';
+import { I18nService, I18nContext } from 'nestjs-i18n';
 
 @Injectable()
 export class MailService {
   private transporter: nodemailer.Transporter;
   private readonly logger = new Logger(MailService.name);
 
-  constructor() {
+  constructor(private i18n: I18nService) {
     // For development, you can use ethereal.email or your own Gmail credentials in .env
     this.transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST || 'smtp.gmail.com',
@@ -24,10 +29,11 @@ export class MailService {
     otp: string,
     purpose: 'register' | 'forgot_password',
   ): Promise<void> {
+    const lang = I18nContext.current()?.lang || 'vi';
     const subject =
       purpose === 'register'
-        ? 'Mã xác thực đăng ký tài khoản'
-        : 'Mã xác thực đặt lại mật khẩu';
+        ? this.i18n.t('mail.OTP_SUBJECT_REGISTER', { lang })
+        : this.i18n.t('mail.OTP_SUBJECT_FORGOT', { lang });
     const text = `Mã xác thực của bạn là: ${otp}. Mã này sẽ hết hạn sau 5 phút. Vui lòng không chia sẻ cho bất kỳ ai.`;
     const html = `<div style="font-family: Arial, sans-serif; padding: 20px;">
         <h2 style="color: #333;">Xác thực tài khoản</h2>
@@ -46,7 +52,9 @@ export class MailService {
       this.logger.log(`OTP email sent to ${to} for ${purpose}`);
     } catch (error) {
       this.logger.error(`Failed to send OTP email to ${to}:`, error);
-      throw new Error('Không thể gửi email xác thực');
+      throw new InternalServerErrorException(
+        this.i18n.t('mail.SEND_FAILED', { lang }),
+      );
     }
   }
 }

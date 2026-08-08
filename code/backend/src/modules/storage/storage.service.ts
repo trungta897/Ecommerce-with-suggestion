@@ -7,11 +7,13 @@ import * as streamifier from 'streamifier';
 export class StorageService implements OnModuleInit {
   private readonly logger = new Logger(StorageService.name);
 
+  constructor(private storageConfig: StorageConfig) {}
+
   onModuleInit(): void {
     cloudinary.config({
-      cloud_name: StorageConfig.cloudinaryCloudName,
-      api_key: StorageConfig.cloudinaryApiKey,
-      api_secret: StorageConfig.cloudinaryApiSecret,
+      cloud_name: this.storageConfig.cloudinaryCloudName,
+      api_key: this.storageConfig.cloudinaryApiKey,
+      api_secret: this.storageConfig.cloudinaryApiSecret,
     });
     this.logger.log('Cloudinary configured');
   }

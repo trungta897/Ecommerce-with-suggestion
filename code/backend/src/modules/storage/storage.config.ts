@@ -1,13 +1,19 @@
+import { Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+
+@Injectable()
 export class StorageConfig {
-  static get cloudinaryCloudName(): string {
-    return process.env.CLOUDINARY_CLOUD_NAME || '';
+  constructor(private configService: ConfigService) {}
+
+  get cloudinaryCloudName(): string {
+    return this.configService.get<string>('CLOUDINARY_CLOUD_NAME') || '';
   }
 
-  static get cloudinaryApiKey(): string {
-    return process.env.CLOUDINARY_API_KEY || '';
+  get cloudinaryApiKey(): string {
+    return this.configService.get<string>('CLOUDINARY_API_KEY') || '';
   }
 
-  static get cloudinaryApiSecret(): string {
-    return process.env.CLOUDINARY_API_SECRET || '';
+  get cloudinaryApiSecret(): string {
+    return this.configService.get<string>('CLOUDINARY_API_SECRET') || '';
   }
 }

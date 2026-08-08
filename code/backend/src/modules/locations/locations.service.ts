@@ -1,12 +1,22 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service';
+import { RedisService } from '../redis/redis.service';
+import { Province, District, Ward } from '@prisma/client';
 
 @Injectable()
 export class LocationsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly redis: RedisService,
+  ) {}
 
   async getProvinces() {
-    return await this.prisma.province.findMany({
+    const cacheKey = 'locations:provinces';
+    const cached = await this.redis.get(cacheKey);
+    if (cached)
+      return JSON.parse(cached) as Pick<Province, 'id' | 'name' | 'fullName'>[];
+
+    const data = await this.prisma.province.findMany({
       select: {
         id: true,
         name: true,
@@ -16,10 +26,21 @@ export class LocationsService {
         name: 'asc',
       },
     });
+
+    await this.redis.set(cacheKey, JSON.stringify(data), 86400); // 24h
+    return data;
   }
 
   async getDistricts(provinceId: string) {
-    return await this.prisma.district.findMany({
+    const cacheKey = `locations:districts:${provinceId}`;
+    const cached = await this.redis.get(cacheKey);
+    if (cached)
+      return JSON.parse(cached) as Pick<
+        District,
+        'id' | 'provinceId' | 'name' | 'fullName'
+      >[];
+
+    const data = await this.prisma.district.findMany({
       where: { provinceId },
       select: {
         id: true,
@@ -31,10 +52,21 @@ export class LocationsService {
         name: 'asc',
       },
     });
+
+    await this.redis.set(cacheKey, JSON.stringify(data), 43200); // 12h
+    return data;
   }
 
   async getWards(districtId: string) {
-    return await this.prisma.ward.findMany({
+    const cacheKey = `locations:wards:${districtId}`;
+    const cached = await this.redis.get(cacheKey);
+    if (cached)
+      return JSON.parse(cached) as Pick<
+        Ward,
+        'id' | 'districtId' | 'name' | 'fullName'
+      >[];
+
+    const data = await this.prisma.ward.findMany({
       where: { districtId },
       select: {
         id: true,
@@ -46,5 +78,8 @@ export class LocationsService {
         name: 'asc',
       },
     });
+
+    await this.redis.set(cacheKey, JSON.stringify(data), 43200); // 12h
+    return data;
   }
 }

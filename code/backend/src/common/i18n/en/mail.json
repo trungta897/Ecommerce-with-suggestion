@@ -1,0 +1,5 @@
+{
+  "SEND_FAILED": "Failed to send verification email. Please try again later.",
+  "OTP_SUBJECT_REGISTER": "Account Registration OTP",
+  "OTP_SUBJECT_FORGOT": "Password Recovery OTP"
+}

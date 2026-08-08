@@ -3,6 +3,8 @@ import { AppModule } from './app.module';
 import { I18nValidationExceptionFilter, I18nValidationPipe } from 'nestjs-i18n';
 import cookieParser from 'cookie-parser';
 import { PrismaExceptionFilter } from './common/filters/prisma-exception.filter';
+import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -26,12 +28,23 @@ async function bootstrap() {
     }),
   );
 
+  app.useGlobalInterceptors(new LoggingInterceptor());
+
   app.useGlobalFilters(
     new I18nValidationExceptionFilter({
       detailedErrors: false,
     }),
     new PrismaExceptionFilter(),
   );
+
+  const config = new DocumentBuilder()
+    .setTitle('E-Commerce API')
+    .setDescription('API documentation for the E-Commerce system')
+    .setVersion('1.0')
+    .addBearerAuth()
+    .build();
+  const document = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('api/docs', app, document);
 
   await app.listen(process.env.PORT ?? 8000);
 }

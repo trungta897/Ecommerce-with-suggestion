@@ -1,11 +1,12 @@
 import { Module } from '@nestjs/common';
 import { LocationsController } from './locations.controller';
 import { LocationsService } from './locations.service';
-import { PrismaService } from '../../database/prisma.service';
+import { RedisModule } from '../redis/redis.module';
 
 @Module({
+  imports: [RedisModule],
   controllers: [LocationsController],
-  providers: [LocationsService, PrismaService],
+  providers: [LocationsService],
   exports: [LocationsService],
 })
 export class LocationsModule {}

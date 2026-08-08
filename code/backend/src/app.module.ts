@@ -14,9 +14,15 @@ import { ProductsModule } from './modules/products/products.module';
 import { LocationsModule } from './modules/locations/locations.module';
 import { CartModule } from './modules/cart/cart.module';
 import { ScheduleModule } from '@nestjs/schedule';
+import { DatabaseModule } from './database/database.module';
+import { ConfigModule } from '@nestjs/config';
 
 @Module({
   imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+    }),
+    DatabaseModule,
     ScheduleModule.forRoot(),
     ThrottlerModule.forRoot([
       {

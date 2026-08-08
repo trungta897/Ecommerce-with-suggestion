@@ -45,6 +45,7 @@ export class ProductsService {
     }
 
     const [data, total] = await Promise.all([
+      // [EAGER LOADING] Sử dụng include để lấy kèm category, tránh lỗi N+1 Query
       this.prisma.product.findMany({
         where,
         include: {
@@ -104,7 +105,7 @@ export class ProductsService {
       );
     }
 
-    const createData: Prisma.ProductUncheckedCreateInput = dto;
+    const createData = dto as unknown as Prisma.ProductUncheckedCreateInput;
 
     const result = await this.prisma.product.create({
       data: createData,
@@ -128,7 +129,7 @@ export class ProductsService {
       }
     }
 
-    const updateData: Prisma.ProductUncheckedUpdateInput = dto;
+    const updateData = dto as unknown as Prisma.ProductUncheckedUpdateInput;
 
     const result = await this.prisma.product.update({
       where: { id: existingProduct.id },
