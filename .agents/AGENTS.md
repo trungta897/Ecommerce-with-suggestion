@@ -81,3 +81,7 @@
 **Rule**: Tuyệt đối tránh các lỗi liên quan đến dư thừa khoảng trắng (trailing spaces) hoặc ép kiểu không cần thiết (unnecessary type assertions) trong file code (ví dụ dùng `as any` khi Type đã tương thích).
 - Agent **BẮT BUỘC** phải chạy script để format (ví dụ: `npm run format` hoặc `npx prettier --write <file>`) sau khi sửa đổi file code nếu phát sinh các lỗi liên quan tới định dạng (formatting).
 - Agent **BẮT BUỘC** sử dụng kiểu dữ liệu chặt chẽ và chỉ sử dụng ép kiểu (`as`) khi thực sự cần thiết, hạn chế tối đa việc sử dụng kiểu `any`.
+
+## Safe Execution Mandate
+
+**Rule**: KHÔNG THỰC HIỆN BẤT KỲ HÀNH ĐỘNG DESTRUCTIVE NÀO BAO GỒM XÓA FILE, XÓA DỮ LIỆU, GHI ĐÈ KHÔNG CÓ BACKUP, HOẶC THAY ĐỔI KHÔNG THỂ HOÀN TÁC. KHÔNG NÂNG CẤP, HẠ CẤP HOẶC THAY ĐỔI PHIÊN BẢN FRAMEWORK, THƯ VIỆN, HỆ ĐIỀU HÀNH KHI CHƯA CÓ CHỈ ĐỊNH RÕ RÀNG. LUÔN HỎI LẠI TRƯỚC KHI THỰC HIỆN HÀNH ĐỘNG ẢNH HƯỞNG HỆ THỐNG. ƯU TIÊN GIẢI PHÁP KHÔNG PHÁ VỠ, CÓ THỂ HOÀN TÁC. TẠO BẢN SAO LƯU TRƯỚC KHI CHỈNH SỬA QUAN TRỌNG. KHÔNG TỰ ĐỘNG CHẠY SCRIPT NGUY HIỂM. BẢO TOÀN TÍNH TOÀN VẸN DỮ LIỆU VÀ MÔI TRƯỜNG PHÁT TRIỂN. LUÔN MINH BẠCH VỀ RỦI RO TRƯỚC KHI HÀNH ĐỘNG.
