@@ -6,3 +6,6 @@ pandas>=2.1.0
 numpy>=1.25.0
 scipy>=1.11.2
 pydantic>=2.3.0
+pydantic-settings>=2.0.3
+redis>=5.0.1
+python-dotenv>=1.0.0
