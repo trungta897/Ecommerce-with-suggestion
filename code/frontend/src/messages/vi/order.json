@@ -31,6 +31,19 @@
     "return_requested": "Yêu cầu trả hàng",
     "returned": "Đã trả hàng",
     "refunded": "Đã hoàn tiền",
-    "cancelled": "Đã hủy"
-  }
+    "cancelled": "Đã hủy",
+    "return_rejected": "Từ chối trả hàng"
+  },
+  "returnPolicy": "Chính sách trả hàng",
+  "returnEligibleDays": "Có thể trả hàng trong vòng {days} ngày kể từ ngày hoàn thành",
+  "returnNote": "Ghi chú",
+  "evidenceFiles": "Hình ảnh/Video chứng minh",
+  "uploadEvidence": "Tải lên bằng chứng",
+  "uploadLimitExceeded": "Tối đa {max} file",
+  "fileSizeExceeded": "Dung lượng mỗi file không vượt quá {size}MB",
+  "returnReasonRequired": "Vui lòng chọn lý do trả hàng",
+  "returnSuccess": "Gửi yêu cầu trả hàng thành công",
+  "returnRejectReason": "Lý do từ chối",
+  "supplementEvidence": "Bổ sung chứng minh",
+  "supplementSuccess": "Bổ sung chứng minh thành công"
 }
