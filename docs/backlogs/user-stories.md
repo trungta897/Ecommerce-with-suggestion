@@ -272,15 +272,15 @@ Các công việc phục vụ vận hành kỹ thuật hoặc đánh giá học 
 
 ### US-ORD-03 — Yêu cầu trả hàng với lý do tiêu chuẩn
 
-**User Story:** Là khách hàng, tôi muốn yêu cầu trả sản phẩm trong 7 ngày theo danh sách lý do hợp lệ.
+**User Story:** Là khách hàng, tôi muốn yêu cầu trả sản phẩm trong 14 ngày theo danh sách lý do hợp lệ.
 
 **Ưu tiên:** Should  
 **Truy vết:** FR-09, Mục 3.6.1
 
 **Acceptance Criteria:**
 
-1. **Given** đơn ở `completed` chưa quá 7 ngày, **when** khách hàng yêu cầu trả hàng, **then** bắt buộc phải chọn 1 trong 6 lý do hợp lệ: Bể vỡ/móp méo, Lỗi kỹ thuật, Sai sản phẩm, Thiếu phụ kiện, Hàng đã qua sử dụng, Hàng giả/nhái (Không chấp nhận lý do "Không thích"). Yêu cầu phải đính kèm ảnh/video chứng minh.
-2. **Given** yêu cầu trả hàng bị từ chối (đơn chuyển sang `return_rejected`), **when** khách hàng xem chi tiết đơn, **then** hệ thống hiển thị trạng thái từ chối kèm lý do.
+1. **Given** đơn ở `completed` chưa quá 14 ngày (dựa vào `completedAt`), **when** khách hàng yêu cầu trả hàng, **then** bắt buộc phải chọn 1 trong 9 lý do hợp lệ. Yêu cầu phải đính kèm ảnh/video chứng minh (upload best-effort có thể thất bại một phần).
+2. **Given** yêu cầu trả hàng bị từ chối (đơn chuyển sang `return_rejected`), **when** khách hàng xem chi tiết đơn, **then** hệ thống hiển thị trạng thái từ chối kèm lý do, đây là trạng thái cuối (terminal) và khách hàng không thể yêu cầu trả hàng lần nữa.
 
 ### US-ORD-04 — Tra cứu đơn bằng hai yếu tố
 

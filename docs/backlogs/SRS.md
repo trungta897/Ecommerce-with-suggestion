@@ -158,7 +158,7 @@ flowchart TD
 | FR-06 | Checkout (Luồng Guest) | Guest chọn SP -> Điền form thông tin -> Hệ thống tự động tạo User ngầm, gửi OTP qua email -> Bắt buộc xác thực OTP & Tự đặt mật khẩu -> Tự động redirect về trang checkout và điền lại thông tin. | All |
 | FR-07 | Thanh toán & Nhận hàng | Khách hàng tuỳ chọn phương thức nhận hàng. Thanh toán VNPay (timeout 30 phút). COD sẽ tự động duyệt thành công dựa trên API Webhook đa kênh từ Shipper (GHN, SPX, Grab, Be...). | User (Ver) |
 | FR-08 | Hủy đơn hàng | Cho phép hủy đơn khi trạng thái là `Pending` hoặc `pending_payment`. | User (Ver) |
-| FR-09 | Trả hàng | Gửi yêu cầu trả hàng trong vòng 7 ngày sau khi đơn `Completed`. Bắt buộc chọn 1 trong 6 lý do hợp lệ (Lỗi NSX, Giao sai, Bể vỡ...). Admin có thể duyệt hoặc từ chối (`return_rejected`). | User (Ver) |
+| FR-09 | Trả hàng | Gửi yêu cầu trả hàng trong vòng 14 ngày sau khi đơn `Completed`. Bắt buộc chọn 1 trong 9 lý do hợp lệ (Lỗi NSX, Giao sai, Bể vỡ...). Admin có thể duyệt hoặc từ chối (`return_rejected`). Trạng thái `return_rejected` là trạng thái cuối (terminal), không thể yêu cầu trả hàng lại. | User (Ver) |
 | FR-10 | Realtime Tracking | Xem lịch sử đơn hàng, nhận SSE push trạng thái realtime. | User (Ver) |
 | FR-11 | Đánh giá Sản phẩm | Rate 1-5 sao và comment. *Chỉ đánh giá SP đã nhận hàng.* | User (Ver) |
 | FR-12 | Cá nhân hóa (RecSys) | Nhận danh sách gợi ý trên Home/Detail. | User (Ver) |

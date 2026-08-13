@@ -17,3 +17,9 @@
 - [ ] **4. Quản lý đơn hàng (User) (US-ORD-03)**
   - [ ] API lấy danh sách lịch sử đơn hàng của người dùng
   - [ ] Tích hợp Frontend UI (`profile/orders`)
+
+- [x] **5. Tính năng Trả hàng (Self-Service Return) (US-ORD-03, US-ADM-06, FR-09)**
+  - [x] Khởi tạo DB Schema cho tính năng trả hàng (`completedAt`, enum reasons, audit trail)
+  - [x] Xây dựng Backend Logic (Eligibility check, Request Return, Supplement Evidence)
+  - [x] Xây dựng Backend Admin Logic (Approve Return, Reject Return)
+  - [x] Xây dựng UI Frontend (ReturnModal, Admin Orders, i18n, Services)

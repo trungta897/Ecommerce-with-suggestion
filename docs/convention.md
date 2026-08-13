@@ -90,3 +90,9 @@ Tài liệu này định nghĩa các quy tắc viết code (Coding Conventions) 
 - **CHỜ APPROVE CUỐI CÙNG**: Nếu User có feedback chỉnh sửa Plan, Agent phải cập nhật lại Plan và **tiếp tục chờ User duyệt bản Plan cuối cùng** chứ không được phép tự động chuyển sang bước thực thi (code).
 - Không được phép tự ý sửa file code khi chưa thống nhất kế hoạch hoàn chỉnh.
 - **SAFE EXECUTION MANDATE**: KHÔNG THỰC HIỆN BẤT KỲ HÀNH ĐỘNG DESTRUCTIVE NÀO BAO GỒM XÓA FILE, XÓA DỮ LIỆU, GHI ĐÈ KHÔNG CÓ BACKUP, HOẶC THAY ĐỔI KHÔNG THỂ HOÀN TÁC. KHÔNG NÂNG CẤP, HẠ CẤP HOẶC THAY ĐỔI PHIÊN BẢN FRAMEWORK, THƯ VIỆN, HỆ ĐIỀU HÀNH KHI CHƯA CÓ CHỈ ĐỊNH RÕ RÀNG. LUÔN HỎI LẠI TRƯỚC KHI THỰC HIỆN HÀNH ĐỘNG ẢNH HƯỞNG HỆ THỐNG. ƯU TIÊN GIẢI PHÁP KHÔNG PHÁ VỠ, CÓ THỂ HOÀN TÁC. TẠO BẢN SAO LƯU TRƯỚC KHI CHỈNH SỬA QUAN TRỌNG. KHÔNG TỰ ĐỘNG CHẠY SCRIPT NGUY HIỂM. BẢO TOÀN TÍNH TOÀN VẸN DỮ LIỆU VÀ MÔI TRƯỜNG PHÁT TRIỂN. LUÔN MINH BẠCH VỀ RỦI RO TRƯỚC KHI HÀNH ĐỘNG.
+
+## 9. Xử lý Concurrency & Database Fields Đặc Biệt
+
+- **Cập nhật mảng JSON (ví dụ: `auditTrail`)**: BẮT BUỘC KHÔNG được dùng phương pháp Read-Modify-Write (đọc ra bộ nhớ, push phần tử, lưu lại) để tránh Race Conditions. 
+  - Thay vào đó, BẮT BUỘC phải dùng Raw SQL `JSON_ARRAY_APPEND`. 
+  - Trong project đã có sẵn helper `appendAuditTrail` tại `src/common/utils/audit-trail.util.ts`. Bất kỳ khi nào cần thêm log vào `auditTrail`, phải gọi hàm helper này truyền kèm transaction/client thay vì tự viết raw SQL hay dùng update thông thường của Prisma.
