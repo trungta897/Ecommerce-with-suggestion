@@ -17,6 +17,9 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { DatabaseModule } from './database/database.module';
 import { ConfigModule } from '@nestjs/config';
 import { MailModule } from './modules/mail/mail.module';
+import { OrdersModule } from './modules/orders/orders.module';
+import { PaymentModule } from './modules/payment/payment.module';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 
 @Module({
   imports: [
@@ -25,6 +28,7 @@ import { MailModule } from './modules/mail/mail.module';
     }),
     DatabaseModule,
     ScheduleModule.forRoot(),
+    EventEmitterModule.forRoot(),
     ThrottlerModule.forRoot([
       {
         ttl: 60000,
@@ -51,6 +55,8 @@ import { MailModule } from './modules/mail/mail.module';
     LocationsModule,
     CartModule,
     MailModule,
+    OrdersModule,
+    PaymentModule,
   ],
   controllers: [AppController],
   providers: [

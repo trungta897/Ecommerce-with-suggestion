@@ -56,5 +56,59 @@ export class MailService {
         this.i18n.t('mail.SEND_FAILED', { lang }),
       );
     }
+  async sendReturnApprovedEmail(to: string, orderId: string): Promise<void> {
+    const lang = I18nContext.current()?.lang || 'vi';
+    const subject = this.i18n.t('orders.RETURN_APPROVED_EMAIL_SUBJECT', { lang });
+    
+    // Fallback if translations are missing
+    const finalSubject = subject || `Yêu cầu trả hàng cho đơn ${orderId} đã được duyệt`;
+    
+    const text = `Yêu cầu trả hàng cho đơn ${orderId} của bạn đã được duyệt. Vui lòng đóng gói sản phẩm và gửi về kho.`;
+    const html = `<div style="font-family: Arial, sans-serif; padding: 20px;">
+        <h2 style="color: #333;">Yêu cầu trả hàng đã được duyệt</h2>
+        <p>Yêu cầu trả hàng cho đơn <strong>${orderId}</strong> của bạn đã được duyệt.</p>
+        <p>Vui lòng đóng gói sản phẩm và gửi về kho theo hướng dẫn trên ứng dụng.</p>
+      </div>`;
+
+    try {
+      await this.transporter.sendMail({
+        from: `"E-Commerce App" <${process.env.SMTP_USER}>`,
+        to,
+        subject: finalSubject,
+        text,
+        html,
+      });
+      this.logger.log(`Return approved email sent to ${to} for order ${orderId}`);
+    } catch (error) {
+      this.logger.error(`Failed to send return approved email to ${to}:`, error);
+    }
+  }
+
+  async sendReturnRejectedEmail(to: string, orderId: string, reason: string): Promise<void> {
+    const lang = I18nContext.current()?.lang || 'vi';
+    const subject = this.i18n.t('orders.RETURN_REJECTED_EMAIL_SUBJECT', { lang });
+    
+    const finalSubject = subject || `Yêu cầu trả hàng cho đơn ${orderId} bị từ chối`;
+    
+    const text = `Yêu cầu trả hàng cho đơn ${orderId} của bạn đã bị từ chối. Lý do: ${reason}`;
+    const html = `<div style="font-family: Arial, sans-serif; padding: 20px;">
+        <h2 style="color: #333;">Yêu cầu trả hàng bị từ chối</h2>
+        <p>Rất tiếc, yêu cầu trả hàng cho đơn <strong>${orderId}</strong> của bạn đã bị từ chối.</p>
+        <p><strong>Lý do:</strong> ${reason}</p>
+        <p>Nếu bạn có thắc mắc, vui lòng liên hệ bộ phận hỗ trợ khách hàng.</p>
+      </div>`;
+
+    try {
+      await this.transporter.sendMail({
+        from: `"E-Commerce App" <${process.env.SMTP_USER}>`,
+        to,
+        subject: finalSubject,
+        text,
+        html,
+      });
+      this.logger.log(`Return rejected email sent to ${to} for order ${orderId}`);
+    } catch (error) {
+      this.logger.error(`Failed to send return rejected email to ${to}:`, error);
+    }
   }
 }

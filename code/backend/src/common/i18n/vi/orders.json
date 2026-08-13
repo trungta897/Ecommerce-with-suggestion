@@ -1,0 +1,4 @@
+{
+  "RETURN_APPROVED_EMAIL_SUBJECT": "Yêu cầu trả hàng cho đơn {orderId} đã được duyệt",
+  "RETURN_REJECTED_EMAIL_SUBJECT": "Yêu cầu trả hàng cho đơn {orderId} bị từ chối"
+}
