@@ -75,6 +75,7 @@
 - Bản tổng kết này phải được lưu vào một file nằm trong thư mục `summary/` của dự án.
 - Tên file tổng kết nên chứa timestamp hoặc thông tin commit (ví dụ: `summary_YYYYMMDD_HHMMSS.md`).
 - Nội dung tóm tắt rõ ràng các file đã sửa đổi, tính năng đã thêm hoặc lỗi đã sửa để tiện theo dõi.
+- **BẮT BUỘC** phải viết thêm cả gợi ý `commit message` (theo chuẩn Conventional Commits) cho từng nhóm thay đổi (ví dụ: chia riêng commit cho `docs`, `backend`, `frontend`) bên trong file tổng kết này.
 
 ## Code Formatting & Type Safety Mandate
 
