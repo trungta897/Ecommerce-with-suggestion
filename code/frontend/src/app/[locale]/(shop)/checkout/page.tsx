@@ -1,33 +1,24 @@
 'use client';
 
-import { useLocale, useTranslations } from 'next-intl';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
-import { BaseButton, BaseInput } from '@/components/base';
-import {
-  CreditCard,
-  Truck,
-  CheckCircle2,
-  ChevronRight,
-  Package,
-  MapPin,
-  User,
-  Phone,
-} from '@/components/base/icons';
+import { BaseButton } from '@/components/base';
+import { ChevronRight, Package } from '@/components/base/icons';
 import { useCartStore } from '@/store';
 import { useProducts } from '@/hooks/use-products';
-import Image from 'next/image';
 import Link from 'next/link';
 import { useToast } from '@/providers/toast-provider';
-import { AddressSelector } from '@/components/features/address/AddressSelector';
-import { formatPrice } from '@/utils/format';
 import { orderService } from '@/services/order-service';
 import { paymentService } from '@/services/payment-service';
-import { voucherService } from '@/services/voucher-service';
 
-const STEPS = ['step1', 'step2', 'step3'] as const;
+import { CheckoutSteps } from '@/components/checkout/CheckoutSteps';
+import { ShippingForm } from '@/components/checkout/ShippingForm';
+import { PaymentForm } from '@/components/checkout/PaymentForm';
+import { OrderConfirmation } from '@/components/checkout/OrderConfirmation';
+import { OrderSummarySidebar } from '@/components/checkout/OrderSummarySidebar';
+import { CheckoutSuccess } from '@/components/checkout/CheckoutSuccess';
 
 export default function CheckoutPage() {
-  const locale = useLocale();
   const t = useTranslations('checkout');
   const tCommon = useTranslations('common');
   const toast = useToast();
@@ -61,7 +52,11 @@ export default function CheckoutPage() {
   // Voucher State
   const [voucherCode, setVoucherCode] = useState('');
   const [discount, setDiscount] = useState(0);
-  const [appliedVoucher, setAppliedVoucher] = useState<{ id: string; code: string; type: string } | null>(null);
+  const [appliedVoucher, setAppliedVoucher] = useState<{
+    id: string;
+    code: string;
+    type: string;
+  } | null>(null);
 
   const getProductPrice = (product?: { price: number; discountPrice?: number }) => {
     if (!product) return 0;
@@ -85,41 +80,9 @@ export default function CheckoutPage() {
   const shippingFee = deliveryMethod === 'express' ? 50000 : 30000;
   const total = Math.max(0, subtotal + shippingFee - discount);
 
-  const stepIcons = [Truck, CreditCard, CheckCircle2];
-
-  const handleApplyVoucher = async () => {
-    if (!voucherCode.trim()) {
-      toast.error(t('toast.voucherErrorMessage'), t('toast.voucherErrorTitle'));
-      return;
-    }
-    const code = voucherCode.trim().toUpperCase();
-    
-    try {
-      const response = await voucherService.validateVoucher(code, subtotal);
-      if (response.valid) {
-        setDiscount(response.discountAmount);
-        setAppliedVoucher({
-          id: response.voucherId,
-          code: response.code,
-          type: response.type
-        });
-        toast.success(t('toast.voucherSuccessMessage'), t('toast.voucherSuccessTitle'));
-      }
-    } catch (error: any) {
-      setDiscount(0);
-      setAppliedVoucher(null);
-      const errorMsg = error.response?.data?.message || t('toast.voucherErrorMessage');
-      toast.error(errorMsg, t('toast.voucherErrorTitle'));
-    }
-  };
-
   const handleNextStep = () => {
     if (currentStep === 0) {
-      const newErrors: {
-        fullName?: string;
-        phone?: string;
-        address?: string;
-      } = {};
+      const newErrors: { fullName?: string; phone?: string; address?: string } = {};
       let hasError = false;
 
       if (!shippingData.fullName.trim()) {
@@ -160,7 +123,7 @@ export default function CheckoutPage() {
   const handlePlaceOrder = async () => {
     if (isSubmitting) return;
     setIsSubmitting(true);
-    
+
     try {
       const fullAddress = `${addressDetails.street}, ${addressDetails.wardName}, ${addressDetails.districtName}, ${addressDetails.provinceName}`;
       const body = {
@@ -174,11 +137,11 @@ export default function CheckoutPage() {
 
       const order = await orderService.createOrder(body);
 
-      if (order.paymentMethod === 'COD') {
+      if (order.payment_method === 'COD') {
         toast.success(t('toast.orderSuccessMessage'), t('toast.orderSuccessTitle'));
         setOrderPlaced(true);
         clearCart();
-      } else if (order.paymentMethod === 'ZALOPAY') {
+      } else if (order.payment_method === 'ZALOPAY') {
         const { orderUrl } = await paymentService.createZaloPayOrder(order.id);
         window.location.href = orderUrl;
       }
@@ -190,22 +153,10 @@ export default function CheckoutPage() {
     }
   };
 
+  // --- Render: Early Returns ---
+
   if (orderPlaced) {
-    return (
-      <div className="max-w-lg mx-auto px-4 py-16 text-center">
-        <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-green-100 flex items-center justify-center animate-in zoom-in duration-300">
-          <CheckCircle2 className="w-10 h-10 text-green-600" />
-        </div>
-        <h2 className="text-2xl font-bold text-ink mb-2">{t('orderSuccess')}</h2>
-        <p className="text-ink-2 mb-2">{t('orderSuccessDesc')}</p>
-        <p className="text-lg font-bold text-primary mb-8">
-          #ORD-{Date.now().toString().slice(-6)}
-        </p>
-        <Link href="/">
-          <BaseButton size="lg">{tCommon('home')}</BaseButton>
-        </Link>
-      </div>
-    );
+    return <CheckoutSuccess />;
   }
 
   if (items.length > 0 && isLoading) {
@@ -229,6 +180,8 @@ export default function CheckoutPage() {
     );
   }
 
+  // --- Render: Main Checkout ---
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Breadcrumb */}
@@ -246,244 +199,44 @@ export default function CheckoutPage() {
 
       <h1 className="text-2xl font-bold text-ink mb-8">{t('title')}</h1>
 
-      {/* Step Indicator */}
-      <div className="flex items-center justify-center mb-10">
-        {STEPS.map((step, idx) => {
-          const Icon = stepIcons[idx];
-          return (
-            <div key={step} className="flex items-center">
-              <div
-                className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all ${
-                  idx <= currentStep ? 'bg-primary text-white shadow-md' : 'bg-paper-2 text-ink-2'
-                }`}
-              >
-                <Icon className="w-4 h-4" />
-                <span className="hidden sm:inline">{t(step)}</span>
-              </div>
-              {idx < STEPS.length - 1 && (
-                <div
-                  className={`w-8 sm:w-16 h-0.5 mx-1 transition-colors ${
-                    idx < currentStep ? 'bg-primary' : 'bg-rule'
-                  }`}
-                />
-              )}
-            </div>
-          );
-        })}
-      </div>
+      <CheckoutSteps currentStep={currentStep} />
 
       <div className="flex flex-col lg:flex-row gap-8">
         {/* Form Area */}
         <div className="flex-1">
-          {/* Step 1: Shipping Info */}
           {currentStep === 0 && (
-            <div className="bg-white border border-rule rounded-xl p-6 space-y-6 shadow-sm">
-              <h2 className="text-lg font-bold text-ink mb-4 border-b border-rule pb-3">
-                {t('shippingInfo')}
-              </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <label className="text-sm font-medium text-ink">{t('fullName')} *</label>
-                  <BaseInput
-                    placeholder={t('fullName')}
-                    value={shippingData.fullName}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                      setShippingData((prev) => ({
-                        ...prev,
-                        fullName: e.target.value,
-                      }));
-                      setErrors((prev) => ({ ...prev, fullName: undefined }));
-                    }}
-                    className={errors.fullName ? 'border-red-500' : ''}
-                  />
-                  {errors.fullName && <p className="text-xs text-red-500">{errors.fullName}</p>}
-                </div>
-                <div className="space-y-1">
-                  <label className="text-sm font-medium text-ink">{t('phone')} *</label>
-                  <BaseInput
-                    type="tel"
-                    placeholder="0900 000 000"
-                    value={shippingData.phone}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                      setShippingData((prev) => ({
-                        ...prev,
-                        phone: e.target.value,
-                      }));
-                      setErrors((prev) => ({ ...prev, phone: undefined }));
-                    }}
-                    className={errors.phone ? 'border-red-500' : ''}
-                  />
-                  {errors.phone && <p className="text-xs text-red-500">{errors.phone}</p>}
-                </div>
-
-                <div className="space-y-2 md:col-span-2 pt-2 border-t border-rule">
-                  <label className="text-sm font-bold text-ink">{t('address')} *</label>
-                  <AddressSelector
-                    initialAddress={shippingData.address}
-                    onAddressChange={(fullAddr, details) => {
-                      setShippingData((prev) => ({
-                        ...prev,
-                        address: fullAddr,
-                      }));
-                      setAddressDetails(details);
-                      setErrors((prev) => ({ ...prev, address: undefined }));
-                    }}
-                    error={errors.address}
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-3 pt-4 border-t border-rule">
-                <label className="text-sm font-bold text-ink">{t('deliveryMethod')}</label>
-                {['standard', 'express'].map((method) => (
-                  <label
-                    key={method}
-                    className={`flex items-center gap-3 p-3.5 rounded-xl border cursor-pointer transition-all ${
-                      deliveryMethod === method
-                        ? 'border-primary bg-primary/5 font-medium'
-                        : 'border-rule hover:border-ink-2'
-                    }`}
-                  >
-                    <input
-                      type="radio"
-                      name="delivery"
-                      value={method}
-                      checked={deliveryMethod === method}
-                      onChange={(e) => setDeliveryMethod(e.target.value)}
-                      className="accent-primary w-4 h-4"
-                    />
-                    <span className="text-sm text-ink">{t(method as 'standard' | 'express')}</span>
-                    <span className="text-sm font-semibold text-primary ml-auto">
-                      {method === 'standard' ? t('free') : formatPrice(50000, locale)}
-                    </span>
-                  </label>
-                ))}
-              </div>
-            </div>
+            <ShippingForm
+              shippingData={shippingData}
+              addressDetails={addressDetails}
+              deliveryMethod={deliveryMethod}
+              errors={errors}
+              onShippingDataChange={setShippingData}
+              onAddressDetailsChange={setAddressDetails}
+              onDeliveryMethodChange={setDeliveryMethod}
+              onErrorsChange={setErrors}
+            />
           )}
 
-          {/* Step 2: Payment */}
           {currentStep === 1 && (
-            <div className="bg-white border border-rule rounded-xl p-6 space-y-6 shadow-sm">
-              <h2 className="text-lg font-bold text-ink mb-4 border-b border-rule pb-3">
-                {t('paymentMethod')}
-              </h2>
-              <div className="space-y-3">
-                {(['vnpay', 'cod'] as const).map((method) => (
-                  <label
-                    key={method}
-                    className={`flex items-center gap-3.5 p-4 rounded-xl border cursor-pointer transition-all ${
-                      paymentMethod === method
-                        ? 'border-primary bg-primary/5 font-semibold text-primary'
-                        : 'border-rule hover:border-ink-2 text-ink'
-                    }`}
-                  >
-                    <input
-                      type="radio"
-                      name="payment"
-                      value={method}
-                      checked={paymentMethod === method}
-                      onChange={(e) => setPaymentMethod(e.target.value as 'vnpay' | 'cod')}
-                      className="accent-primary w-4 h-4"
-                    />
-                    <CreditCard className="w-5 h-5 text-ink-2 flex-shrink-0" />
-                    <span className="text-sm">{t(method)}</span>
-                  </label>
-                ))}
-              </div>
-
-              {/* Voucher */}
-              <div className="pt-4 border-t border-rule space-y-3">
-                <label className="text-sm font-bold text-ink block">{t('voucher')}</label>
-                <div className="flex gap-2.5">
-                  <BaseInput
-                    placeholder={t('voucherPlaceholder')}
-                    value={voucherCode}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                      setVoucherCode(e.target.value)
-                    }
-                    className="flex-1 uppercase font-mono"
-                  />
-                  <BaseButton type="button" variant="outline" onClick={handleApplyVoucher}>
-                    {t('applyVoucher')}
-                  </BaseButton>
-                </div>
-                {appliedVoucher && (
-                  <div className="flex justify-between items-center bg-green-50 text-green-700 p-3 rounded-xl border border-green-200">
-                    <span className="text-sm font-medium">
-                      ✓ Đã áp dụng giảm {formatPrice(discount, locale)}
-                    </span>
-                    <button
-                      onClick={() => {
-                        setDiscount(0);
-                        setAppliedVoucher(false);
-                        setVoucherCode('');
-                      }}
-                      className="text-xs font-bold underline"
-                    >
-                      {t('remove')}
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
+            <PaymentForm
+              paymentMethod={paymentMethod}
+              voucherCode={voucherCode}
+              discount={discount}
+              appliedVoucher={appliedVoucher}
+              subtotal={subtotal}
+              onPaymentMethodChange={setPaymentMethod}
+              onVoucherCodeChange={setVoucherCode}
+              onDiscountChange={setDiscount}
+              onAppliedVoucherChange={setAppliedVoucher}
+            />
           )}
 
-          {/* Step 3: Confirm */}
           {currentStep === 2 && (
-            <div className="bg-white border border-rule rounded-xl p-6 space-y-6 shadow-sm">
-              <h2 className="text-lg font-bold text-ink mb-2 border-b border-rule pb-3">
-                {t('step3')}
-              </h2>
-
-              {/* Summary Box of Recipient Info */}
-              <div className="p-4 bg-indigo-50/60 border border-indigo-100 rounded-xl space-y-2 text-xs text-ink-2">
-                <h3 className="font-bold text-sm text-indigo-900 mb-2 flex items-center gap-2">
-                  <User className="w-4 h-4 text-indigo-500" />
-                  {t('shippingInfo')}
-                </h3>
-                <div className="flex items-center gap-2 text-ink">
-                  <User className="w-3.5 h-3.5 text-gray-400" />
-                  <span className="font-semibold">{shippingData.fullName}</span>
-                </div>
-                <div className="flex items-center gap-2 text-ink">
-                  <Phone className="w-3.5 h-3.5 text-gray-400" />
-                  <span>{shippingData.phone}</span>
-                </div>
-                <div className="flex items-start gap-2 text-ink pt-1 border-t border-indigo-100">
-                  <MapPin className="w-3.5 h-3.5 text-indigo-500 mt-0.5 flex-shrink-0" />
-                  <span className="font-medium text-indigo-950">{shippingData.address}</span>
-                </div>
-              </div>
-
-              <div className="space-y-3 pt-2">
-                <h3 className="font-bold text-sm text-ink mb-2">{t('orderSummary')}</h3>
-                {cartProducts.map((item) => (
-                  <div
-                    key={item.product_id}
-                    className="flex items-center gap-3 py-2 border-b border-rule last:border-0"
-                  >
-                    <div className="w-12 h-12 bg-paper-2 rounded-lg flex-shrink-0 relative overflow-hidden flex items-center justify-center">
-                      <Image
-                        src={item.product?.thumbnailUrl || ''}
-                        alt={item.product?.name || ''}
-                        fill
-                        className="object-contain"
-                      />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-ink truncate">{item.product?.name}</p>
-                      <p className="text-xs text-ink-2">x{item.quantity}</p>
-                    </div>
-                    <div className="text-right">
-                      <span className="font-semibold text-primary">
-                        {formatPrice(getProductPrice(item.product) * item.quantity, locale)}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
+            <OrderConfirmation
+              shippingData={shippingData}
+              cartProducts={cartProducts}
+              getProductPrice={getProductPrice}
+            />
           )}
 
           {/* Navigation Buttons */}
@@ -506,37 +259,12 @@ export default function CheckoutPage() {
         </div>
 
         {/* Order Summary Sidebar */}
-        <div className="lg:w-80">
-          <div className="bg-white border border-rule rounded-xl p-6 sticky top-4 shadow-sm">
-            <h3 className="text-lg font-bold text-ink mb-4 border-b border-rule pb-3">
-              {t('orderSummary')}
-            </h3>
-            <div className="space-y-3 text-sm">
-              <div className="flex justify-between items-center">
-                <span className="text-ink-2">{t('subtotal')}</span>
-                <span className="font-semibold">{formatPrice(subtotal, locale)}</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-ink-2">{t('shippingFee')}</span>
-                <span className="font-semibold">{formatPrice(shippingFee, locale)}</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-ink-2">{t('discount')}</span>
-                <span className="font-semibold text-green-600">
-                  -{formatPrice(discount, locale)}
-                </span>
-              </div>
-              <div className="border-t border-rule pt-3 mt-3">
-                <div className="flex justify-between items-center pt-4 border-t border-rule">
-                  <span className="text-base font-bold text-ink">{t('total')}</span>
-                  <span className="text-lg font-bold text-primary">
-                    {formatPrice(total, locale)}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+        <OrderSummarySidebar
+          subtotal={subtotal}
+          shippingFee={shippingFee}
+          discount={discount}
+          total={total}
+        />
       </div>
     </div>
   );
