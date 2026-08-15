@@ -20,6 +20,9 @@ import Link from 'next/link';
 import { useToast } from '@/providers/toast-provider';
 import { AddressSelector } from '@/components/features/address/AddressSelector';
 import { formatPrice } from '@/utils/format';
+import { orderService } from '@/services/order-service';
+import { paymentService } from '@/services/payment-service';
+import { voucherService } from '@/services/voucher-service';
 
 const STEPS = ['step1', 'step2', 'step3'] as const;
 
@@ -35,6 +38,7 @@ export default function CheckoutPage() {
   const [paymentMethod, setPaymentMethod] = useState<'vnpay' | 'cod'>('cod');
   const [deliveryMethod, setDeliveryMethod] = useState('standard');
   const [orderPlaced, setOrderPlaced] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Form State
   const [shippingData, setShippingData] = useState({
@@ -57,7 +61,7 @@ export default function CheckoutPage() {
   // Voucher State
   const [voucherCode, setVoucherCode] = useState('');
   const [discount, setDiscount] = useState(0);
-  const [appliedVoucher, setAppliedVoucher] = useState(false);
+  const [appliedVoucher, setAppliedVoucher] = useState<{ id: string; code: string; type: string } | null>(null);
 
   const getProductPrice = (product?: { price: number; discountPrice?: number }) => {
     if (!product) return 0;
@@ -83,21 +87,29 @@ export default function CheckoutPage() {
 
   const stepIcons = [Truck, CreditCard, CheckCircle2];
 
-  const handleApplyVoucher = () => {
+  const handleApplyVoucher = async () => {
     if (!voucherCode.trim()) {
       toast.error(t('toast.voucherErrorMessage'), t('toast.voucherErrorTitle'));
       return;
     }
     const code = voucherCode.trim().toUpperCase();
-    if (['DATN50', 'WELCOME', 'VIP100', 'FREE50K'].includes(code)) {
-      const discountVal = code === 'VIP100' ? 100000 : 50000;
-      setDiscount(discountVal);
-      setAppliedVoucher(true);
-      toast.success(t('toast.voucherSuccessMessage'), t('toast.voucherSuccessTitle'));
-    } else {
+    
+    try {
+      const response = await voucherService.validateVoucher(code, subtotal);
+      if (response.valid) {
+        setDiscount(response.discountAmount);
+        setAppliedVoucher({
+          id: response.voucherId,
+          code: response.code,
+          type: response.type
+        });
+        toast.success(t('toast.voucherSuccessMessage'), t('toast.voucherSuccessTitle'));
+      }
+    } catch (error: any) {
       setDiscount(0);
-      setAppliedVoucher(false);
-      toast.error(t('toast.voucherErrorMessage'), t('toast.voucherErrorTitle'));
+      setAppliedVoucher(null);
+      const errorMsg = error.response?.data?.message || t('toast.voucherErrorMessage');
+      toast.error(errorMsg, t('toast.voucherErrorTitle'));
     }
   };
 
@@ -145,10 +157,37 @@ export default function CheckoutPage() {
     setCurrentStep((prev) => prev + 1);
   };
 
-  const handlePlaceOrder = () => {
-    toast.success(t('toast.orderSuccessMessage'), t('toast.orderSuccessTitle'));
-    setOrderPlaced(true);
-    clearCart();
+  const handlePlaceOrder = async () => {
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+    
+    try {
+      const fullAddress = `${addressDetails.street}, ${addressDetails.wardName}, ${addressDetails.districtName}, ${addressDetails.provinceName}`;
+      const body = {
+        shippingName: shippingData.fullName,
+        shippingPhone: shippingData.phone,
+        shippingAddress: fullAddress,
+        deliveryMethod,
+        paymentMethod: paymentMethod.toUpperCase(),
+        voucherId: appliedVoucher ? appliedVoucher.id : undefined,
+      };
+
+      const order = await orderService.createOrder(body);
+
+      if (order.paymentMethod === 'COD') {
+        toast.success(t('toast.orderSuccessMessage'), t('toast.orderSuccessTitle'));
+        setOrderPlaced(true);
+        clearCart();
+      } else if (order.paymentMethod === 'ZALOPAY') {
+        const { orderUrl } = await paymentService.createZaloPayOrder(order.id);
+        window.location.href = orderUrl;
+      }
+    } catch (error) {
+      console.error('Checkout failed:', error);
+      toast.error(tCommon('error'));
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   if (orderPlaced) {
@@ -459,7 +498,9 @@ export default function CheckoutPage() {
             {currentStep < 2 ? (
               <BaseButton onClick={handleNextStep}>{t('next')}</BaseButton>
             ) : (
-              <BaseButton onClick={handlePlaceOrder}>{t('placeOrder')}</BaseButton>
+              <BaseButton onClick={handlePlaceOrder} disabled={isSubmitting}>
+                {isSubmitting ? tCommon('loading') : t('placeOrder')}
+              </BaseButton>
             )}
           </div>
         </div>

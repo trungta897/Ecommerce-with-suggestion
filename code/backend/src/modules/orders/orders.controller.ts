@@ -10,6 +10,7 @@ import {
   Patch,
   UseInterceptors,
   UploadedFiles,
+  Query,
 } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { RequestReturnDto } from './dto/request-return.dto';
@@ -45,6 +46,38 @@ export class OrdersController {
     const userId = req.user.id;
     return this.ordersService.payAgain(userId, orderId);
   }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Get('my')
+  async getMyOrders(
+    @Req() req: Request & { user: { id: string } },
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ) {
+    const userId = req.user.id;
+    return this.ordersService.getUserOrders(userId, Number(page) || 1, Number(limit) || 10);
+  }
+
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN, UserRole.EMPLOYEE)
+  @Get('admin')
+  async getAdminOrders(
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('status') status?: string,
+  ) {
+    return this.ordersService.getAdminOrders(Number(page) || 1, Number(limit) || 10, status);
+  }
+
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN, UserRole.EMPLOYEE)
+  @Patch(':id/status')
+  async updateOrderStatus(
+    @Param('id') orderId: string,
+    @Body('status') status: string,
+  ) {
+    return this.ordersService.updateOrderStatus(orderId, status);
+  }
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
   @Post(':id/refund')
@@ -57,7 +90,7 @@ export class OrdersController {
   }
 
   @UseGuards(AuthGuard('jwt'), RolesGuard)
-  @Roles(UserRole.ADMIN)
+  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
   @Post(':id/force-confirm')
   async forceConfirmPayment(
     @Req() req: Request & { user: { id: string } },
@@ -101,7 +134,7 @@ export class OrdersController {
   }
 
   @UseGuards(AuthGuard('jwt'), RolesGuard)
-  @Roles(UserRole.ADMIN)
+  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN, UserRole.EMPLOYEE)
   @Post(':id/return/approve')
   async approveReturn(
     @Req() req: Request & { user: { id: string } },
@@ -111,7 +144,7 @@ export class OrdersController {
   }
 
   @UseGuards(AuthGuard('jwt'), RolesGuard)
-  @Roles(UserRole.ADMIN)
+  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN, UserRole.EMPLOYEE)
   @Post(':id/return/reject')
   async rejectReturn(
     @Req() req: Request & { user: { id: string } },

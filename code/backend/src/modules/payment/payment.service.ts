@@ -6,20 +6,81 @@ import {
 import { PrismaService } from '../../database/prisma.service';
 import { OrderStatus, PaymentStatus } from '@prisma/client';
 import { appendAuditTrail } from '../../common/utils/audit-trail.util';
+import { ZaloPayService } from './zalopay.service';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 @Injectable()
 export class PaymentService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly zaloPayService: ZaloPayService,
+    private readonly eventEmitter: EventEmitter2,
+  ) {}
 
-  // 1. ZaloPay Webhook (Mocked for architecture demo)
-  async handleZaloPayWebhook(_data: any) {
-    // Layer 1: Verify MAC (Mocked)
-    // Layer 2: Amount Match
-    // Layer 3: Idempotency (check if paymentStatus is already COMPLETED)
-    // Layer 4: Late IPN (Orphaned Payment)
+  // 1. ZaloPay Webhook (4-Layer Protection)
+  async handleZaloPayWebhook(body: { data: string; mac: string }) {
+    // Lớp 1: Verify MAC
+    const isValid = this.zaloPayService.verifyCallback(body.data, body.mac);
+    if (!isValid) {
+      return { return_code: -1, return_message: 'Invalid MAC' };
+    }
+
+    const callbackData = JSON.parse(body.data);
+    const appTransId: string = callbackData.app_trans_id;
+
+    // Lấy đơn hàng theo Khớp Chính Xác
+    const order = await this.prisma.order.findFirst({
+      where: { paymentGatewayTxnId: appTransId },
+    });
+    
+    if (!order) {
+      return { return_code: -1, return_message: 'Order not found' };
+    }
+
+    // Lớp 2: Amount Match
+    const expectedAmount = Number(order.totalAmount);
+    if (callbackData.amount !== expectedAmount) {
+      return { return_code: -1, return_message: 'Amount mismatch' };
+    }
+
+    // Lớp 3 & 4: Atomic Idempotency & Late IPN
+    await this.prisma.$transaction(async (tx) => {
+      if (order.status === OrderStatus.CANCELLED) {
+        // Late IPN: Tiền về khi đơn đã timeout huỷ
+        const updated = await tx.order.updateMany({
+          where: { id: order.id, paymentStatus: PaymentStatus.PENDING },
+          data: {
+            paymentStatus: PaymentStatus.COMPLETED,
+            isOrphanedPayment: true,
+            paymentGatewayTransNo: String(callbackData.zp_trans_id),
+            paymentGatewayPayDate: String(callbackData.server_time),
+          },
+        });
+        
+        if (updated.count > 0) {
+          this.eventEmitter.emit('payment.orphaned', { orderId: order.id });
+        }
+      } else if (order.status === OrderStatus.PENDING_PAYMENT) {
+        // Normal success IPN
+        const updated = await tx.order.updateMany({
+          where: { id: order.id, paymentStatus: PaymentStatus.PENDING },
+          data: {
+            paymentStatus: PaymentStatus.COMPLETED,
+            status: OrderStatus.PENDING,
+            paymentGatewayTransNo: String(callbackData.zp_trans_id),
+            paymentGatewayPayDate: String(callbackData.server_time),
+          },
+        });
+
+        if (updated.count > 0) {
+          this.eventEmitter.emit('order.paid', { orderId: order.id });
+        }
+      }
+      // Nếu updateMany.count === 0, tức là đã xử lý trước đó rồi (Idempotency)
+    });
+
     return { return_code: 1, return_message: 'success' };
   }
-
   // 2. Stripe Webhook (Mocked)
   async handleStripeWebhook(_data: any) {
     return { received: true };

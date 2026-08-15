@@ -205,6 +205,53 @@ export class OrdersService {
     }
   }
 
+  async getUserOrders(userId: string, page: number = 1, limit: number = 10) {
+    const skip = (page - 1) * limit;
+    const [orders, total] = await Promise.all([
+      this.prisma.order.findMany({
+        where: { userId },
+        include: { items: { include: { product: true } } },
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
+      }),
+      this.prisma.order.count({ where: { userId } }),
+    ]);
+
+    return { data: orders, total, page, limit, totalPages: Math.ceil(total / limit) };
+  }
+
+  async getAdminOrders(page: number = 1, limit: number = 10, status?: string) {
+    const skip = (page - 1) * limit;
+    const whereCondition = status ? { status: status as OrderStatus } : {};
+    
+    const [orders, total] = await Promise.all([
+      this.prisma.order.findMany({
+        where: whereCondition,
+        include: { user: { select: { id: true, name: true, email: true } }, items: { include: { product: true } } },
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
+      }),
+      this.prisma.order.count({ where: whereCondition }),
+    ]);
+
+    return { data: orders, total, page, limit, totalPages: Math.ceil(total / limit) };
+  }
+
+  async updateOrderStatus(orderId: string, status: string) {
+    if (!Object.values(OrderStatus).includes(status as OrderStatus)) {
+      throw new BadRequestException('Trạng thái không hợp lệ');
+    }
+    
+    const updated = await this.prisma.order.update({
+      where: { id: orderId },
+      data: { status: status as OrderStatus },
+    });
+    
+    return updated;
+  }
+
   async refundOrder(orderId: string, adminId: string) {
     // 1. Atomic Claim đơn hàng
     const claimResult = await this.prisma.order.updateMany({

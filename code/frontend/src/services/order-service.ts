@@ -17,7 +17,21 @@ export interface RejectReturnDto {
   rejectReason: string;
 }
 
+export interface CreateOrderDto {
+  shippingName: string;
+  shippingAddress: string;
+  shippingPhone: string;
+  deliveryMethod?: string;
+  paymentMethod: string;
+  voucherId?: string;
+}
+
 export const orderService = {
+  async createOrder(dto: CreateOrderDto): Promise<Order> {
+    const { data } = await apiClient.post<{ data: Order }>('/orders', dto);
+    return data.data;
+  },
+
   async getOrderById(orderId: string): Promise<Order> {
     const { data } = await apiClient.get<{ data: Order }>(`/orders/${orderId}`);
     return data.data;

@@ -134,11 +134,11 @@ model Order {
   returnRequestedAt  DateTime?
   returnResolvedAt   DateTime?
   returnRejectReason String?            @db.Text
-  auditTrail         Json?
-  vnpTxnRef          String?
-  vnpTransactionNo   String?
-  vnpPayDate         String?
-  voucherId          String?
+  auditTrail            Json?
+  paymentGatewayTxnId   String?
+  paymentGatewayTransNo String?
+  paymentGatewayPayDate String?
+  voucherId             String?
   createdAt          DateTime           @default(now())
   updatedAt          DateTime           @updatedAt
   items              OrderItem[]
@@ -287,6 +287,7 @@ model Wishlist {
 
 enum UserRole {
   CUSTOMER
+  EMPLOYEE
   ADMIN
   SUPER_ADMIN
 }

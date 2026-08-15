@@ -20,6 +20,7 @@ import { MailModule } from './modules/mail/mail.module';
 import { OrdersModule } from './modules/orders/orders.module';
 import { PaymentModule } from './modules/payment/payment.module';
 import { EventEmitterModule } from '@nestjs/event-emitter';
+import { VouchersModule } from './modules/vouchers/vouchers.module';
 
 @Module({
   imports: [
@@ -57,6 +58,7 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
     MailModule,
     OrdersModule,
     PaymentModule,
+    VouchersModule,
   ],
   controllers: [AppController],
   providers: [
