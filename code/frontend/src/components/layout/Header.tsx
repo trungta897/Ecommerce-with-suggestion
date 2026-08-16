@@ -24,14 +24,12 @@ export function Header() {
             <p className="text-sm font-medium text-primary-foreground">{t('promo_text')}</p>
           </div>
           <div className="flex items-center gap-4">
-            {!isLoggedIn && (
-              <Link
-                href="/login"
-                className="text-sm font-medium text-primary-foreground transition hover:text-gray-200"
-              >
-                {t('sign_in')}
-              </Link>
-            )}
+            <span className="text-sm font-medium text-primary-foreground">
+              Hotline: 1900 6868
+            </span>
+            <span className="text-sm font-medium text-primary-foreground hidden sm:inline">
+              Email: support@datn.com
+            </span>
           </div>
         </div>
       </div>

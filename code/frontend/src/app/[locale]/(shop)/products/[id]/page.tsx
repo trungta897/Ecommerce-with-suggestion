@@ -1,7 +1,7 @@
 'use client';
 
 import { useLocale, useTranslations } from 'next-intl';
-import { useProduct } from '@/hooks/use-products';
+import { useProductBySlug } from '@/hooks/use-products';
 import {
   Star,
   Minus,
@@ -31,7 +31,7 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
   const [quantity, setQuantity] = useState(1);
   const [activeTab, setActiveTab] = useState<'description' | 'reviews'>('description');
 
-  const { data: product, isLoading } = useProduct(params.id);
+  const { data: product, isLoading } = useProductBySlug(params.id);
 
   if (isLoading) {
     return (
@@ -80,7 +80,10 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
         quantity,
         product,
       });
-      toast.success(t('addedToCartSuccess', { name: product.name }), t('addedToCartTitle'));
+      toast.success(t('addedToCartSuccess'), t('addedToCartTitle'), undefined, {
+        label: tCommon('viewCart'),
+        onClick: () => router.push('/cart')
+      });
     } catch {
       toast.error(t('addedToCartFailed'));
     }
