@@ -21,6 +21,7 @@ import { OrdersModule } from './modules/orders/orders.module';
 import { PaymentModule } from './modules/payment/payment.module';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { VouchersModule } from './modules/vouchers/vouchers.module';
+import { ReviewsModule } from './modules/reviews/reviews.module';
 
 @Module({
   imports: [
@@ -59,6 +60,7 @@ import { VouchersModule } from './modules/vouchers/vouchers.module';
     OrdersModule,
     PaymentModule,
     VouchersModule,
+    ReviewsModule,
   ],
   controllers: [AppController],
   providers: [

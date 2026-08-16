@@ -1,4 +1,15 @@
 {
   "RETURN_APPROVED_EMAIL_SUBJECT": "Yêu cầu trả hàng cho đơn {orderId} đã được duyệt",
-  "RETURN_REJECTED_EMAIL_SUBJECT": "Yêu cầu trả hàng cho đơn {orderId} bị từ chối"
+  "RETURN_REJECTED_EMAIL_SUBJECT": "Yêu cầu trả hàng cho đơn {orderId} bị từ chối",
+  "error": {
+    "notFound": "Đơn hàng không tồn tại",
+    "cartEmpty": "Giỏ hàng trống",
+    "unauthorized": "Không có quyền truy cập",
+    "phoneMismatch": "Số điện thoại không khớp với đơn hàng",
+    "missingPhone": "Vui lòng cung cấp số điện thoại",
+    "authMismatch": "Thông tin xác thực không khớp",
+    "invalidStatus": "Trạng thái không hợp lệ",
+    "invalidFileFormat": "Định dạng file không hợp lệ",
+    "missingEvidence": "Vui lòng cung cấp file chứng minh"
+  }
 }

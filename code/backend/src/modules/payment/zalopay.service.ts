@@ -9,7 +9,12 @@ export class ZaloPayService {
 
   constructor(private config: ConfigService) {}
 
-  async createOrder(orderId: string, appTransId: string, amount: number, description: string) {
+  async createOrder(
+    orderId: string,
+    appTransId: string,
+    amount: number,
+    description: string,
+  ) {
     const appId = this.config.get<string>('ZALOPAY_APP_ID');
     const key1 = this.config.get<string>('ZALOPAY_KEY1');
     const endpointCreate = this.config.get<string>('ZALOPAY_ENDPOINT_CREATE');
@@ -45,19 +50,33 @@ export class ZaloPayService {
     };
 
     try {
-      const response = await axios.post(endpointCreate, null, { params: payload });
+      const response = await axios.post(endpointCreate, null, {
+        params: payload,
+      });
 
-      if (response.data.return_code !== 1) {
-        this.logger.error(`ZaloPay create order error: ${JSON.stringify(response.data)}`);
-        throw new BadRequestException(`ZaloPay error: ${response.data.return_message}`);
+      const responseData = response.data as {
+        return_code: number;
+        return_message: string;
+        order_url: string;
+      };
+
+      if (responseData.return_code !== 1) {
+        this.logger.error(
+          `ZaloPay create order error: ${JSON.stringify(responseData)}`,
+        );
+        throw new BadRequestException(
+          `ZaloPay error: ${responseData.return_message}`,
+        );
       }
 
       return {
-        orderUrl: response.data.order_url,
+        orderUrl: responseData.order_url,
         appTransId,
       };
-    } catch (error: any) {
-      this.logger.error(`ZaloPay API request failed: ${error.message}`);
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      this.logger.error(`ZaloPay API request failed: ${errorMessage}`);
       throw new BadRequestException('Failed to connect to ZaloPay');
     }
   }

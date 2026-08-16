@@ -5,6 +5,7 @@ import {
   HttpCode,
   HttpStatus,
   Res,
+  BadRequestException,
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import type { Response } from 'express';
@@ -111,6 +112,22 @@ export class AuthController {
       sameSite: 'lax',
     });
     return this.authService.logout();
+  }
+
+  @Post('phone/login')
+  async requestPhoneOtp(@Body('phone') phone: string) {
+    if (!phone) {
+      throw new BadRequestException('Số điện thoại là bắt buộc');
+    }
+    return this.authService.requestPhoneOtp(phone);
+  }
+
+  @Post('phone/verify')
+  async verifyPhoneOtp(@Body('phone') phone: string, @Body('otp') otp: string) {
+    if (!phone || !otp) {
+      throw new BadRequestException('Số điện thoại và mã OTP là bắt buộc');
+    }
+    return this.authService.verifyPhoneOtp(phone, otp);
   }
 
   private setAuthCookie(res: Response, accessToken: string) {

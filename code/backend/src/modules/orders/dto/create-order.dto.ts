@@ -25,4 +25,11 @@ export class CreateOrderDto {
   @IsOptional()
   @IsString()
   voucherId?: string;
+
+  @IsOptional()
+  @IsString()
+  email?: string;
+
+  @IsOptional()
+  items?: { productId: string; quantity: number }[];
 }

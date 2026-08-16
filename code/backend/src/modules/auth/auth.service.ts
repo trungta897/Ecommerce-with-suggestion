@@ -194,4 +194,92 @@ export class AuthService {
       message: this.i18n.t('auth.LOGOUT_SUCCESS', { lang }),
     };
   }
+
+  async requestPhoneOtp(phone: string) {
+    // Check if user is blocked or something if we want, but for now we just send OTP
+    const user = await this.prisma.user.findUnique({
+      where: { phone },
+    });
+
+    if (user && !user.isActive) {
+      throw new BadRequestException('Tài khoản của bạn đã bị khóa');
+    }
+
+    const otp = this.generateOtp();
+    await this.redisService.set(`OTP:PHONE:${phone}`, otp, 300); // 5 mins
+
+    // TODO: Actually call SMS API here
+    // For now, mock it with console log
+    console.log(`[MOCK SMS] Gửi mã OTP ${otp} đến số điện thoại ${phone}`);
+
+    return {
+      message: 'Mã OTP đã được gửi đến số điện thoại của bạn',
+      phone,
+    };
+  }
+
+  async verifyPhoneOtp(phone: string, otp: string) {
+    const redisKey = `OTP:PHONE:${phone}`;
+    const failKey = `OTP:FAIL_PHONE:${phone}`;
+
+    const fails = await this.redisService.get(failKey);
+    if (fails && parseInt(fails, 10) >= 3) {
+      throw new BadRequestException(
+        'Bạn đã nhập sai mã OTP quá nhiều lần. Vui lòng thử lại sau.',
+      );
+    }
+
+    const savedOtp = await this.redisService.get(redisKey);
+    if (!savedOtp) {
+      throw new BadRequestException('Mã OTP đã hết hạn hoặc không tồn tại');
+    }
+
+    if (savedOtp !== otp) {
+      await this.redisService.incr(failKey);
+      throw new BadRequestException('Mã OTP không chính xác');
+    }
+
+    // OTP is valid. Now find or create user.
+    let user = await this.prisma.user.findUnique({
+      where: { phone },
+    });
+
+    if (!user) {
+      // Create new customer
+      user = await this.prisma.user.create({
+        data: {
+          phone,
+          email: `${phone}@placeholder.local`, // Mock email since it is @unique in schema. Wait, email is unique. It should be unique.
+          fullName: 'Khách Hàng',
+          passwordHash: '', // No password
+          isVerified: true,
+          role: 'CUSTOMER',
+        },
+      });
+    }
+
+    // Clear OTP
+    await this.redisService.del(redisKey);
+    await this.redisService.del(failKey);
+
+    // Generate JWT
+    const payload = {
+      sub: user.id,
+      email: user.email,
+      phone: user.phone,
+      role: user.role,
+    };
+    const accessToken = this.jwtService.sign(payload);
+
+    return {
+      accessToken,
+      user: {
+        id: user.id,
+        email: user.email,
+        phone: user.phone,
+        fullName: user.fullName,
+        role: user.role,
+      },
+    };
+  }
 }

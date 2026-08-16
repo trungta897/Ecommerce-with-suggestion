@@ -56,13 +56,17 @@ export class MailService {
         this.i18n.t('mail.SEND_FAILED', { lang }),
       );
     }
+  }
   async sendReturnApprovedEmail(to: string, orderId: string): Promise<void> {
     const lang = I18nContext.current()?.lang || 'vi';
-    const subject = this.i18n.t('orders.RETURN_APPROVED_EMAIL_SUBJECT', { lang });
-    
+    const subject = this.i18n.t('orders.RETURN_APPROVED_EMAIL_SUBJECT', {
+      lang,
+    });
+
     // Fallback if translations are missing
-    const finalSubject = subject || `Yêu cầu trả hàng cho đơn ${orderId} đã được duyệt`;
-    
+    const finalSubject =
+      subject || `Yêu cầu trả hàng cho đơn ${orderId} đã được duyệt`;
+
     const text = `Yêu cầu trả hàng cho đơn ${orderId} của bạn đã được duyệt. Vui lòng đóng gói sản phẩm và gửi về kho.`;
     const html = `<div style="font-family: Arial, sans-serif; padding: 20px;">
         <h2 style="color: #333;">Yêu cầu trả hàng đã được duyệt</h2>
@@ -78,18 +82,30 @@ export class MailService {
         text,
         html,
       });
-      this.logger.log(`Return approved email sent to ${to} for order ${orderId}`);
+      this.logger.log(
+        `Return approved email sent to ${to} for order ${orderId}`,
+      );
     } catch (error) {
-      this.logger.error(`Failed to send return approved email to ${to}:`, error);
+      this.logger.error(
+        `Failed to send return approved email to ${to}:`,
+        error,
+      );
     }
   }
 
-  async sendReturnRejectedEmail(to: string, orderId: string, reason: string): Promise<void> {
+  async sendReturnRejectedEmail(
+    to: string,
+    orderId: string,
+    reason: string,
+  ): Promise<void> {
     const lang = I18nContext.current()?.lang || 'vi';
-    const subject = this.i18n.t('orders.RETURN_REJECTED_EMAIL_SUBJECT', { lang });
-    
-    const finalSubject = subject || `Yêu cầu trả hàng cho đơn ${orderId} bị từ chối`;
-    
+    const subject = this.i18n.t('orders.RETURN_REJECTED_EMAIL_SUBJECT', {
+      lang,
+    });
+
+    const finalSubject =
+      subject || `Yêu cầu trả hàng cho đơn ${orderId} bị từ chối`;
+
     const text = `Yêu cầu trả hàng cho đơn ${orderId} của bạn đã bị từ chối. Lý do: ${reason}`;
     const html = `<div style="font-family: Arial, sans-serif; padding: 20px;">
         <h2 style="color: #333;">Yêu cầu trả hàng bị từ chối</h2>
@@ -106,9 +122,14 @@ export class MailService {
         text,
         html,
       });
-      this.logger.log(`Return rejected email sent to ${to} for order ${orderId}`);
+      this.logger.log(
+        `Return rejected email sent to ${to} for order ${orderId}`,
+      );
     } catch (error) {
-      this.logger.error(`Failed to send return rejected email to ${to}:`, error);
+      this.logger.error(
+        `Failed to send return rejected email to ${to}:`,
+        error,
+      );
     }
   }
 }

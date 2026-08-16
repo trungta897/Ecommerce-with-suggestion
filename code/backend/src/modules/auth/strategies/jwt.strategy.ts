@@ -6,7 +6,8 @@ import { Request } from 'express';
 
 interface JwtPayload {
   sub: string;
-  email: string;
+  email?: string;
+  phone?: string;
   role: UserRole;
 }
 
@@ -25,6 +26,12 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 
   validate(payload: JwtPayload) {
-    return { userId: payload.sub, email: payload.email, role: payload.role };
+    return {
+      id: payload.sub,
+      userId: payload.sub,
+      email: payload.email,
+      phone: payload.phone,
+      role: payload.role,
+    };
   }
 }

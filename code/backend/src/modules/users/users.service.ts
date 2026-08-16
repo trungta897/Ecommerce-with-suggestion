@@ -1,5 +1,10 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service';
+import { UserRole } from '@prisma/client';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { I18nService, I18nContext } from 'nestjs-i18n';
 
@@ -66,5 +71,148 @@ export class UsersService {
     });
 
     return updatedUser;
+  }
+
+  async getAllUsers(page = 1, limit = 10, role?: string) {
+    const skip = (page - 1) * limit;
+    const where = role ? { role: role as UserRole } : {};
+
+    const [users, total] = await Promise.all([
+      this.prisma.user.findMany({
+        where,
+        skip,
+        take: limit,
+        select: {
+          id: true,
+          email: true,
+          fullName: true,
+          phone: true,
+          role: true,
+          isActive: true,
+          isVerified: true,
+          createdAt: true,
+        },
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.prisma.user.count({ where }),
+    ]);
+
+    return {
+      data: users,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+
+  async inviteStaff(
+    email: string,
+    fullName: string,
+    role: 'ADMIN' | 'EMPLOYEE',
+  ) {
+    // Check if email already exists
+    const existingUser = await this.prisma.user.findUnique({
+      where: { email },
+    });
+    if (existingUser) {
+      throw new BadRequestException('Email đã tồn tại trong hệ thống');
+    }
+
+    // Instead of hardcoding password, we just set an empty passwordHash and send an invite link (mocked)
+    const newUser = await this.prisma.user.create({
+      data: {
+        email,
+        fullName,
+        role,
+        passwordHash: '', // They will set this via invite link
+        isVerified: true, // Internal staff can be pre-verified
+      },
+    });
+
+    // TODO: Send Email with setup-password link using MailService
+    console.log(
+      `[MOCK EMAIL] Gửi link thiết lập mật khẩu cho staff ${email} (Role: ${role})`,
+    );
+
+    return {
+      message: 'Đã gửi lời mời thành công',
+      user: newUser,
+    };
+  }
+
+  async changeRole(
+    adminId: string,
+    adminRole: string,
+    targetUserId: string,
+    newRole: UserRole,
+  ) {
+    if (adminId === targetUserId) {
+      throw new BadRequestException(
+        'Không thể tự thay đổi quyền của chính mình',
+      );
+    }
+
+    const targetUser = await this.prisma.user.findUnique({
+      where: { id: targetUserId },
+    });
+    if (!targetUser) throw new NotFoundException('Người dùng không tồn tại');
+
+    // RBAC Rule:
+    // ADMIN can only manage EMPLOYEE/CUSTOMER
+    // SUPER_ADMIN can manage ADMIN/EMPLOYEE/CUSTOMER
+    if (adminRole === 'ADMIN') {
+      if (targetUser.role === 'SUPER_ADMIN' || targetUser.role === 'ADMIN') {
+        throw new BadRequestException(
+          'Bạn không có quyền thay đổi vai trò của người dùng này',
+        );
+      }
+      if (newRole === 'SUPER_ADMIN' || newRole === 'ADMIN') {
+        throw new BadRequestException('Bạn không có quyền cấp vai trò này');
+      }
+    }
+
+    const updatedUser = await this.prisma.user.update({
+      where: { id: targetUserId },
+      data: { role: newRole },
+    });
+
+    return { message: 'Cập nhật vai trò thành công', user: updatedUser };
+  }
+
+  async toggleActive(adminId: string, adminRole: string, targetUserId: string) {
+    if (adminId === targetUserId) {
+      throw new BadRequestException(
+        'Không thể tự khóa tài khoản của chính mình',
+      );
+    }
+
+    const targetUser = await this.prisma.user.findUnique({
+      where: { id: targetUserId },
+    });
+    if (!targetUser) throw new NotFoundException('Người dùng không tồn tại');
+
+    if (
+      adminRole === 'ADMIN' &&
+      (targetUser.role === 'SUPER_ADMIN' || targetUser.role === 'ADMIN')
+    ) {
+      throw new BadRequestException(
+        'Bạn không có quyền khóa tài khoản của người dùng này',
+      );
+    }
+
+    const updatedUser = await this.prisma.user.update({
+      where: { id: targetUserId },
+      data: { isActive: !targetUser.isActive },
+    });
+
+    return {
+      message: updatedUser.isActive
+        ? 'Đã mở khóa tài khoản'
+        : 'Đã khóa tài khoản',
+      user: updatedUser,
+    };
   }
 }

@@ -9,6 +9,13 @@ import { appendAuditTrail } from '../../common/utils/audit-trail.util';
 import { ZaloPayService } from './zalopay.service';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 
+interface ZaloPayCallbackData {
+  app_trans_id: string;
+  amount: number;
+  zp_trans_id: number | string;
+  server_time: number | string;
+}
+
 @Injectable()
 export class PaymentService {
   constructor(
@@ -18,21 +25,25 @@ export class PaymentService {
   ) {}
 
   // 1. ZaloPay Webhook (4-Layer Protection)
-  async handleZaloPayWebhook(body: { data: string; mac: string }) {
+  async handleZaloPayWebhook(body: {
+    data: string;
+    mac: string;
+    type?: number;
+  }) {
     // Lớp 1: Verify MAC
     const isValid = this.zaloPayService.verifyCallback(body.data, body.mac);
     if (!isValid) {
       return { return_code: -1, return_message: 'Invalid MAC' };
     }
 
-    const callbackData = JSON.parse(body.data);
+    const callbackData = JSON.parse(body.data) as ZaloPayCallbackData;
     const appTransId: string = callbackData.app_trans_id;
 
     // Lấy đơn hàng theo Khớp Chính Xác
     const order = await this.prisma.order.findFirst({
       where: { paymentGatewayTxnId: appTransId },
     });
-    
+
     if (!order) {
       return { return_code: -1, return_message: 'Order not found' };
     }
@@ -56,7 +67,7 @@ export class PaymentService {
             paymentGatewayPayDate: String(callbackData.server_time),
           },
         });
-        
+
         if (updated.count > 0) {
           this.eventEmitter.emit('payment.orphaned', { orderId: order.id });
         }
@@ -82,12 +93,14 @@ export class PaymentService {
     return { return_code: 1, return_message: 'success' };
   }
   // 2. Stripe Webhook (Mocked)
-  async handleStripeWebhook(_data: any) {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  handleStripeWebhook(_data: unknown) {
     return { received: true };
   }
 
   // 3. Bank Transfer Webhook (Napas/VietQR - Mocked)
-  async handleBankTransferWebhook(_data: any) {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  handleBankTransferWebhook(_data: unknown) {
     return { success: true };
   }
 

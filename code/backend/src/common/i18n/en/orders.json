@@ -1,4 +1,15 @@
 {
   "RETURN_APPROVED_EMAIL_SUBJECT": "Return request for order {orderId} has been approved",
-  "RETURN_REJECTED_EMAIL_SUBJECT": "Return request for order {orderId} has been rejected"
+  "RETURN_REJECTED_EMAIL_SUBJECT": "Return request for order {orderId} has been rejected",
+  "error": {
+    "notFound": "Order not found",
+    "cartEmpty": "Cart is empty",
+    "unauthorized": "Unauthorized access",
+    "phoneMismatch": "Phone number does not match the order",
+    "missingPhone": "Please provide a phone number",
+    "authMismatch": "Authentication information does not match",
+    "invalidStatus": "Invalid order status",
+    "invalidFileFormat": "Invalid file format",
+    "missingEvidence": "Please provide evidence files"
+  }
 }

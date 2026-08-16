@@ -13,7 +13,7 @@ import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { UserRole } from '@prisma/client';
 import { ZaloPayService } from './zalopay.service';
-import { PrismaService } from '../prisma/prisma.service';
+import { PrismaService } from '../../database/prisma.service';
 import { NotFoundException } from '@nestjs/common';
 
 @Controller('payment')
@@ -25,7 +25,9 @@ export class PaymentController {
   ) {}
 
   @Post('webhook/zalopay')
-  async handleZaloPayWebhook(@Body() data: any) {
+  async handleZaloPayWebhook(
+    @Body() data: { data: string; mac: string; type?: number },
+  ) {
     return this.paymentService.handleZaloPayWebhook(data);
   }
 
@@ -35,8 +37,10 @@ export class PaymentController {
     @Req() req: Request & { user: { id: string } },
     @Param('orderId') orderId: string,
   ) {
-    const order = await this.prisma.order.findUnique({ where: { id: orderId } });
-    
+    const order = await this.prisma.order.findUnique({
+      where: { id: orderId },
+    });
+
     if (!order || order.userId !== req.user.id) {
       throw new NotFoundException('Order not found or access denied');
     }
@@ -48,7 +52,7 @@ export class PaymentController {
     // Atomic Update DB lưu appTransId TRƯỚC
     await this.prisma.order.update({
       where: { id: orderId },
-      data: { paymentGatewayTxnId: appTransId }
+      data: { paymentGatewayTxnId: appTransId },
     });
 
     return this.zaloPayService.createOrder(
@@ -60,12 +64,12 @@ export class PaymentController {
   }
 
   @Post('webhook/stripe')
-  async handleStripeWebhook(@Body() data: any) {
+  handleStripeWebhook(@Body() data: any) {
     return this.paymentService.handleStripeWebhook(data);
   }
 
   @Post('webhook/bank-transfer')
-  async handleBankTransferWebhook(@Body() data: any) {
+  handleBankTransferWebhook(@Body() data: any) {
     return this.paymentService.handleBankTransferWebhook(data);
   }
 

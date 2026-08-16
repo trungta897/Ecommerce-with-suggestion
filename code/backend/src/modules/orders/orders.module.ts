@@ -1,6 +1,8 @@
 import { Module } from '@nestjs/common';
 import { OrdersController } from './orders.controller';
 import { OrdersService } from './orders.service';
+import { OrdersPaymentService } from './orders-payment.service';
+import { OrdersReturnService } from './orders-return.service';
 import { OrdersCronService } from './orders-cron.service';
 import { RedisModule } from '../redis/redis.module';
 import { MailModule } from '../mail/mail.module';
@@ -10,6 +12,12 @@ import { OrdersEventsSubscriber } from './orders-events.subscriber';
 @Module({
   imports: [RedisModule, MailModule, StorageModule],
   controllers: [OrdersController],
-  providers: [OrdersService, OrdersCronService, OrdersEventsSubscriber],
+  providers: [
+    OrdersService,
+    OrdersPaymentService,
+    OrdersReturnService,
+    OrdersCronService,
+    OrdersEventsSubscriber,
+  ],
 })
 export class OrdersModule {}
