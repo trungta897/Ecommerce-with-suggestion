@@ -162,11 +162,6 @@ export class ProductsService {
   }
 
   private async clearProductCache() {
-    // In a real scenario, you'd want to use Redis SCAN or keep track of keys in a SET
-    // For now, this requires careful key management. Ideally use a prefix deletion method if redis client supports it.
-    // For simplicity, since we just have one major list endpoint, we will just delete everything in production
-    // or use a more sophisticated cache invalidation. (Redis doesn't have a direct "delete by prefix" without Lua or SCAN).
-    // Let's increment a cache version key or simply do nothing here because it's only 5 mins TTL.
-    // Actually, let's just let it expire in 5 mins to keep it simple, or implement it properly if needed.
+    await this.redis.deletePattern('products:*');
   }
 }
