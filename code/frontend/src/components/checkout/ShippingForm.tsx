@@ -37,6 +37,7 @@ interface ShippingFormProps {
 
 export function ShippingForm({
   shippingData,
+  addressDetails,
   deliveryMethod,
   errors,
   onShippingDataChange,
@@ -46,6 +47,8 @@ export function ShippingForm({
 }: ShippingFormProps) {
   const locale = useLocale();
   const t = useTranslations('checkout');
+
+  const hasAddress = !!addressDetails?.provinceName;
 
   return (
     <div className="bg-white border border-rule rounded-xl p-6 space-y-6 shadow-sm">
@@ -100,10 +103,14 @@ export function ShippingForm({
         {['standard', 'express'].map((method) => (
           <label
             key={method}
-            className={`flex items-center gap-3 p-3.5 rounded-xl border cursor-pointer transition-all ${
-              deliveryMethod === method
+            className={`flex items-center gap-3 p-3.5 rounded-xl border transition-all ${
+              !hasAddress
+                ? 'opacity-50 cursor-not-allowed bg-gray-50'
+                : 'cursor-pointer hover:border-ink-2'
+            } ${
+              deliveryMethod === method && hasAddress
                 ? 'border-primary bg-primary/5 font-medium'
-                : 'border-rule hover:border-ink-2'
+                : 'border-rule'
             }`}
           >
             <input
@@ -111,12 +118,13 @@ export function ShippingForm({
               name="delivery"
               value={method}
               checked={deliveryMethod === method}
+              disabled={!hasAddress}
               onChange={(e) => onDeliveryMethodChange(e.target.value)}
-              className="accent-primary w-4 h-4"
+              className="accent-primary w-4 h-4 disabled:opacity-50"
             />
             <span className="text-sm text-ink">{t(method as 'standard' | 'express')}</span>
             <span className="text-sm font-semibold text-primary ml-auto">
-              {method === 'standard' ? t('free') : formatPrice(50000, locale)}
+              {method === 'standard' ? t('free') : formatPrice(2, locale)}
             </span>
           </label>
         ))}

@@ -55,7 +55,7 @@ export default async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   const pathWithoutLocale = pathname.replace(/^\/(vi|en)(\/|$)/, '/').replace(/\/$/, '') || '/';
 
-  const protectedRoutes = ['/profile', '/orders', '/checkout'];
+  const protectedRoutes = ['/profile', '/orders'];
   const authRoutes = ['/login', '/register', '/forgot-password', '/reset-password'];
 
   const isProtectedRoute = protectedRoutes.some((route) => pathWithoutLocale.startsWith(route));

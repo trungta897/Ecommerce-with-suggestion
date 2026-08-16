@@ -78,7 +78,9 @@ export default function CheckoutPage() {
     (sum, item) => sum + getProductPrice(item.product) * item.quantity,
     0
   );
-  const shippingFee = deliveryMethod === 'express' ? 50000 : 30000;
+
+  const hasAddress = !!addressDetails.provinceName;
+  const shippingFee = hasAddress ? (deliveryMethod === 'express' ? 2 : 0) : 0;
   const total = Math.max(0, subtotal + shippingFee - discount);
 
   const handleNextStep = () => {
