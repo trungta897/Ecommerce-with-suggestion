@@ -15,16 +15,10 @@ import { LoginDto } from './dto/login.dto';
 import { VerifyEmailDto } from './dto/verify-email.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
-import { GoogleAuthService } from './google-auth.service';
-import { GoogleLoginDto } from './dto/google-login.dto';
-import { GoogleCompleteDto } from './dto/google-complete.dto';
 
 @Controller('auth')
 export class AuthController {
-  constructor(
-    private readonly authService: AuthService,
-    private readonly googleAuthService: GoogleAuthService,
-  ) {}
+  constructor(private readonly authService: AuthService) {}
 
   @Throttle({ default: { limit: 5, ttl: 60000 } })
   @Post('register')
@@ -62,42 +56,6 @@ export class AuthController {
   ) {
     const result = await this.authService.login(dto);
     if (result?.accessToken) {
-      this.setAuthCookie(res, result.accessToken);
-    }
-    return result;
-  }
-
-  @Throttle({ default: { limit: 10, ttl: 60000 } })
-  @HttpCode(HttpStatus.OK)
-  @Post('google')
-  async googleAuth(
-    @Body() dto: GoogleLoginDto,
-    @Res({ passthrough: true }) res: Response,
-  ) {
-    const result = await this.googleAuthService.verifyGoogleToken(dto);
-    if (
-      result &&
-      'accessToken' in result &&
-      typeof result.accessToken === 'string'
-    ) {
-      this.setAuthCookie(res, result.accessToken);
-    }
-    return result;
-  }
-
-  @Throttle({ default: { limit: 10, ttl: 60000 } })
-  @HttpCode(HttpStatus.OK)
-  @Post('google/complete')
-  async googleComplete(
-    @Body() dto: GoogleCompleteDto,
-    @Res({ passthrough: true }) res: Response,
-  ) {
-    const result = await this.googleAuthService.completeRegistration(dto);
-    if (
-      result &&
-      'accessToken' in result &&
-      typeof result.accessToken === 'string'
-    ) {
       this.setAuthCookie(res, result.accessToken);
     }
     return result;
