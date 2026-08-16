@@ -150,19 +150,19 @@ flowchart TD
 
 | ID | Chức năng | Mô tả chi tiết | Quyền |
 |---|---|---|---|
-| FR-01 | Đăng ký & Đăng nhập | Tạo tài khoản, đăng nhập JWT. Bắt buộc có Google reCAPTCHA v3. | Guest |
-| FR-02 | Xác thực Email (OTP) | Gửi OTP qua email (Hiệu lực 15 phút). Nhập đúng -> nâng quyền tự động, bắt buộc đổi mật khẩu. Sai 5 lần -> khóa tính năng gửi lại OTP 15 phút. Wording lỗi: *"Mã OTP không chính xác, vui lòng kiểm tra lại"*. | User (Unv) |
-| FR-03 | Quên / Reset Mật khẩu | Gửi link/OTP reset qua email đăng ký. Hết hạn sau 15p. | Guest, User |
+| FR-01 | Đăng nhập & Đăng ký Khách hàng | Khách hàng đăng nhập bằng Số điện thoại và mã OTP qua SMS. Hệ thống tự động tạo tài khoản nếu SĐT chưa tồn tại. Bắt buộc có Google reCAPTCHA v3. Không sử dụng mật khẩu hay email. | Guest |
+| FR-02 | Xác thực SMS OTP | Gửi OTP qua SMS/Zalo. Hiệu lực 5 phút. Nhập đúng -> cấp JWT. Sai 3 lần -> khóa 15 phút. Wording lỗi: *"Mã OTP không chính xác, vui lòng kiểm tra lại"*. | Guest |
+| FR-03 | Đăng nhập Admin/Nhân viên | Dành riêng cho luồng quản trị: Admin và Nhân viên đăng nhập bằng Email và Mật khẩu. | Admin, Employee |
 | FR-04 | Tìm kiếm & Lọc SP | Full-text search, lọc theo giá, category, rating. | All |
 | FR-05 | Quản lý Giỏ hàng | Thêm, xóa, cập nhật số lượng SP. Số lượng trong giỏ không được vượt quá tồn kho (`stock`) của sản phẩm tại thời điểm thao tác. | All (Local), User |
-| FR-06 | Checkout (Luồng Guest) | Guest chọn SP -> Điền form thông tin -> Hệ thống tự động tạo User ngầm, gửi OTP qua email -> Bắt buộc xác thực OTP & Tự đặt mật khẩu -> Tự động redirect về trang checkout và điền lại thông tin. | All |
+| FR-06 | Checkout (Luồng Guest) | Guest chọn SP -> Điền form thông tin nhận hàng (Danh xưng, Tên, SĐT, Tỉnh/Huyện/Xã, Địa chỉ cụ thể) -> Hệ thống tạo đơn hàng trực tiếp không bắt buộc tạo tài khoản. Khách lưu đơn hàng với `userId = null`. Luồng Guest **CHỈ áp dụng thanh toán COD** (Thanh toán khi nhận hàng) để tối giản, tránh rủi ro thanh toán lỗi không thể retry. | All |
 | FR-07 | Thanh toán & Nhận hàng | Khách hàng tuỳ chọn phương thức nhận hàng. Thanh toán VNPay (timeout 30 phút). COD sẽ tự động duyệt thành công dựa trên API Webhook đa kênh từ Shipper (GHN, SPX, Grab, Be...). | User (Ver) |
 | FR-08 | Hủy đơn hàng | Cho phép hủy đơn khi trạng thái là `Pending` hoặc `pending_payment`. | User (Ver) |
 | FR-09 | Trả hàng | Gửi yêu cầu trả hàng trong vòng 14 ngày sau khi đơn `Completed`. Bắt buộc chọn 1 trong 9 lý do hợp lệ (Lỗi NSX, Giao sai, Bể vỡ...). Admin có thể duyệt hoặc từ chối (`return_rejected`). Trạng thái `return_rejected` là trạng thái cuối (terminal), không thể yêu cầu trả hàng lại. | User (Ver) |
 | FR-10 | Realtime Tracking | Xem lịch sử đơn hàng, nhận SSE push trạng thái realtime. | User (Ver) |
 | FR-11 | Đánh giá Sản phẩm | Rate 1-5 sao và comment. *Chỉ đánh giá SP đã nhận hàng.* | User (Ver) |
 | FR-12 | Cá nhân hóa (RecSys) | Nhận danh sách gợi ý trên Home/Detail. | User (Ver) |
-| FR-13 | Tra cứu đơn hàng | Bắt buộc nhập **Mã đơn hàng + (SĐT hoặc Email)** (2 yếu tố) để tra cứu trạng thái đơn — không cho tra cứu chỉ bằng SĐT/Email để tránh lộ thông tin đơn hàng của người khác. | Guest, User |
+| FR-13 | Tra cứu đơn hàng | Bắt buộc nhập **Mã đơn hàng + SĐT** (2 yếu tố) để tra cứu trạng thái đơn — không cho tra cứu chỉ bằng SĐT để tránh lộ thông tin đơn hàng của người khác. | Guest, User |
 | FR-14 | Quản lý Profile | Cập nhật thông tin cá nhân (Tên, Ảnh đại diện, Địa chỉ giao hàng mặc định). | User (Ver) |
 | FR-15 | Xem chi tiết sản phẩm | Hiển thị mô tả chi tiết, ảnh gallery, phân trang đánh giá và khu vực gợi ý sản phẩm. | All |
 
@@ -192,51 +192,26 @@ flowchart TD
 
 ### 3.5. Sơ đồ tuần tự (Sequence Diagrams)
 
-#### 3.5.1. Luồng Guest Checkout & Xác thực OTP
+#### 3.5.1. Luồng Guest Checkout (Không cần tài khoản)
 ```mermaid
 sequenceDiagram
     actor Guest
     participant Frontend
     participant Backend
-    participant Mailer
     
-    Guest->>Frontend: Thêm SP vào giỏ & Đặt hàng
-    Guest->>Frontend: Điền form thông tin (Email, SĐT, Địa chỉ)
-    Frontend->>Backend: Gửi yêu cầu Checkout (Guest Info)
-    Backend->>Backend: Tự động tạo User (is_verified=false, chưa có password)
-    Backend->>Backend: Lưu thông tin đơn hàng tạm (status=pending_payment/pending, chưa chốt)
-    Backend->>Mailer: Yêu cầu gửi OTP
-    Mailer-->>Guest: Email chứa OTP (15p)
-    Backend-->>Frontend: Yêu cầu xác thực OTP
-    Frontend-->>Guest: Hiển thị màn hình nhập OTP
-    
-    alt Nhập đúng OTP
-        Guest->>Frontend: Nhập mã OTP
-        Frontend->>Backend: Verify OTP
-        Backend-->>Frontend: Xác thực thành công (Token)
-        Frontend-->>Guest: Yêu cầu tạo mật khẩu (lần đầu, bắt buộc)
-        Guest->>Frontend: Nhập mật khẩu mới
-        Frontend->>Backend: Set mật khẩu + is_verified=true
-        Backend-->>Frontend: Success
-        Frontend-->>Guest: Chuyển hướng quay lại Đơn hàng
-        Guest->>Frontend: Hoàn tất thanh toán & Chốt đơn
-        Frontend->>Backend: Xác nhận đặt hàng
-        Backend-->>Frontend: Thành công
-    else Nhập sai OTP (< 5 lần)
-        Guest->>Frontend: Nhập sai OTP
-        Frontend->>Backend: Verify OTP
-        Backend-->>Frontend: Error "Mã OTP không chính xác, vui lòng kiểm tra lại"
-    else Sai OTP >= 5 lần
-        Guest->>Frontend: Nhập sai OTP (lần 5)
-        Frontend->>Backend: Verify OTP
-        Backend-->>Frontend: Error Bị khóa 15 phút
-    else Đóng trình duyệt (Interrupted)
-        Guest->>Frontend: Tắt trình duyệt ngang chừng
-        Note over Guest, Backend: Tài khoản (is_verified=false) & đơn hàng tạm chưa có password nên không login lại được ngay; nếu quay lại email đó, hệ thống nhận diện tài khoản đang chờ verify và gửi lại OTP thay vì tạo tài khoản mới. Job dọn dẹp sẽ tự xóa tài khoản/đơn tạm này nếu bỏ dở quá lâu (xem mục 3.6.4).
-    end
+    Guest->>Frontend: Thêm SP vào giỏ & Tiến hành Đặt hàng
+    Guest->>Frontend: Điền form thông tin (Danh xưng, Tên, SĐT, Địa chỉ)
+    Note over Guest, Frontend: KHÔNG yêu cầu Email, KHÔNG bắt buộc đăng nhập
+    Guest->>Frontend: Chọn hình thức thanh toán (Bắt buộc COD) & Đặt hàng
+    Frontend->>Backend: Gửi yêu cầu Checkout (Guest Info & Cart Items)
+    Backend->>Backend: Validate thông tin & Tồn kho
+    Backend->>Backend: Lưu thông tin đơn hàng (Gắn cờ Guest / userId null)
+    Backend-->>Frontend: Trả về OrderID (Thành công)
+    Frontend-->>Guest: Hiển thị trang thành công kèm Mã đơn hàng
+    Note over Guest, Frontend: Guest dùng Mã đơn hàng + SĐT để tra cứu sau này (Không cần thanh toán lại do chỉ dùng COD)
 ```
 
-**Lưu ý bảo mật:** không gửi mật khẩu mặc định qua email dạng plaintext — thay vào đó chỉ gửi OTP; mật khẩu do chính Guest tự đặt ngay sau khi verify OTP thành công, tránh rủi ro lộ mật khẩu qua đường email.
+**Lưu ý:** Luồng này tối ưu tỷ lệ chuyển đổi (conversion rate) bằng cách loại bỏ hoàn toàn ma sát từ việc bắt buộc đăng nhập hoặc xác thực OTP.
 
 #### 3.5.2. Luồng Thanh toán VNPay (IPN Callback & Edge Cases)
 ```mermaid
@@ -329,11 +304,11 @@ Sử dụng kiến trúc đa kênh, hệ thống tiếp nhận Webhook từ đ�
 
 **1. Bảng `users`**
 - `id`: VARCHAR(UUID) (PK)
-- `email`: VARCHAR (Unique, Not Null)
-- `password`: VARCHAR (Hash, NOT NULL - validate: 1 Hoa, 1 Số, 1 Ký tự đặc biệt)
+- `email`: VARCHAR (Unique, Nullable)
+- `phone`: VARCHAR (Unique, Nullable - Bắt buộc ở tầng DTO đối với Customer)
+- `password`: VARCHAR (Hash, Nullable)
 - `role`: ENUM ('CUSTOMER', 'STAFF', 'ADMIN', 'SUPER_ADMIN')
-- `is_verified`: BOOLEAN (Default FALSE)
-- `password_set_at`: TIMESTAMP (Nullable — NULL nghĩa là tài khoản tạo từ Guest Checkout nhưng chưa hoàn tất verify + đặt mật khẩu, dùng để job dọn dẹp nhận diện)
+- `is_active`: BOOLEAN (Default TRUE)
 - `created_at`, `updated_at`
 
 **2. Bảng `categories`**
@@ -362,7 +337,7 @@ Sử dụng kiến trúc đa kênh, hệ thống tiếp nhận Webhook từ đ�
 
 **5. Bảng `orders`**
 - `id`: INT (PK)
-- `user_id`: INT (FK users)
+- `user_id`: INT (FK users, Nullable)
 - `total_amount`: DECIMAL
 - `shipping_fee`: DECIMAL (Phí ship)
 - `discount_amount`: DECIMAL (Số tiền giảm giá do voucher)
