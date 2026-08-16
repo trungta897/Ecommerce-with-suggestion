@@ -1,8 +1,6 @@
-import { useTranslations } from 'next-intl';
 import { AdminLoginForm } from '@/components/features/auth/AdminLoginForm';
 
 export default function AdminLoginPage() {
-  const t = useTranslations('auth');
   return (
     <div className="flex min-h-screen">
       <div className="hidden md:block w-1/2 bg-slate-900">

@@ -4,13 +4,7 @@ import * as React from 'react';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useTranslations } from 'next-intl';
-import {
-  phoneLoginSchema,
-  PhoneLoginFormData,
-  otpSchema,
-  OtpFormData,
-} from '@/schemas';
+import { phoneLoginSchema, PhoneLoginFormData, otpSchema, OtpFormData } from '@/schemas';
 import { BaseInput, BaseButton } from '@/components/base';
 import { authService } from '@/services/authService';
 import { cartService } from '@/services/cart-service';
@@ -19,7 +13,6 @@ import { useCartStore } from '@/store/useCartStore';
 import { useRouter } from 'next/navigation';
 
 export function LoginForm() {
-  const t = useTranslations('auth');
   const router = useRouter();
   const setAuth = useAuthStore((state) => state.setAuth);
 
