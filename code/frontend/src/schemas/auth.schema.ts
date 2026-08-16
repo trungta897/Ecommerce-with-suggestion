@@ -1,5 +1,13 @@
 import { z } from 'zod';
 
+export const phoneLoginSchema = z.object({
+  phone: z
+    .string()
+    .regex(/(84|0[3|5|7|8|9])+([0-9]{8})\b/, { message: 'Số điện thoại không hợp lệ' }),
+});
+
+export type PhoneLoginFormData = z.infer<typeof phoneLoginSchema>;
+
 export const loginSchema = z.object({
   email: z.string().email({ message: 'Email không hợp lệ' }),
   password: z.string().min(1, { message: 'Vui lòng nhập mật khẩu' }),

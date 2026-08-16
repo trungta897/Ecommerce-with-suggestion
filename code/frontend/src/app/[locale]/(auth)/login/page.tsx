@@ -1,6 +1,5 @@
 import { useTranslations } from 'next-intl';
 import { LoginForm } from '@/components/features/auth/LoginForm';
-import Link from 'next/link';
 
 export default function LoginPage() {
   const t = useTranslations('auth');
@@ -13,12 +12,6 @@ export default function LoginPage() {
         <div className="max-w-md w-full p-6">
           <h1 className="text-2xl font-bold mb-6">{t('login')}</h1>
           <LoginForm />
-          <p className="mt-4 text-center text-sm text-muted-foreground">
-            {t('no_account')}{' '}
-            <Link href="/register" className="text-primary hover:underline">
-              {t('register')}
-            </Link>
-          </p>
         </div>
       </div>
     </div>

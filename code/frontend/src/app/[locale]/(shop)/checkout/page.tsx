@@ -4,7 +4,7 @@ import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { BaseButton } from '@/components/base';
 import { ChevronRight, Package } from '@/components/base/icons';
-import { useCartStore } from '@/store';
+import { useCartStore, useAuthStore } from '@/store';
 import { useProducts } from '@/hooks/use-products';
 import Link from 'next/link';
 import { useToast } from '@/providers/toast-provider';
@@ -22,6 +22,7 @@ export default function CheckoutPage() {
   const t = useTranslations('checkout');
   const tCommon = useTranslations('common');
   const toast = useToast();
+  const { isAuthenticated } = useAuthStore();
   const { items, clearCart } = useCartStore();
   const { data: productsResponse, isLoading } = useProducts({ all: true });
   const products = productsResponse?.data || [];
@@ -68,7 +69,7 @@ export default function CheckoutPage() {
 
   const cartProducts = items
     .map((item) => {
-      const product = products.find((p) => p.id === item.product_id);
+      const product = products.find((p) => p.id === item.productId);
       return { ...item, product };
     })
     .filter((item) => item.product);
@@ -126,7 +127,8 @@ export default function CheckoutPage() {
 
     try {
       const fullAddress = `${addressDetails.street}, ${addressDetails.wardName}, ${addressDetails.districtName}, ${addressDetails.provinceName}`;
-      const body = {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const body: any = {
         shippingName: shippingData.fullName,
         shippingPhone: shippingData.phone,
         shippingAddress: fullAddress,
@@ -135,13 +137,22 @@ export default function CheckoutPage() {
         voucherId: appliedVoucher ? appliedVoucher.id : undefined,
       };
 
-      const order = await orderService.createOrder(body);
+      let order;
+      if (isAuthenticated) {
+        order = await orderService.createOrder(body);
+      } else {
+        body.items = cartProducts.map((item) => ({
+          productId: item.productId,
+          quantity: item.quantity,
+        }));
+        order = await orderService.createGuestOrder(body);
+      }
 
-      if (order.payment_method === 'COD') {
+      if (order.paymentMethod === 'COD') {
         toast.success(t('toast.orderSuccessMessage'), t('toast.orderSuccessTitle'));
         setOrderPlaced(true);
         clearCart();
-      } else if (order.payment_method === 'ZALOPAY') {
+      } else if (order.paymentMethod === 'ZALOPAY') {
         const { orderUrl } = await paymentService.createZaloPayOrder(order.id);
         window.location.href = orderUrl;
       }
@@ -224,6 +235,7 @@ export default function CheckoutPage() {
               discount={discount}
               appliedVoucher={appliedVoucher}
               subtotal={subtotal}
+              phone={shippingData.phone || ''}
               onPaymentMethodChange={setPaymentMethod}
               onVoucherCodeChange={setVoucherCode}
               onDiscountChange={setDiscount}

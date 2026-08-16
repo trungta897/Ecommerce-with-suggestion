@@ -23,22 +23,16 @@ export function Header() {
           <div className="hidden lg:block">
             <p className="text-sm font-medium text-primary-foreground">{t('promo_text')}</p>
           </div>
-          {!isLoggedIn && (
-            <div className="flex divide-x divide-white/20">
-              <Link
-                href="/register"
-                className="pr-3 text-sm font-medium text-primary-foreground transition hover:text-gray-200"
-              >
-                {t('create_account')}
-              </Link>
+          <div className="flex items-center gap-4">
+            {!isLoggedIn && (
               <Link
                 href="/login"
-                className="pl-3 text-sm font-medium text-primary-foreground transition hover:text-gray-200"
+                className="text-sm font-medium text-primary-foreground transition hover:text-gray-200"
               >
                 {t('sign_in')}
               </Link>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
 

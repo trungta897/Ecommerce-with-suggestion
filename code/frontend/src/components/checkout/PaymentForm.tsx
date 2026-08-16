@@ -19,6 +19,7 @@ interface PaymentFormProps {
   discount: number;
   appliedVoucher: AppliedVoucher | null;
   subtotal: number;
+  phone: string;
   onPaymentMethodChange: (method: 'vnpay' | 'cod') => void;
   onVoucherCodeChange: (code: string) => void;
   onDiscountChange: (discount: number) => void;
@@ -31,6 +32,7 @@ export function PaymentForm({
   discount,
   appliedVoucher,
   subtotal,
+  phone,
   onPaymentMethodChange,
   onVoucherCodeChange,
   onDiscountChange,
@@ -48,7 +50,7 @@ export function PaymentForm({
     const code = voucherCode.trim().toUpperCase();
 
     try {
-      const response = await voucherService.validateVoucher(code, subtotal);
+      const response = await voucherService.validateVoucher(code, subtotal, phone);
       if (response.valid) {
         onDiscountChange(response.discountAmount);
         onAppliedVoucherChange({

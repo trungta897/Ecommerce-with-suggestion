@@ -24,6 +24,8 @@ export interface CreateOrderDto {
   deliveryMethod?: string;
   paymentMethod: string;
   voucherId?: string;
+  email?: string;
+  items?: { productId: string; quantity: number }[];
 }
 
 export const orderService = {
@@ -32,8 +34,32 @@ export const orderService = {
     return data.data;
   },
 
+  async createGuestOrder(dto: CreateOrderDto): Promise<Order> {
+    const { data } = await apiClient.post<{ data: Order }>('/orders/guest', dto);
+    return data.data;
+  },
+
+  async payAgain(orderId: string): Promise<Order> {
+    const { data } = await apiClient.post<{ data: Order }>(`/orders/${orderId}/pay-again`);
+    return data.data;
+  },
+
+  async payAgainGuest(orderId: string, phone: string): Promise<Order> {
+    const { data } = await apiClient.post<{ data: Order }>(`/orders/guest/${orderId}/pay-again`, {
+      phone,
+    });
+    return data.data;
+  },
+
   async getOrderById(orderId: string): Promise<Order> {
     const { data } = await apiClient.get<{ data: Order }>(`/orders/${orderId}`);
+    return data.data;
+  },
+
+  async getGuestOrderById(orderId: string, phone: string): Promise<Order> {
+    const { data } = await apiClient.get<{ data: Order }>(`/orders/guest/${orderId}`, {
+      params: { phone },
+    });
     return data.data;
   },
 

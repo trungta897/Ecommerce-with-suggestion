@@ -10,4 +10,30 @@ export const userService = {
     const { data } = await apiClient.patch('/users/profile', updates);
     return data;
   },
+
+  // Admin Endpoints
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  getAllUsers: async (
+    page = 1,
+    limit = 10,
+    role?: string
+  ): Promise<{ data: User[]; meta: any }> => {
+    const { data } = await apiClient.get('/admin/users', { params: { page, limit, role } });
+    return data;
+  },
+
+  inviteStaff: async (email: string, fullName: string, role: string) => {
+    const { data } = await apiClient.post('/admin/users/invite', { email, fullName, role });
+    return data;
+  },
+
+  changeRole: async (id: string, role: string) => {
+    const { data } = await apiClient.patch(`/admin/users/${id}/role`, { role });
+    return data;
+  },
+
+  toggleActive: async (id: string) => {
+    const { data } = await apiClient.patch(`/admin/users/${id}/toggle-active`);
+    return data;
+  },
 };

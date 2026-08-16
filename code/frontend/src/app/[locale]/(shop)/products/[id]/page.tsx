@@ -11,7 +11,8 @@ import {
   Sparkles,
   ChevronRight,
 } from '@/components/base/icons';
-import { BaseButton } from '@/components/base';
+import { BaseButton } from '@/components/base/BaseButton';
+import { ProductReviews } from '@/components/features/product/ProductReviews';
 import { useCart } from '@/hooks/use-cart';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -74,8 +75,8 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
     try {
       await addItem({
         id: `${Date.now()}`,
-        user_id: '',
-        product_id: product.id,
+        userId: '',
+        productId: product.id,
         quantity,
         product,
       });
@@ -89,8 +90,8 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
     try {
       await addItem({
         id: `${Date.now()}`,
-        user_id: '',
-        product_id: product.id,
+        userId: '',
+        productId: product.id,
         quantity,
         product,
       });
@@ -280,14 +281,8 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
             </div>
           ) : (
             <div className="space-y-6">
-              {/* AI Review Summary */}
-              <div className="p-5 bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-100 rounded-xl">
-                <h3 className="font-semibold text-purple-700 flex items-center gap-2 mb-3">
-                  <Sparkles className="w-5 h-5" />
-                  {t('aiSummary')}
-                </h3>
-                <p className="text-sm text-ink-2">{t('noReviews')}</p>
-              </div>
+              {/* AI Review Summary (can be re-added later if needed) */}
+              <ProductReviews productId={product.id} />
             </div>
           )}
         </div>

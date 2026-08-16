@@ -6,7 +6,7 @@ import Image from 'next/image';
 import { formatPrice } from '@/utils/format';
 
 interface CartProduct {
-  product_id: string;
+  productId: string;
   quantity: number;
   product?: {
     name: string;
@@ -64,7 +64,7 @@ export function OrderConfirmation({
         <h3 className="font-bold text-sm text-ink mb-2">{t('orderSummary')}</h3>
         {cartProducts.map((item) => (
           <div
-            key={item.product_id}
+            key={item.productId}
             className="flex items-center gap-3 py-2 border-b border-rule last:border-0"
           >
             <div className="w-12 h-12 bg-paper-2 rounded-lg flex-shrink-0 relative overflow-hidden flex items-center justify-center">

@@ -1,57 +1,48 @@
+'use client';
+
 import { useTranslations } from 'next-intl';
 import { BaseInput } from '@/components/base';
 import { Search, Star, Eye, EyeOff } from '@/components/base/icons';
+import { useEffect, useState } from 'react';
+import { reviewService } from '@/services/review-service';
 
 export default function AdminReviewsPage() {
   const t = useTranslations('admin.reviews');
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [reviews, setReviews] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [error, setError] = useState('');
 
-  const mockReviews = [
-    {
-      id: '1',
-      product: 'iPhone 15 Pro Max',
-      user: 'Nguyễn Văn A',
-      rating: 5,
-      comment: 'Sản phẩm tuyệt vời, giao hàng nhanh!',
-      status: 'visible',
-      date: '20/07',
-    },
-    {
-      id: '2',
-      product: 'Samsung Galaxy S24 Ultra',
-      user: 'Trần Thị B',
-      rating: 4,
-      comment: 'Chất lượng tốt, đúng mô tả. Pin khá trâu.',
-      status: 'visible',
-      date: '19/07',
-    },
-    {
-      id: '3',
-      product: 'MacBook Air M3',
-      user: 'Lê Văn C',
-      rating: 2,
-      comment: 'Hàng không đúng mô tả, bị trầy xước.',
-      status: 'visible',
-      date: '18/07',
-    },
-    {
-      id: '4',
-      product: 'AirPods Pro 2',
-      user: 'Phạm Thị D',
-      rating: 1,
-      comment: 'Spam review nội dung xấu...',
-      status: 'hidden',
-      date: '17/07',
-    },
-    {
-      id: '5',
-      product: 'iPad Pro M4',
-      user: 'Hoàng Văn E',
-      rating: 5,
-      comment: 'Màn hình đẹp, mượt mà. Rất hài lòng!',
-      status: 'visible',
-      date: '16/07',
-    },
-  ];
+  useEffect(() => {
+    fetchReviews(1);
+  }, []);
+
+  const fetchReviews = async (p: number) => {
+    try {
+      setLoading(true);
+      const res = await reviewService.getAdminReviews(p, 10);
+      setReviews(res.data);
+      setTotalPages(res.meta.totalPages);
+      setPage(p);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (err: any) {
+      console.error('Failed to load reviews', err);
+      setError('Lỗi khi tải danh sách đánh giá');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleToggle = async (id: string) => {
+    try {
+      await reviewService.toggleVisibility(id);
+      fetchReviews(page);
+    } catch (err) {
+      console.error('Failed to toggle visibility', err);
+    }
+  };
 
   return (
     <div className="p-6 lg:p-8">
@@ -64,6 +55,8 @@ export default function AdminReviewsPage() {
           <BaseInput placeholder={t('searchPlaceholder')} className="pl-10" />
         </div>
       </div>
+
+      {error && <div className="mb-4 text-red-600">{error}</div>}
 
       {/* Reviews Table */}
       <div className="bg-white rounded-xl border border-rule overflow-hidden">
@@ -80,55 +73,98 @@ export default function AdminReviewsPage() {
               </tr>
             </thead>
             <tbody>
-              {mockReviews.map((review) => (
-                <tr
-                  key={review.id}
-                  className="border-b border-rule last:border-0 hover:bg-paper-2 transition-colors"
-                >
-                  <td className="px-5 py-3 font-medium text-ink max-w-[160px] truncate">
-                    {review.product}
-                  </td>
-                  <td className="px-5 py-3 text-ink-2">{review.user}</td>
-                  <td className="px-5 py-3">
-                    <div className="flex items-center gap-0.5">
-                      {[1, 2, 3, 4, 5].map((s) => (
-                        <Star
-                          key={s}
-                          className={`w-3.5 h-3.5 ${s <= review.rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`}
-                        />
-                      ))}
-                    </div>
-                  </td>
-                  <td className="px-5 py-3 text-ink-2 max-w-[250px] truncate">{review.comment}</td>
-                  <td className="px-5 py-3">
-                    <span
-                      className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
-                        review.status === 'visible'
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-gray-100 text-gray-800'
-                      }`}
-                    >
-                      {t(review.status as Parameters<typeof t>[0])}
-                    </span>
-                  </td>
-                  <td className="px-5 py-3">
-                    <button
-                      className="p-1.5 rounded-lg hover:bg-paper-2 text-ink-2 hover:text-orange-500 transition-colors"
-                      title={review.status === 'visible' ? t('hideReview') : t('showReview')}
-                    >
-                      {review.status === 'visible' ? (
-                        <EyeOff className="w-4 h-4" />
-                      ) : (
-                        <Eye className="w-4 h-4" />
-                      )}
-                    </button>
+              {loading ? (
+                <tr>
+                  <td colSpan={6} className="text-center py-8">
+                    Đang tải...
                   </td>
                 </tr>
-              ))}
+              ) : reviews.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="text-center py-8">
+                    Không có đánh giá nào
+                  </td>
+                </tr>
+              ) : (
+                reviews.map((review) => (
+                  <tr
+                    key={review.id}
+                    className="border-b border-rule last:border-0 hover:bg-paper-2 transition-colors"
+                  >
+                    <td className="px-5 py-3 font-medium text-ink max-w-[160px] truncate">
+                      {review.product?.name}
+                    </td>
+                    <td className="px-5 py-3 text-ink-2">
+                      <div>{review.user?.fullName}</div>
+                      <div className="text-xs text-gray-500">{review.user?.phone}</div>
+                    </td>
+                    <td className="px-5 py-3">
+                      <div className="flex items-center gap-0.5">
+                        {[1, 2, 3, 4, 5].map((s) => (
+                          <Star
+                            key={s}
+                            className={`w-3.5 h-3.5 ${s <= review.rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`}
+                          />
+                        ))}
+                      </div>
+                    </td>
+                    <td className="px-5 py-3 text-ink-2 max-w-[250px] truncate">
+                      {review.title && <div className="font-medium text-black">{review.title}</div>}
+                      {review.content}
+                    </td>
+                    <td className="px-5 py-3">
+                      <span
+                        className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
+                          review.status === 'VISIBLE'
+                            ? 'bg-green-100 text-green-800'
+                            : 'bg-gray-100 text-gray-800'
+                        }`}
+                      >
+                        {review.status === 'VISIBLE' ? 'Hiển thị' : 'Đã ẩn'}
+                      </span>
+                    </td>
+                    <td className="px-5 py-3">
+                      <button
+                        onClick={() => handleToggle(review.id)}
+                        className="p-1.5 rounded-lg hover:bg-paper-2 text-ink-2 hover:text-orange-500 transition-colors"
+                        title={review.status === 'VISIBLE' ? t('hideReview') : t('showReview')}
+                      >
+                        {review.status === 'VISIBLE' ? (
+                          <EyeOff className="w-4 h-4" />
+                        ) : (
+                          <Eye className="w-4 h-4" />
+                        )}
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
       </div>
+
+      {totalPages > 1 && (
+        <div className="flex justify-center gap-2 mt-6">
+          <button
+            disabled={page === 1}
+            onClick={() => fetchReviews(page - 1)}
+            className="px-4 py-2 border rounded-lg disabled:opacity-50"
+          >
+            Trước
+          </button>
+          <span className="px-4 py-2">
+            {page} / {totalPages}
+          </span>
+          <button
+            disabled={page === totalPages}
+            onClick={() => fetchReviews(page + 1)}
+            className="px-4 py-2 border rounded-lg disabled:opacity-50"
+          >
+            Sau
+          </button>
+        </div>
+      )}
     </div>
   );
 }

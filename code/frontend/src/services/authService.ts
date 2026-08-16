@@ -1,32 +1,24 @@
-import { AuthResponse, UserRole } from '@/types';
+import { AuthResponse } from '@/types';
 import { apiClient } from './api-client';
 
 export const authService = {
   login: async (credentials: Record<string, unknown>): Promise<AuthResponse> => {
-    // In real implementation:
-    // const response = await apiClient.post<AuthResponse>("/auth/login", credentials);
-    // return response.data;
-
-    // Mock implementation for UI building
-    return new Promise((resolve) =>
-      setTimeout(() => {
-        resolve({
-          user: {
-            id: '1',
-            email: credentials.email as string,
-            role: UserRole.CUSTOMER,
-            isVerified: true,
-          },
-          accessToken: 'mock-jwt-token',
-          refreshToken: 'mock-refresh-token',
-        });
-      }, 1000)
-    );
+    const response = await apiClient.post<AuthResponse>('/auth/login', credentials);
+    return response.data;
   },
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  requestPhoneOtp: async (phone: string): Promise<{ message: string }> => {
+    const response = await apiClient.post<{ message: string }>('/auth/phone/login', { phone });
+    return response.data;
+  },
+
+  verifyPhoneOtp: async (phone: string, otp: string): Promise<AuthResponse> => {
+    const response = await apiClient.post<AuthResponse>('/auth/phone/verify', { phone, otp });
+    return response.data;
+  },
+
   register: async (userData: Record<string, unknown>): Promise<void> => {
-    return new Promise((resolve) => setTimeout(resolve, 1000));
+    await apiClient.post('/auth/register', userData);
   },
 
   logout: async (): Promise<void> => {

@@ -51,11 +51,13 @@ export default function CheckoutResultPage() {
             {t('paymentFailedDesc') || 'Thanh toán không thành công hoặc đã bị huỷ.'}
           </p>
           <div className="bg-gray-50 p-4 rounded-lg mb-8 text-sm text-left inline-block">
-            <p><span className="font-semibold">Mã giao dịch:</span> {appTransId || 'Không xác định'}</p>
+            <p>
+              <span className="font-semibold">Mã giao dịch:</span> {appTransId || 'Không xác định'}
+            </p>
           </div>
           <div className="flex gap-4 justify-center">
             <Link href="/orders">
-              <BaseButton variant="primary" className="flex items-center gap-2">
+              <BaseButton variant="default" className="flex items-center gap-2">
                 Pay Again <ArrowRight className="w-4 h-4" />
               </BaseButton>
             </Link>

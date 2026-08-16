@@ -17,6 +17,9 @@ export enum OrderStatus {
 export enum PaymentMethod {
   VNPAY = 'vnpay',
   COD = 'cod',
+  ZALOPAY = 'zalopay',
+  STRIPE = 'stripe',
+  BANK_TRANSFER = 'bank_transfer',
 }
 
 export enum PaymentStatus {
@@ -28,40 +31,40 @@ export enum PaymentStatus {
 
 export interface OrderItem {
   id: string;
-  order_id: string;
-  product_id: string;
+  orderId: string;
+  productId: string;
   quantity: number;
-  unit_price: number;
+  unitPrice: number;
   product?: Product;
 }
 
 export interface Order {
   id: string;
-  user_id: string;
-  total_amount: number;
-  shipping_fee: number;
-  discount_amount: number;
-  voucher_id?: string | null;
-  shipping_name: string;
-  shipping_phone: string;
-  shipping_address: string;
-  delivery_method: string;
-  delivery_partner?: string | null;
-  tracking_id?: string | null;
+  userId?: string | null;
+  totalAmount: number;
+  shippingFee: number;
+  discountAmount: number;
+  voucherId?: string | null;
+  shippingName: string;
+  shippingPhone: string;
+  shippingAddress: string;
+  deliveryMethod: string;
+  deliveryPartner?: string | null;
+  trackingId?: string | null;
   status: OrderStatus;
-  payment_method: PaymentMethod;
-  payment_status: PaymentStatus;
-  vnp_txn_ref?: string | null;
-  vnp_transaction_no?: string | null;
-  vnp_pay_date?: string | null;
+  paymentMethod: PaymentMethod | string;
+  paymentStatus: PaymentStatus;
+  vnpTxnRef?: string | null;
+  vnpTransactionNo?: string | null;
+  vnpPayDate?: string | null;
   items?: OrderItem[];
   user?: User; // Depending on eager loading
 }
 
 export interface CartItem {
   id: string;
-  user_id: string;
-  product_id: string;
+  userId: string;
+  productId: string;
   quantity: number;
   product?: Product;
 }

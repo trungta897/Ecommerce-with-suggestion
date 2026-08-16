@@ -39,8 +39,8 @@ export default function ProductCard({ product, isFlashSale, flashSaleData }: Pro
     try {
       addItem({
         id: product.id,
-        user_id: '',
-        product_id: product.id,
+        userId: '',
+        productId: product.id,
         quantity: 1,
         product,
       });
