@@ -32,5 +32,8 @@
     "title": "404 - Không tìm thấy trang",
     "description": "Đường dẫn bạn truy cập không tồn tại hoặc máy chủ Backend (port 8000) chưa hoạt động.",
     "backHome": "Quay lại Trang chủ"
-  }
+  },
+  "viewCart": "Xem giỏ hàng",
+  "error": "Đã xảy ra lỗi. Vui lòng thử lại.",
+  "loading": "Đang xử lý..."
 }

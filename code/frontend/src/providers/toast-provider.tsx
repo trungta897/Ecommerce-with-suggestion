@@ -4,11 +4,37 @@ import React, { createContext, useContext, useState, useCallback, useMemo } from
 import { BaseToast, ToastItem, ToastType } from '@/components/base/BaseToast';
 
 interface ToastContextType {
-  showToast: (type: ToastType, message: string, title?: string, duration?: number) => void;
-  success: (message: string, title?: string, duration?: number) => void;
-  error: (message: string, title?: string, duration?: number) => void;
-  warning: (message: string, title?: string, duration?: number) => void;
-  info: (message: string, title?: string, duration?: number) => void;
+  showToast: (
+    type: ToastType,
+    message: string,
+    title?: string,
+    duration?: number,
+    action?: { label: string; onClick: () => void }
+  ) => void;
+  success: (
+    message: string,
+    title?: string,
+    duration?: number,
+    action?: { label: string; onClick: () => void }
+  ) => void;
+  error: (
+    message: string,
+    title?: string,
+    duration?: number,
+    action?: { label: string; onClick: () => void }
+  ) => void;
+  warning: (
+    message: string,
+    title?: string,
+    duration?: number,
+    action?: { label: string; onClick: () => void }
+  ) => void;
+  info: (
+    message: string,
+    title?: string,
+    duration?: number,
+    action?: { label: string; onClick: () => void }
+  ) => void;
 }
 
 const ToastContext = createContext<ToastContextType | undefined>(undefined);
@@ -21,9 +47,15 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }, []);
 
   const showToast = useCallback(
-    (type: ToastType, message: string, title?: string, duration?: number) => {
+    (
+      type: ToastType,
+      message: string,
+      title?: string,
+      duration?: number,
+      action?: { label: string; onClick: () => void }
+    ) => {
       const id = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-      setToasts((prev) => [...prev, { id, type, message, title, duration }]);
+      setToasts((prev) => [...prev, { id, type, message, title, duration, action }]);
     },
     []
   );
@@ -31,14 +63,30 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const contextValue = useMemo(
     () => ({
       showToast,
-      success: (message: string, title?: string, duration?: number) =>
-        showToast('success', message, title, duration),
-      error: (message: string, title?: string, duration?: number) =>
-        showToast('error', message, title, duration),
-      warning: (message: string, title?: string, duration?: number) =>
-        showToast('warning', message, title, duration),
-      info: (message: string, title?: string, duration?: number) =>
-        showToast('info', message, title, duration),
+      success: (
+        message: string,
+        title?: string,
+        duration?: number,
+        action?: { label: string; onClick: () => void }
+      ) => showToast('success', message, title, duration, action),
+      error: (
+        message: string,
+        title?: string,
+        duration?: number,
+        action?: { label: string; onClick: () => void }
+      ) => showToast('error', message, title, duration, action),
+      warning: (
+        message: string,
+        title?: string,
+        duration?: number,
+        action?: { label: string; onClick: () => void }
+      ) => showToast('warning', message, title, duration, action),
+      info: (
+        message: string,
+        title?: string,
+        duration?: number,
+        action?: { label: string; onClick: () => void }
+      ) => showToast('info', message, title, duration, action),
     }),
     [showToast]
   );

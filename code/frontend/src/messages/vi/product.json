@@ -26,7 +26,7 @@
   "filterProducts": "Lọc sản phẩm",
   "showAllCount": "Hiển thị tất cả ({total} sản phẩm)",
   "showAll": "Hiển thị tất cả sản phẩm",
-  "addedToCartSuccess": "Đã thêm {name} vào giỏ hàng",
+  "addedToCartSuccess": "Đã thêm vào giỏ hàng",
   "addedToCartFailed": "Thêm vào giỏ hàng thất bại",
   "addedToCartTitle": "Thành công",
   "redirectingToCheckout": "Đang chuyển đến trang thanh toán...",

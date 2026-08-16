@@ -32,5 +32,8 @@
     "title": "404 - Page Not Found",
     "description": "The path you are accessing does not exist or the Backend server (port 8000) is offline.",
     "backHome": "Back to Home"
-  }
+  },
+  "viewCart": "View Cart",
+  "error": "An error occurred. Please try again.",
+  "loading": "Loading..."
 }
