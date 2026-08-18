@@ -1,7 +1,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { BaseButton } from '@/components/base';
 import { ChevronRight, Package } from '@/components/base/icons';
 import { useCartStore, useAuthStore } from '@/store';
@@ -22,7 +22,7 @@ export default function CheckoutPage() {
   const t = useTranslations('checkout');
   const tCommon = useTranslations('common');
   const toast = useToast();
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, user } = useAuthStore();
   const { items, clearCart } = useCartStore();
   const { data: productsResponse, isLoading } = useProducts({ all: true });
   const products = productsResponse?.data || [];
@@ -37,8 +37,16 @@ export default function CheckoutPage() {
     fullName: '',
     phone: '',
     address: '',
+    pickupTime: '',
   });
-  const [addressDetails, setAddressDetails] = useState({
+  const [addressDetails, setAddressDetails] = useState<{
+    provinceName: string;
+    districtName: string;
+    wardName: string;
+    street: string;
+    provinceId?: string;
+    wardId?: string;
+  }>({
     provinceName: '',
     districtName: '',
     wardName: '',
@@ -48,7 +56,20 @@ export default function CheckoutPage() {
     fullName?: string;
     phone?: string;
     address?: string;
+    pickupTime?: string;
   }>({});
+
+  // Autofill
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      setShippingData(prev => ({
+        ...prev,
+        fullName: prev.fullName || user.fullName || '',
+        phone: prev.phone || user.phone || '',
+        address: prev.address || user.address || '',
+      }));
+    }
+  }, [isAuthenticated, user]);
 
   // Voucher State
   const [voucherCode, setVoucherCode] = useState('');
@@ -58,6 +79,8 @@ export default function CheckoutPage() {
     code: string;
     type: string;
   } | null>(null);
+
+  const [useVipPoints, setUseVipPoints] = useState(false);
 
   const getProductPrice = (product?: { price: number; discountPrice?: number }) => {
     if (!product) return 0;
@@ -80,12 +103,19 @@ export default function CheckoutPage() {
   );
 
   const hasAddress = !!addressDetails.provinceName;
-  const shippingFee = hasAddress ? (deliveryMethod === 'express' ? 2 : 0) : 0;
-  const total = Math.max(0, subtotal + shippingFee - discount);
+  const shippingFee = deliveryMethod === 'pickup' ? 0 : (hasAddress ? (deliveryMethod === 'express' ? 2 : 0) : 0);
+  
+  let vipDiscount = 0;
+  if (useVipPoints && user && user.vipPoints) {
+     vipDiscount = user.vipPoints * 10;
+     if (vipDiscount > subtotal) vipDiscount = subtotal;
+  }
+
+  const total = Math.max(0, subtotal + shippingFee - discount - vipDiscount);
 
   const handleNextStep = () => {
     if (currentStep === 0) {
-      const newErrors: { fullName?: string; phone?: string; address?: string } = {};
+      const newErrors: { fullName?: string; phone?: string; address?: string; pickupTime?: string } = {};
       let hasError = false;
 
       if (!shippingData.fullName.trim()) {
@@ -96,22 +126,30 @@ export default function CheckoutPage() {
         newErrors.phone = t('validation.phoneInvalid');
         toast.error(t('validation.phoneInvalid'), t('toast.orderErrorTitle'));
         hasError = true;
-      } else if (!addressDetails.provinceName) {
-        newErrors.address = t('validation.provinceRequired');
-        toast.error(t('validation.provinceRequired'), t('toast.orderErrorTitle'));
-        hasError = true;
-      } else if (!addressDetails.districtName) {
-        newErrors.address = t('validation.districtRequired');
-        toast.error(t('validation.districtRequired'), t('toast.orderErrorTitle'));
-        hasError = true;
-      } else if (!addressDetails.wardName) {
-        newErrors.address = t('validation.wardRequired');
-        toast.error(t('validation.wardRequired'), t('toast.orderErrorTitle'));
-        hasError = true;
-      } else if (!addressDetails.street) {
-        newErrors.address = t('validation.streetRequired');
-        toast.error(t('validation.streetRequired'), t('toast.orderErrorTitle'));
-        hasError = true;
+      } else if (deliveryMethod !== 'pickup') {
+        if (!addressDetails.provinceName) {
+          newErrors.address = t('validation.provinceRequired');
+          toast.error(t('validation.provinceRequired'), t('toast.orderErrorTitle'));
+          hasError = true;
+        } else if (!addressDetails.districtName) {
+          newErrors.address = t('validation.districtRequired');
+          toast.error(t('validation.districtRequired'), t('toast.orderErrorTitle'));
+          hasError = true;
+        } else if (!addressDetails.wardName) {
+          newErrors.address = t('validation.wardRequired');
+          toast.error(t('validation.wardRequired'), t('toast.orderErrorTitle'));
+          hasError = true;
+        } else if (!addressDetails.street) {
+          newErrors.address = t('validation.streetRequired');
+          toast.error(t('validation.streetRequired'), t('toast.orderErrorTitle'));
+          hasError = true;
+        }
+      } else if (deliveryMethod === 'pickup') {
+        if (!shippingData.pickupTime) {
+          newErrors.pickupTime = 'Vui lòng chọn thời gian lấy hàng';
+          toast.error('Vui lòng chọn thời gian lấy hàng', t('toast.orderErrorTitle'));
+          hasError = true;
+        }
       }
 
       if (hasError) {
@@ -128,15 +166,19 @@ export default function CheckoutPage() {
     setIsSubmitting(true);
 
     try {
-      const fullAddress = `${addressDetails.street}, ${addressDetails.wardName}, ${addressDetails.districtName}, ${addressDetails.provinceName}`;
+      const fullAddress = deliveryMethod === 'pickup' ? 'Nhận tại cửa hàng' : `${addressDetails.street}, ${addressDetails.wardName}, ${addressDetails.districtName}, ${addressDetails.provinceName}`;
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const body: any = {
         shippingName: shippingData.fullName,
         shippingPhone: shippingData.phone,
         shippingAddress: fullAddress,
-        deliveryMethod,
+        deliveryMethod: deliveryMethod.toUpperCase(),
         paymentMethod: paymentMethod.toUpperCase(),
         voucherId: appliedVoucher ? appliedVoucher.id : undefined,
+        pickupTime: deliveryMethod === 'pickup' && shippingData.pickupTime ? new Date(shippingData.pickupTime).toISOString() : undefined,
+        provinceId: deliveryMethod !== 'pickup' ? addressDetails.provinceId : undefined,
+        wardId: deliveryMethod !== 'pickup' ? addressDetails.wardId : undefined,
+        useVipPoints: useVipPoints,
       };
 
       let order;
@@ -217,6 +259,14 @@ export default function CheckoutPage() {
       <div className="flex flex-col lg:flex-row gap-8">
         {/* Form Area */}
         <div className="flex-1">
+          {currentStep === 0 && !isAuthenticated && (
+            <div className="bg-primary/5 border border-primary/20 text-primary p-4 rounded-xl mb-6 flex justify-between items-center shadow-sm">
+              <span className="text-sm font-medium">Đăng nhập để tự động điền thông tin và tích điểm!</span>
+              <Link href="/login?redirect=/checkout" className="text-sm font-bold underline hover:text-primary-dark transition-colors">
+                Đăng nhập ngay
+              </Link>
+            </div>
+          )}
           {currentStep === 0 && (
             <ShippingForm
               shippingData={shippingData}
@@ -242,6 +292,8 @@ export default function CheckoutPage() {
               onVoucherCodeChange={setVoucherCode}
               onDiscountChange={setDiscount}
               onAppliedVoucherChange={setAppliedVoucher}
+              useVipPoints={useVipPoints}
+              onUseVipPointsChange={setUseVipPoints}
             />
           )}
 
@@ -278,6 +330,7 @@ export default function CheckoutPage() {
           shippingFee={shippingFee}
           discount={discount}
           total={total}
+          isDepositRequired={deliveryMethod !== 'pickup' && subtotal < 200000}
         />
       </div>
     </div>

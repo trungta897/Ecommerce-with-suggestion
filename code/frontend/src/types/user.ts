@@ -14,6 +14,7 @@ export interface User {
   avatarUrl?: string;
   role: UserRole;
   isVerified: boolean;
+  vipPoints?: number;
   createdAt?: string;
   updatedAt?: string;
 }

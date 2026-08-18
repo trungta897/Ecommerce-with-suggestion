@@ -8,6 +8,7 @@ interface OrderSummarySidebarProps {
   shippingFee: number;
   discount: number;
   total: number;
+  isDepositRequired?: boolean;
 }
 
 export function OrderSummarySidebar({
@@ -15,6 +16,7 @@ export function OrderSummarySidebar({
   shippingFee,
   discount,
   total,
+  isDepositRequired,
 }: OrderSummarySidebarProps) {
   const locale = useLocale();
   const t = useTranslations('checkout');
@@ -43,6 +45,12 @@ export function OrderSummarySidebar({
               <span className="text-base font-bold text-ink">{t('total')}</span>
               <span className="text-lg font-bold text-primary">{formatPrice(total, locale)}</span>
             </div>
+            {isDepositRequired && (
+              <div className="flex justify-between items-center pt-2 mt-2 border-t border-dashed border-rule text-orange-600">
+                <span className="text-sm font-semibold">Cần thanh toán cọc trước:</span>
+                <span className="text-sm font-bold">{formatPrice(50000, locale)}</span>
+              </div>
+            )}
           </div>
         </div>
       </div>

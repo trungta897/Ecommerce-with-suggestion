@@ -10,18 +10,22 @@ interface AddressDetails {
   districtName: string;
   wardName: string;
   street: string;
+  provinceId?: string;
+  wardId?: string;
 }
 
 interface ShippingData {
   fullName: string;
   phone: string;
   address: string;
+  pickupTime: string;
 }
 
 interface ShippingFormErrors {
   fullName?: string;
   phone?: string;
   address?: string;
+  pickupTime?: string;
 }
 
 interface ShippingFormProps {
@@ -84,51 +88,76 @@ export function ShippingForm({
           {errors.phone && <p className="text-xs text-red-500">{errors.phone}</p>}
         </div>
 
-        <div className="space-y-2 md:col-span-2 pt-2 border-t border-rule">
-          <label className="text-sm font-bold text-ink">{t('address')} *</label>
-          <AddressSelector
-            initialAddress={shippingData.address}
-            onAddressChange={(fullAddr, details) => {
-              onShippingDataChange({ ...shippingData, address: fullAddr });
-              onAddressDetailsChange(details);
-              onErrorsChange({ ...errors, address: undefined });
-            }}
-            error={errors.address}
-          />
-        </div>
+        {deliveryMethod !== 'pickup' && (
+          <div className="space-y-2 md:col-span-2 pt-2 border-t border-rule">
+            <label className="text-sm font-bold text-ink">{t('address')} *</label>
+            <AddressSelector
+              initialAddress={shippingData.address}
+              onAddressChange={(fullAddr, details) => {
+                onShippingDataChange({ ...shippingData, address: fullAddr });
+                onAddressDetailsChange(details);
+                onErrorsChange({ ...errors, address: undefined });
+              }}
+              error={errors.address}
+            />
+          </div>
+        )}
       </div>
 
       <div className="space-y-3 pt-4 border-t border-rule">
         <label className="text-sm font-bold text-ink">{t('deliveryMethod')}</label>
-        {['standard', 'express'].map((method) => (
-          <label
-            key={method}
-            className={`flex items-center gap-3 p-3.5 rounded-xl border transition-all ${
-              !hasAddress
-                ? 'opacity-50 cursor-not-allowed bg-gray-50'
-                : 'cursor-pointer hover:border-ink-2'
-            } ${
-              deliveryMethod === method && hasAddress
-                ? 'border-primary bg-primary/5 font-medium'
-                : 'border-rule'
-            }`}
-          >
-            <input
-              type="radio"
-              name="delivery"
-              value={method}
-              checked={deliveryMethod === method}
-              disabled={!hasAddress}
-              onChange={(e) => onDeliveryMethodChange(e.target.value)}
-              className="accent-primary w-4 h-4 disabled:opacity-50"
-            />
-            <span className="text-sm text-ink">{t(method as 'standard' | 'express')}</span>
-            <span className="text-sm font-semibold text-primary ml-auto">
-              {method === 'standard' ? t('free') : formatPrice(2, locale)}
-            </span>
-          </label>
-        ))}
+        {['standard', 'express', 'pickup'].map((method) => {
+          const isPickup = method === 'pickup';
+          const isDisabled = !isPickup && !hasAddress;
+          
+          return (
+            <label
+              key={method}
+              className={`flex items-center gap-3 p-3.5 rounded-xl border transition-all ${
+                isDisabled
+                  ? 'opacity-50 cursor-not-allowed bg-gray-50'
+                  : 'cursor-pointer hover:border-ink-2'
+              } ${
+                deliveryMethod === method
+                  ? 'border-primary bg-primary/5 font-medium'
+                  : 'border-rule'
+              }`}
+            >
+              <input
+                type="radio"
+                name="delivery"
+                value={method}
+                checked={deliveryMethod === method}
+                disabled={isDisabled}
+                onChange={(e) => onDeliveryMethodChange(e.target.value)}
+                className="accent-primary w-4 h-4 disabled:opacity-50"
+              />
+              <span className="text-sm text-ink">{t(method as any)}</span>
+              <span className="text-sm font-semibold text-primary ml-auto">
+                {isPickup ? t('free') : (method === 'standard' ? t('free') : formatPrice(2, locale))}
+              </span>
+            </label>
+          );
+        })}
       </div>
+
+      {deliveryMethod === 'pickup' && (
+        <div className="space-y-2 pt-4 border-t border-rule">
+          <label className="text-sm font-bold text-ink">{t('pickupTime')} *</label>
+          <input
+             type="datetime-local"
+             className="w-full px-4 py-2 border border-rule rounded-xl text-ink outline-none focus:border-primary transition-colors"
+             min={new Date().toISOString().slice(0, 16)}
+             max={new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString().slice(0, 16)}
+             value={shippingData.pickupTime || ''}
+             onChange={(e) => {
+               onShippingDataChange({ ...shippingData, pickupTime: e.target.value });
+               onErrorsChange({ ...errors, pickupTime: undefined });
+             }}
+          />
+          {errors.pickupTime && <p className="text-xs text-red-500">{errors.pickupTime}</p>}
+        </div>
+      )}
     </div>
   );
 }

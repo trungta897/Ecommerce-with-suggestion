@@ -6,6 +6,7 @@ import { CreditCard } from '@/components/base/icons';
 import { useToast } from '@/providers/toast-provider';
 import { voucherService } from '@/services/voucher-service';
 import { formatPrice } from '@/utils/format';
+import { useAuthStore } from '@/store';
 
 interface AppliedVoucher {
   id: string;
@@ -24,6 +25,8 @@ interface PaymentFormProps {
   onVoucherCodeChange: (code: string) => void;
   onDiscountChange: (discount: number) => void;
   onAppliedVoucherChange: (voucher: AppliedVoucher | null) => void;
+  useVipPoints?: boolean;
+  onUseVipPointsChange?: (use: boolean) => void;
 }
 
 export function PaymentForm({
@@ -37,10 +40,13 @@ export function PaymentForm({
   onVoucherCodeChange,
   onDiscountChange,
   onAppliedVoucherChange,
+  useVipPoints,
+  onUseVipPointsChange,
 }: PaymentFormProps) {
   const locale = useLocale();
   const t = useTranslations('checkout');
   const toast = useToast();
+  const { user } = useAuthStore();
 
   const handleApplyVoucher = async () => {
     if (!voucherCode.trim()) {
@@ -131,6 +137,29 @@ export function PaymentForm({
           </div>
         )}
       </div>
+
+      {/* VIP Points */}
+      {user && user.vipPoints && user.vipPoints > 0 && onUseVipPointsChange && (
+        <div className="pt-4 border-t border-rule space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex flex-col">
+              <span className="text-sm font-bold text-ink">Sử dụng điểm VIP</span>
+              <span className="text-xs text-ink-2">
+                Bạn có <span className="font-bold text-primary">{user.vipPoints}</span> điểm (tương đương {formatPrice(user.vipPoints * 10, locale)})
+              </span>
+            </div>
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input 
+                type="checkbox" 
+                className="sr-only peer"
+                checked={useVipPoints || false}
+                onChange={(e) => onUseVipPointsChange(e.target.checked)}
+              />
+              <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+            </label>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

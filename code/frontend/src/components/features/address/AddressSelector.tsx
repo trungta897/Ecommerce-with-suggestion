@@ -14,6 +14,8 @@ export interface AddressSelectorProps {
       districtName: string;
       wardName: string;
       street: string;
+      provinceId?: string;
+      wardId?: string;
     }
   ) => void;
   error?: string;
@@ -158,6 +160,8 @@ export const AddressSelector: React.FC<AddressSelectorProps> = ({
         districtName: selectedDistrict?.fullName || '',
         wardName: selectedWard?.fullName || '',
         street: street.trim(),
+        provinceId: selectedProvince?.id || undefined,
+        wardId: selectedWard?.id || undefined,
       });
     }
   }, [selectedProvince, selectedDistrict, selectedWard, street, initialAddress]);
