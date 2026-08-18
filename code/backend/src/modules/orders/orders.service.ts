@@ -20,21 +20,28 @@ export class OrdersService {
     private readonly i18n: I18nService,
   ) {}
 
-  async calculateShipping(deliveryMethod?: string, provinceId?: string): Promise<number> {
+  async calculateShipping(
+    deliveryMethod?: string,
+    provinceId?: string,
+  ): Promise<number> {
     if (deliveryMethod === 'PICKUP') return 0;
-    if (!provinceId) throw new BadRequestException('Vui lòng chọn Tỉnh/Thành phố giao hàng');
-    
-    const province = await this.prisma.province.findUnique({ where: { id: provinceId }});
-    if (!province) throw new BadRequestException('Tỉnh/Thành phố không tồn tại');
-    
+    if (!provinceId)
+      throw new BadRequestException('Vui lòng chọn Tỉnh/Thành phố giao hàng');
+
+    const province = await this.prisma.province.findUnique({
+      where: { id: provinceId },
+    });
+    if (!province)
+      throw new BadRequestException('Tỉnh/Thành phố không tồn tại');
+
     if (province.id === '01') {
       return deliveryMethod === 'EXPRESS' ? 40000 : 15000;
     }
-    
+
     if (province.region === 'NORTH') return 30000;
     if (province.region === 'CENTRAL') return 40000;
     if (province.region === 'SOUTH') return 50000;
-    
+
     return 30000;
   }
 
@@ -99,15 +106,15 @@ export class OrdersService {
       subtotal += price * item.quantity;
     }
 
-    let shippingFee = await this.calculateShipping(
+    const shippingFee = await this.calculateShipping(
       createOrderDto.deliveryMethod,
-      createOrderDto.provinceId
+      createOrderDto.provinceId,
     );
 
     let vipDiscountAmount = 0;
     let usedVipPoints = 0;
     if (createOrderDto.useVipPoints && userId) {
-      const user = await this.prisma.user.findUnique({ where: { id: userId }});
+      const user = await this.prisma.user.findUnique({ where: { id: userId } });
       if (user && user.vipPoints > 0) {
         usedVipPoints = user.vipPoints;
         vipDiscountAmount = usedVipPoints * 10;
@@ -121,7 +128,9 @@ export class OrdersService {
     let discountAmount = 0;
     // FREE_SHIPPING voucher logic mockup (we assume a 100% discount on shipping for now if voucherId is 'FREE_SHIP')
     if (createOrderDto.voucherId) {
-      const voucher = await this.prisma.voucher.findUnique({ where: { id: createOrderDto.voucherId }});
+      const voucher = await this.prisma.voucher.findUnique({
+        where: { id: createOrderDto.voucherId },
+      });
       if (voucher && voucher.isActive) {
         if (voucher.type === 'FREE_SHIPPING') {
           discountAmount = shippingFee;
@@ -133,21 +142,29 @@ export class OrdersService {
       }
     }
 
-    const totalAmount = Math.max(0, subtotal + shippingFee - discountAmount - vipDiscountAmount);
+    const totalAmount = Math.max(
+      0,
+      subtotal + shippingFee - discountAmount - vipDiscountAmount,
+    );
 
     let isDepositPayment = false;
     let depositAmount: number | null = null;
-    
+
     if (createOrderDto.deliveryMethod !== 'PICKUP' && subtotal < 200000) {
       isDepositPayment = true;
       depositAmount = 50000;
     }
 
-    if (createOrderDto.deliveryMethod === 'PICKUP' && createOrderDto.pickupTime) {
+    if (
+      createOrderDto.deliveryMethod === 'PICKUP' &&
+      createOrderDto.pickupTime
+    ) {
       const pickupTime = new Date(createOrderDto.pickupTime);
       const now = new Date();
       if (pickupTime < now) {
-        throw new BadRequestException('Thời gian lấy hàng không hợp lệ (trong quá khứ)');
+        throw new BadRequestException(
+          'Thời gian lấy hàng không hợp lệ (trong quá khứ)',
+        );
       }
       const maxTime = new Date(now.getTime() + 5 * 24 * 60 * 60 * 1000);
       if (pickupTime > maxTime) {
@@ -155,12 +172,17 @@ export class OrdersService {
       }
       const hour = pickupTime.getHours();
       if (hour < 8 || hour >= 22) {
-        throw new BadRequestException('Thời gian lấy hàng phải trong giờ làm việc (08:00 - 22:00)');
+        throw new BadRequestException(
+          'Thời gian lấy hàng phải trong giờ làm việc (08:00 - 22:00)',
+        );
       }
     }
 
     let paymentExpiresAt: Date | null = null;
-    if (createOrderDto.paymentMethod !== PaymentMethod.COD || isDepositPayment) {
+    if (
+      createOrderDto.paymentMethod !== PaymentMethod.COD ||
+      isDepositPayment
+    ) {
       paymentExpiresAt = new Date(Date.now() + 30 * 60 * 1000); // 30 mins
     }
 
@@ -361,13 +383,19 @@ export class OrdersService {
       );
     }
 
-    const order = await this.prisma.order.findUnique({ where: { id: orderId } });
+    const order = await this.prisma.order.findUnique({
+      where: { id: orderId },
+    });
     if (!order) {
-      throw new NotFoundException(this.i18n.t(ORDER_MESSAGES.NOT_FOUND, { lang }));
+      throw new NotFoundException(
+        this.i18n.t(ORDER_MESSAGES.NOT_FOUND, { lang }),
+      );
     }
 
     const updated = await this.prisma.$transaction(async (tx) => {
-      const updateData: any = { status: status as OrderStatus };
+      const updateData: Prisma.OrderUpdateInput = {
+        status: status as OrderStatus,
+      };
 
       if (status === OrderStatus.COMPLETED && !order.pointsCreditedAt) {
         if (order.userId && order.earnedVipPoints > 0) {
@@ -386,13 +414,19 @@ export class OrdersService {
             where: { id: order.userId },
             data: { vipPoints: { increment: order.usedVipPoints } },
           });
-          updateData.usedVipPoints = 0; 
+          updateData.usedVipPoints = 0;
         }
       }
 
       if (status === OrderStatus.RETURNED) {
-        if (order.userId && order.pointsCreditedAt && order.earnedVipPoints > 0) {
-          const user = await tx.user.findUnique({ where: { id: order.userId } });
+        if (
+          order.userId &&
+          order.pointsCreditedAt &&
+          order.earnedVipPoints > 0
+        ) {
+          const user = await tx.user.findUnique({
+            where: { id: order.userId },
+          });
           if (user) {
             if (user.vipPoints >= order.earnedVipPoints) {
               await tx.user.update({
@@ -408,8 +442,8 @@ export class OrdersService {
             }
           }
           // Prevent double revoke
-          updateData.pointsCreditedAt = null; 
-          updateData.earnedVipPoints = 0; 
+          updateData.pointsCreditedAt = null;
+          updateData.earnedVipPoints = 0;
         }
       }
 
