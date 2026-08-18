@@ -49,7 +49,7 @@ export class PaymentService {
     }
 
     // Lớp 2: Amount Match
-    const expectedAmount = Number(order.totalAmount);
+    const expectedAmount = order.isDepositPayment ? Number(order.depositAmount) : Number(order.totalAmount);
     if (callbackData.amount !== expectedAmount) {
       return { return_code: -1, return_message: 'Amount mismatch' };
     }
@@ -61,7 +61,7 @@ export class PaymentService {
         const updated = await tx.order.updateMany({
           where: { id: order.id, paymentStatus: PaymentStatus.PENDING },
           data: {
-            paymentStatus: PaymentStatus.COMPLETED,
+            paymentStatus: order.isDepositPayment ? PaymentStatus.PARTIALLY_PAID : PaymentStatus.COMPLETED,
             isOrphanedPayment: true,
             paymentGatewayTransNo: String(callbackData.zp_trans_id),
             paymentGatewayPayDate: String(callbackData.server_time),
@@ -76,7 +76,7 @@ export class PaymentService {
         const updated = await tx.order.updateMany({
           where: { id: order.id, paymentStatus: PaymentStatus.PENDING },
           data: {
-            paymentStatus: PaymentStatus.COMPLETED,
+            paymentStatus: order.isDepositPayment ? PaymentStatus.PARTIALLY_PAID : PaymentStatus.COMPLETED,
             status: OrderStatus.PENDING,
             paymentGatewayTransNo: String(callbackData.zp_trans_id),
             paymentGatewayPayDate: String(callbackData.server_time),

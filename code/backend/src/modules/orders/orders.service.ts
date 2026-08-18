@@ -20,6 +20,24 @@ export class OrdersService {
     private readonly i18n: I18nService,
   ) {}
 
+  async calculateShipping(deliveryMethod?: string, provinceId?: string): Promise<number> {
+    if (deliveryMethod === 'PICKUP') return 0;
+    if (!provinceId) throw new BadRequestException('Vui lòng chọn Tỉnh/Thành phố giao hàng');
+    
+    const province = await this.prisma.province.findUnique({ where: { id: provinceId }});
+    if (!province) throw new BadRequestException('Tỉnh/Thành phố không tồn tại');
+    
+    if (province.id === '01') {
+      return deliveryMethod === 'EXPRESS' ? 40000 : 15000;
+    }
+    
+    if (province.region === 'NORTH') return 30000;
+    if (province.region === 'CENTRAL') return 40000;
+    if (province.region === 'SOUTH') return 50000;
+    
+    return 30000;
+  }
+
   async createOrder(
     userId: string | null,
     createOrderDto: CreateOrderDto,
@@ -81,19 +99,74 @@ export class OrdersService {
       subtotal += price * item.quantity;
     }
 
-    const shippingFee = 0; // Simplified for now
-    const discountAmount = 0; // Simplified for now
-    const totalAmount = subtotal + shippingFee - discountAmount;
+    let shippingFee = await this.calculateShipping(
+      createOrderDto.deliveryMethod,
+      createOrderDto.provinceId
+    );
 
-    // 3. Determine Payment Expiry
+    let vipDiscountAmount = 0;
+    let usedVipPoints = 0;
+    if (createOrderDto.useVipPoints && userId) {
+      const user = await this.prisma.user.findUnique({ where: { id: userId }});
+      if (user && user.vipPoints > 0) {
+        usedVipPoints = user.vipPoints;
+        vipDiscountAmount = usedVipPoints * 10;
+        if (vipDiscountAmount > subtotal) {
+          vipDiscountAmount = subtotal;
+          usedVipPoints = Math.ceil(subtotal / 10);
+        }
+      }
+    }
+
+    let discountAmount = 0;
+    // FREE_SHIPPING voucher logic mockup (we assume a 100% discount on shipping for now if voucherId is 'FREE_SHIP')
+    if (createOrderDto.voucherId) {
+      const voucher = await this.prisma.voucher.findUnique({ where: { id: createOrderDto.voucherId }});
+      if (voucher && voucher.isActive) {
+        if (voucher.type === 'FREE_SHIPPING') {
+          discountAmount = shippingFee;
+        } else if (voucher.type === 'FIXED_AMOUNT') {
+          discountAmount = Number(voucher.value);
+        } else if (voucher.type === 'PERCENTAGE') {
+          discountAmount = (subtotal * Number(voucher.value)) / 100;
+        }
+      }
+    }
+
+    const totalAmount = Math.max(0, subtotal + shippingFee - discountAmount - vipDiscountAmount);
+
+    let isDepositPayment = false;
+    let depositAmount: number | null = null;
+    
+    if (createOrderDto.deliveryMethod !== 'PICKUP' && subtotal < 200000) {
+      isDepositPayment = true;
+      depositAmount = 50000;
+    }
+
+    if (createOrderDto.deliveryMethod === 'PICKUP' && createOrderDto.pickupTime) {
+      const pickupTime = new Date(createOrderDto.pickupTime);
+      const now = new Date();
+      if (pickupTime < now) {
+        throw new BadRequestException('Thời gian lấy hàng không hợp lệ (trong quá khứ)');
+      }
+      const maxTime = new Date(now.getTime() + 5 * 24 * 60 * 60 * 1000);
+      if (pickupTime > maxTime) {
+        throw new BadRequestException('Chỉ hỗ trợ đặt giữ hàng tối đa 5 ngày');
+      }
+      const hour = pickupTime.getHours();
+      if (hour < 8 || hour >= 22) {
+        throw new BadRequestException('Thời gian lấy hàng phải trong giờ làm việc (08:00 - 22:00)');
+      }
+    }
+
     let paymentExpiresAt: Date | null = null;
-    if (createOrderDto.paymentMethod !== PaymentMethod.COD) {
+    if (createOrderDto.paymentMethod !== PaymentMethod.COD || isDepositPayment) {
       paymentExpiresAt = new Date(Date.now() + 30 * 60 * 1000); // 30 mins
     }
 
-    // 4. Atomic Transaction
+    const earnedVipPoints = Math.floor(totalAmount / 1000);
+
     const order = await this.prisma.$transaction(async (tx) => {
-      // a. Reduce stock first using condition
       for (const item of cartItems) {
         const updatedProduct = await tx.product.updateMany({
           where: {
@@ -112,6 +185,21 @@ export class OrdersService {
         }
       }
 
+      if (usedVipPoints > 0 && userId) {
+        const updatedUser = await tx.user.updateMany({
+          where: {
+            id: userId,
+            vipPoints: { gte: usedVipPoints },
+          },
+          data: {
+            vipPoints: { decrement: usedVipPoints },
+          },
+        });
+        if (updatedUser.count === 0) {
+          throw new BadRequestException('Số điểm VIP không đủ để thanh toán');
+        }
+      }
+
       const orderData: Prisma.OrderUncheckedCreateInput = {
         status: OrderStatus.PENDING_PAYMENT,
         subtotal,
@@ -125,6 +213,12 @@ export class OrdersService {
         shippingPhone: createOrderDto.shippingPhone,
         deliveryMethod: createOrderDto.deliveryMethod,
         userId: userId || undefined,
+        depositAmount,
+        isDepositPayment,
+        pickupTime: createOrderDto.pickupTime,
+        earnedVipPoints,
+        usedVipPoints,
+        vipDiscountAmount,
         items: {
           create: cartItems.map((item) => ({
             productId: item.productId,
@@ -141,7 +235,6 @@ export class OrdersService {
         data: orderData,
       });
 
-      // c. Clear Cart only for logged in user
       if (userId) {
         await tx.cartItem.deleteMany({
           where: { userId },
@@ -268,12 +361,66 @@ export class OrdersService {
       );
     }
 
-    const updated = await this.prisma.order.update({
-      where: { id: orderId },
-      data: { status: status as OrderStatus },
+    const order = await this.prisma.order.findUnique({ where: { id: orderId } });
+    if (!order) {
+      throw new NotFoundException(this.i18n.t(ORDER_MESSAGES.NOT_FOUND, { lang }));
+    }
+
+    const updated = await this.prisma.$transaction(async (tx) => {
+      const updateData: any = { status: status as OrderStatus };
+
+      if (status === OrderStatus.COMPLETED && !order.pointsCreditedAt) {
+        if (order.userId && order.earnedVipPoints > 0) {
+          await tx.user.update({
+            where: { id: order.userId },
+            data: { vipPoints: { increment: order.earnedVipPoints } },
+          });
+        }
+        updateData.pointsCreditedAt = new Date();
+        updateData.completedAt = new Date();
+      }
+
+      if (status === OrderStatus.CANCELLED) {
+        if (order.userId && order.usedVipPoints > 0) {
+          await tx.user.update({
+            where: { id: order.userId },
+            data: { vipPoints: { increment: order.usedVipPoints } },
+          });
+          updateData.usedVipPoints = 0; 
+        }
+      }
+
+      if (status === OrderStatus.RETURNED) {
+        if (order.userId && order.pointsCreditedAt && order.earnedVipPoints > 0) {
+          const user = await tx.user.findUnique({ where: { id: order.userId } });
+          if (user) {
+            if (user.vipPoints >= order.earnedVipPoints) {
+              await tx.user.update({
+                where: { id: order.userId },
+                data: { vipPoints: { decrement: order.earnedVipPoints } },
+              });
+            } else {
+              const debt = order.earnedVipPoints - user.vipPoints;
+              await tx.user.update({
+                where: { id: order.userId },
+                data: { vipPoints: 0, vipPointsDebt: { increment: debt } },
+              });
+            }
+          }
+          // Prevent double revoke
+          updateData.pointsCreditedAt = null; 
+          updateData.earnedVipPoints = 0; 
+        }
+      }
+
+      return tx.order.update({
+        where: { id: orderId },
+        data: updateData,
+      });
     });
 
     this.eventEmitter.emit(`order.updated.${orderId}`, { status });
+    this.eventEmitter.emit(`order.status.changed`, { orderId, status });
 
     return updated;
   }

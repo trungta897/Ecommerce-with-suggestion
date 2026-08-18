@@ -31,5 +31,19 @@ export class CreateOrderDto {
   email?: string;
 
   @IsOptional()
+  @IsString()
+  provinceId?: string;
+
+  @IsOptional()
+  @IsString()
+  wardId?: string;
+
+  @IsOptional()
+  pickupTime?: Date;
+
+  @IsOptional()
   items?: { productId: string; quantity: number }[];
+
+  @IsOptional()
+  useVipPoints?: boolean;
 }

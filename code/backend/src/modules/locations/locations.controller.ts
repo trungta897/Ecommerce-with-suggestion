@@ -14,21 +14,9 @@ export class LocationsController {
     return await this.locationsService.getProvinces();
   }
 
-  @Get('provinces/:id/districts')
-  async getDistricts(@Param('id') provinceId: string) {
-    const districts = await this.locationsService.getDistricts(provinceId);
-    if (!districts || districts.length === 0) {
-      const lang = I18nContext.current()?.lang || 'vi';
-      throw new NotFoundException(
-        this.i18n.t('locations.PROV_NOT_FOUND', { lang }),
-      );
-    }
-    return districts;
-  }
-
-  @Get('districts/:id/wards')
-  async getWards(@Param('id') districtId: string) {
-    const wards = await this.locationsService.getWards(districtId);
+  @Get('provinces/:id/wards')
+  async getWards(@Param('id') provinceId: string) {
+    const wards = await this.locationsService.getWards(provinceId);
     if (!wards || wards.length === 0) {
       const lang = I18nContext.current()?.lang || 'vi';
       throw new NotFoundException(
