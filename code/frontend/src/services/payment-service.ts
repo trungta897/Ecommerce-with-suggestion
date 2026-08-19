@@ -1,14 +1,13 @@
 import { apiClient } from '../lib/api-client';
 
-export interface CreateZaloPayOrderResponse {
+export interface CreatePaymentOrderResponse {
   orderUrl: string;
-  appTransId: string;
 }
 
 export const paymentService = {
-  async createZaloPayOrder(orderId: string): Promise<CreateZaloPayOrderResponse> {
-    const { data } = await apiClient.post<CreateZaloPayOrderResponse>(
-      `/payment/zalopay/create/${orderId}`
+  async createVnPayOrder(orderId: string): Promise<CreatePaymentOrderResponse> {
+    const { data } = await apiClient.post<CreatePaymentOrderResponse>(
+      `/payment/vnpay/create/${orderId}`
     );
     return data;
   },

@@ -5,13 +5,7 @@ import {
   CATEGORY_TREE,
 } from '@/constants/product';
 
-export { CATEGORY_TREE, DEFAULT_CATEGORY_SLUG } from '@/constants/product';
-
-export function classifyProduct(
-  tags: string[],
-  productName?: string,
-  description?: string
-): string {
+function classifyProduct(tags: string[], productName?: string, description?: string): string {
   return _classifyProduct(tags, productName, description);
 }
 

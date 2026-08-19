@@ -1,7 +1,7 @@
 import { Product } from './product';
 import { User } from './user';
 
-export enum OrderStatus {
+enum OrderStatus {
   PENDING = 'pending',
   PENDING_PAYMENT = 'pending_payment',
   CONFIRMED = 'confirmed',
@@ -14,22 +14,20 @@ export enum OrderStatus {
   CANCELLED = 'cancelled',
 }
 
-export enum PaymentMethod {
+enum PaymentMethod {
   VNPAY = 'vnpay',
   COD = 'cod',
-  ZALOPAY = 'zalopay',
   STRIPE = 'stripe',
-  BANK_TRANSFER = 'bank_transfer',
 }
 
-export enum PaymentStatus {
+enum PaymentStatus {
   PENDING = 'pending',
   COMPLETED = 'completed',
   FAILED = 'failed',
   REFUNDED = 'refunded',
 }
 
-export interface OrderItem {
+interface OrderItem {
   id: string;
   orderId: string;
   productId: string;

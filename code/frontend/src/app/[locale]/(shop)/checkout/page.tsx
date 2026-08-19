@@ -62,7 +62,7 @@ export default function CheckoutPage() {
   // Autofill
   useEffect(() => {
     if (isAuthenticated && user) {
-      setShippingData(prev => ({
+      setShippingData((prev) => ({
         ...prev,
         fullName: prev.fullName || user.fullName || '',
         phone: prev.phone || user.phone || '',
@@ -103,19 +103,25 @@ export default function CheckoutPage() {
   );
 
   const hasAddress = !!addressDetails.provinceName;
-  const shippingFee = deliveryMethod === 'pickup' ? 0 : (hasAddress ? (deliveryMethod === 'express' ? 2 : 0) : 0);
-  
+  const shippingFee =
+    deliveryMethod === 'pickup' ? 0 : hasAddress ? (deliveryMethod === 'express' ? 2 : 0) : 0;
+
   let vipDiscount = 0;
   if (useVipPoints && user && user.vipPoints) {
-     vipDiscount = user.vipPoints * 10;
-     if (vipDiscount > subtotal) vipDiscount = subtotal;
+    vipDiscount = user.vipPoints * 10;
+    if (vipDiscount > subtotal) vipDiscount = subtotal;
   }
 
   const total = Math.max(0, subtotal + shippingFee - discount - vipDiscount);
 
   const handleNextStep = () => {
     if (currentStep === 0) {
-      const newErrors: { fullName?: string; phone?: string; address?: string; pickupTime?: string } = {};
+      const newErrors: {
+        fullName?: string;
+        phone?: string;
+        address?: string;
+        pickupTime?: string;
+      } = {};
       let hasError = false;
 
       if (!shippingData.fullName.trim()) {
@@ -166,7 +172,10 @@ export default function CheckoutPage() {
     setIsSubmitting(true);
 
     try {
-      const fullAddress = deliveryMethod === 'pickup' ? 'Nhận tại cửa hàng' : `${addressDetails.street}, ${addressDetails.wardName}, ${addressDetails.districtName}, ${addressDetails.provinceName}`;
+      const fullAddress =
+        deliveryMethod === 'pickup'
+          ? 'Nhận tại cửa hàng'
+          : `${addressDetails.street}, ${addressDetails.wardName}, ${addressDetails.districtName}, ${addressDetails.provinceName}`;
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const body: any = {
         shippingName: shippingData.fullName,
@@ -175,7 +184,10 @@ export default function CheckoutPage() {
         deliveryMethod: deliveryMethod.toUpperCase(),
         paymentMethod: paymentMethod.toUpperCase(),
         voucherId: appliedVoucher ? appliedVoucher.id : undefined,
-        pickupTime: deliveryMethod === 'pickup' && shippingData.pickupTime ? new Date(shippingData.pickupTime).toISOString() : undefined,
+        pickupTime:
+          deliveryMethod === 'pickup' && shippingData.pickupTime
+            ? new Date(shippingData.pickupTime).toISOString()
+            : undefined,
         provinceId: deliveryMethod !== 'pickup' ? addressDetails.provinceId : undefined,
         wardId: deliveryMethod !== 'pickup' ? addressDetails.wardId : undefined,
         useVipPoints: useVipPoints,
@@ -196,8 +208,8 @@ export default function CheckoutPage() {
         toast.success(t('toast.orderSuccessMessage'), t('toast.orderSuccessTitle'));
         setOrderPlaced(true);
         clearCart();
-      } else if (order.paymentMethod === 'ZALOPAY') {
-        const { orderUrl } = await paymentService.createZaloPayOrder(order.id);
+      } else if (order.paymentMethod === 'VNPAY') {
+        const { orderUrl } = await paymentService.createVnPayOrder(order.id);
         window.location.href = orderUrl;
       }
     } catch (error) {
@@ -261,8 +273,13 @@ export default function CheckoutPage() {
         <div className="flex-1">
           {currentStep === 0 && !isAuthenticated && (
             <div className="bg-primary/5 border border-primary/20 text-primary p-4 rounded-xl mb-6 flex justify-between items-center shadow-sm">
-              <span className="text-sm font-medium">Đăng nhập để tự động điền thông tin và tích điểm!</span>
-              <Link href="/login?redirect=/checkout" className="text-sm font-bold underline hover:text-primary-dark transition-colors">
+              <span className="text-sm font-medium">
+                Đăng nhập để tự động điền thông tin và tích điểm!
+              </span>
+              <Link
+                href="/login?redirect=/checkout"
+                className="text-sm font-bold underline hover:text-primary-dark transition-colors"
+              >
                 Đăng nhập ngay
               </Link>
             </div>

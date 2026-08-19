@@ -103,7 +103,7 @@ const DESKTOP_EXCLUSION_TAGS = [
   'TV Tuners & Video Capture',
 ];
 
-export const TAG_TO_SLUG: [string[], string][] = [
+const TAG_TO_SLUG: [string[], string][] = [
   // --- Điện thoại, Tablet ---
   [['Cell Phones', 'Smartphones', 'Unlocked Cell Phones', 'Carrier Cell Phones'], 'dien-thoai'],
   [['Tablets'], 'may-tinh-bang'],
@@ -318,7 +318,7 @@ export const TAG_TO_SLUG: [string[], string][] = [
   ],
 ];
 
-export const KEYWORD_TO_SLUG: [string[], string][] = [
+const KEYWORD_TO_SLUG: [string[], string][] = [
   [['cable', 'adapter', 'router', 'switch', 'hub '], 'cap-hub'],
   [['keyboard', 'mouse', 'trackball', 'wacom', 'keypad'], 'cap-hub'],
   [['headphone', 'speaker', 'earbud', 'microphone', 'sound card'], 'tai-nghe-am-thanh'],
