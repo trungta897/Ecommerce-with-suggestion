@@ -1,4 +1,4 @@
-export interface CategoryNode {
+interface CategoryNode {
   slug: string;
   name: string;
   children?: CategoryNode[];

@@ -1,57 +1,50 @@
-import {
-  BadRequestException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service';
 import { OrderStatus, PaymentStatus } from '@prisma/client';
-import { appendAuditTrail } from '../../common/utils/audit-trail.util';
-import { ZaloPayService } from './zalopay.service';
+import { VnPayService } from './vnpay.service';
+import { ReturnQueryFromVNPay } from 'vnpay';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-
-interface ZaloPayCallbackData {
-  app_trans_id: string;
-  amount: number;
-  zp_trans_id: number | string;
-  server_time: number | string;
-}
 
 @Injectable()
 export class PaymentService {
+  private readonly logger = new Logger(PaymentService.name);
+
   constructor(
     private readonly prisma: PrismaService,
-    private readonly zaloPayService: ZaloPayService,
+    private readonly vnPayService: VnPayService,
     private readonly eventEmitter: EventEmitter2,
   ) {}
 
-  // 1. ZaloPay Webhook (4-Layer Protection)
-  async handleZaloPayWebhook(body: {
-    data: string;
-    mac: string;
-    type?: number;
-  }) {
-    // Lớp 1: Verify MAC
-    const isValid = this.zaloPayService.verifyCallback(body.data, body.mac);
-    if (!isValid) {
-      return { return_code: -1, return_message: 'Invalid MAC' };
+  // 1. VNPay Webhook (4-Layer Protection)
+  async handleVnPayWebhook(query: ReturnQueryFromVNPay) {
+    // Lớp 1: Verify Signature
+    const verifyResult = this.vnPayService.verifyIpn(query);
+    if (!verifyResult.isSuccess) {
+      return { RspCode: '97', Message: 'Invalid signature' };
     }
 
-    const callbackData = JSON.parse(body.data) as ZaloPayCallbackData;
-    const appTransId: string = callbackData.app_trans_id;
+    const appTransId: string = String(query.vnp_TxnRef);
+    const vnp_Amount = Number(query.vnp_Amount) / 100; // VNPay amount is multiplied by 100
 
-    // Lấy đơn hàng theo Khớp Chính Xác
     const order = await this.prisma.order.findFirst({
       where: { paymentGatewayTxnId: appTransId },
     });
 
     if (!order) {
-      return { return_code: -1, return_message: 'Order not found' };
+      return { RspCode: '01', Message: 'Order not found' };
     }
 
     // Lớp 2: Amount Match
-    const expectedAmount = order.isDepositPayment ? Number(order.depositAmount) : Number(order.totalAmount);
-    if (callbackData.amount !== expectedAmount) {
-      return { return_code: -1, return_message: 'Amount mismatch' };
+    const expectedAmount = order.isDepositPayment
+      ? Number(order.depositAmount)
+      : Number(order.totalAmount);
+    if (vnp_Amount !== expectedAmount) {
+      return { RspCode: '04', Message: 'Amount mismatch' };
+    }
+
+    // Nếu vnp_ResponseCode !== '00', khách hàng huỷ thanh toán hoặc thanh toán lỗi
+    if (query.vnp_ResponseCode !== '00') {
+      return { RspCode: '00', Message: 'Confirm Success' };
     }
 
     // Lớp 3 & 4: Atomic Idempotency & Late IPN
@@ -61,10 +54,12 @@ export class PaymentService {
         const updated = await tx.order.updateMany({
           where: { id: order.id, paymentStatus: PaymentStatus.PENDING },
           data: {
-            paymentStatus: order.isDepositPayment ? PaymentStatus.PARTIALLY_PAID : PaymentStatus.COMPLETED,
+            paymentStatus: order.isDepositPayment
+              ? PaymentStatus.PARTIALLY_PAID
+              : PaymentStatus.COMPLETED,
             isOrphanedPayment: true,
-            paymentGatewayTransNo: String(callbackData.zp_trans_id),
-            paymentGatewayPayDate: String(callbackData.server_time),
+            paymentGatewayTransNo: String(query.vnp_TransactionNo),
+            paymentGatewayPayDate: String(query.vnp_PayDate),
           },
         });
 
@@ -76,10 +71,12 @@ export class PaymentService {
         const updated = await tx.order.updateMany({
           where: { id: order.id, paymentStatus: PaymentStatus.PENDING },
           data: {
-            paymentStatus: order.isDepositPayment ? PaymentStatus.PARTIALLY_PAID : PaymentStatus.COMPLETED,
+            paymentStatus: order.isDepositPayment
+              ? PaymentStatus.PARTIALLY_PAID
+              : PaymentStatus.COMPLETED,
             status: OrderStatus.PENDING,
-            paymentGatewayTransNo: String(callbackData.zp_trans_id),
-            paymentGatewayPayDate: String(callbackData.server_time),
+            paymentGatewayTransNo: String(query.vnp_TransactionNo),
+            paymentGatewayPayDate: String(query.vnp_PayDate),
           },
         });
 
@@ -87,85 +84,14 @@ export class PaymentService {
           this.eventEmitter.emit('order.paid', { orderId: order.id });
         }
       }
-      // Nếu updateMany.count === 0, tức là đã xử lý trước đó rồi (Idempotency)
     });
 
-    return { return_code: 1, return_message: 'success' };
+    return { RspCode: '00', Message: 'Confirm Success' };
   }
-  // 2. Stripe Webhook (Mocked)
+
+  // 3. Stripe Webhook (Mocked)
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   handleStripeWebhook(_data: unknown) {
     return { received: true };
-  }
-
-  // 3. Bank Transfer Webhook (Napas/VietQR - Mocked)
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  handleBankTransferWebhook(_data: unknown) {
-    return { success: true };
-  }
-
-  // 4. Admin Manual Confirmation (Double Safety Net)
-  async manualConfirmPayment(
-    adminId: string,
-    orderId: string,
-    amountReceived: number,
-    isForceConfirm: boolean = false,
-    reason?: string,
-  ) {
-    const order = await this.prisma.order.findUnique({
-      where: { id: orderId },
-    });
-
-    if (!order) throw new NotFoundException('Đơn hàng không tồn tại');
-    if (order.status !== OrderStatus.PENDING_PAYMENT) {
-      throw new BadRequestException(
-        'Đơn hàng không ở trạng thái chờ thanh toán',
-      );
-    }
-
-    const expectedAmount = Number(order.totalAmount);
-    const MAX_TOLERANCE = 5000;
-    const shortage = expectedAmount - amountReceived;
-    const paymentDiscrepancy = shortage !== 0 ? -shortage : 0; // If shortage > 0, they paid less, discrepancy is negative. If shortage < 0, they paid more, discrepancy is positive.
-
-    if (shortage > MAX_TOLERANCE && !isForceConfirm) {
-      throw new BadRequestException(
-        `Khách chuyển thiếu vượt ngưỡng (Thiếu: ${shortage}đ). Yêu cầu Force Confirm.`,
-      );
-    }
-
-    if (isForceConfirm && !reason) {
-      throw new BadRequestException(
-        'Bắt buộc phải nhập lý do khi Force Confirm',
-      );
-    }
-
-    // Atomic update status
-    await this.prisma.$transaction(async (tx) => {
-      const updated = await tx.order.updateMany({
-        where: { id: orderId, status: OrderStatus.PENDING_PAYMENT },
-        data: {
-          status: OrderStatus.PENDING,
-          paymentStatus: PaymentStatus.COMPLETED,
-          paymentDiscrepancy,
-        },
-      });
-
-      if (updated.count === 0) {
-        throw new BadRequestException('Trạng thái đơn hàng đã thay đổi');
-      }
-
-      // If Force Confirm, append Audit Trail via Raw SQL to avoid race conditions
-      if (isForceConfirm) {
-        await appendAuditTrail(tx, orderId, {
-          action: 'FORCE_CONFIRM_PAYMENT',
-          adminId,
-          reason,
-          shortage,
-        });
-      }
-    });
-
-    return { success: true, message: 'Xác nhận thanh toán thành công' };
   }
 }

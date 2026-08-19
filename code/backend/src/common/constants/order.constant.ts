@@ -2,7 +2,6 @@
 export const RETURN_ELIGIBLE_DAYS = 14;
 
 /** Thời hạn thanh toán (ms) — 30 phút */
-export const PAYMENT_TIMEOUT_MS = 30 * 60 * 1000;
 
 /** Số file chứng minh tối đa khi yêu cầu return */
 export const RETURN_MAX_EVIDENCE_FILES = 5;

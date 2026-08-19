@@ -8,7 +8,7 @@ import {
   ValidateNested,
 } from 'class-validator';
 
-export class CartItemDto {
+class CartItemDto {
   @IsString()
   @IsNotEmpty()
   productId: string;

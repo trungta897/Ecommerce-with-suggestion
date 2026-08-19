@@ -8,12 +8,14 @@ import { OrderStatus, Order } from '@prisma/client';
 import { appendAuditTrail } from '../../common/utils/audit-trail.util';
 import { ORDER_MESSAGES } from '../../common/constants/order-message.constant';
 import { I18nService } from 'nestjs-i18n';
+import { VnPayService } from '../payment/vnpay.service';
 
 @Injectable()
 export class OrdersPaymentService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly i18n: I18nService,
+    private readonly vnPayService: VnPayService,
   ) {}
 
   async payAgain(userId: string, orderId: string, lang?: string) {
@@ -114,37 +116,6 @@ export class OrdersPaymentService {
     }
   }
 
-  async forceConfirmPayment(
-    adminId: string,
-    orderId: string,
-    reason: string,
-    lang?: string,
-  ) {
-    const order = await this.prisma.order.findUnique({
-      where: { id: orderId },
-    });
-    if (!order)
-      throw new NotFoundException(
-        this.i18n.t(ORDER_MESSAGES.NOT_FOUND, { lang }),
-      );
-
-    return this.prisma.order.update({
-      where: { id: orderId },
-      data: {
-        paymentStatus: 'COMPLETED',
-        status: 'CONFIRMED',
-        auditTrail: {
-          push: {
-            action: 'FORCE_CONFIRM_PAYMENT',
-            adminId,
-            reason,
-            timestamp: new Date(),
-          },
-        },
-      },
-    });
-  }
-
   async refundOrder(orderId: string, adminId: string, lang?: string) {
     const claimResult = await this.prisma.order.updateMany({
       where: {
@@ -164,7 +135,21 @@ export class OrdersPaymentService {
     }
 
     try {
-      const isSuccess = true; // Mocked
+      let isSuccess = false;
+      const orderToRefund = await this.prisma.order.findUnique({
+        where: { id: orderId },
+      });
+
+      if (orderToRefund?.paymentMethod === 'VNPAY') {
+        isSuccess = await this.vnPayService.refund(
+          orderId,
+          Number(orderToRefund.totalAmount),
+          orderToRefund.paymentGatewayTxnId!,
+          orderToRefund.paymentGatewayPayDate!,
+        );
+      } else {
+        isSuccess = true; // COD, STRIPE etc. mock or actual implementation
+      }
 
       if (isSuccess) {
         await this.prisma.$transaction(async (tx) => {

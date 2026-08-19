@@ -167,23 +167,6 @@ export class OrdersController {
     return this.ordersPaymentService.refundOrder(orderId, adminId, lang);
   }
 
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
-  @Post(':id/force-confirm')
-  async forceConfirmPayment(
-    @Req() req: Request & { user: { id: string } },
-    @Param('id') orderId: string,
-    @Body('reason') reason: string,
-    @I18nLang() lang: string,
-  ) {
-    return this.ordersPaymentService.forceConfirmPayment(
-      req.user.id,
-      orderId,
-      reason,
-      lang,
-    );
-  }
-
   // Return Endpoints
   @UseGuards(AuthGuard('jwt'))
   @Get(':id/return/eligibility')
