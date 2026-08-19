@@ -135,7 +135,6 @@ model Order {
   vipDiscountAmount  Decimal            @default(0.00) @db.Decimal(12, 2)
   pointsCreditedAt   DateTime?
   isOrphanedPayment  Boolean            @default(false)
-  paymentDiscrepancy Decimal?           @db.Decimal(12, 2)
   refundStatus       RefundStatus?
   completedAt        DateTime?
   returnReason       ReturnReason?
@@ -327,9 +326,7 @@ enum PaymentStatus {
 enum PaymentMethod {
   VNPAY
   COD
-  ZALOPAY
   STRIPE
-  BANK_TRANSFER
 }
 
 enum RefundStatus {
