@@ -31,6 +31,19 @@
     "return_requested": "Return Requested",
     "returned": "Returned",
     "refunded": "Refunded",
-    "cancelled": "Cancelled"
-  }
+    "cancelled": "Cancelled",
+    "return_rejected": "Return Rejected"
+  },
+  "returnPolicy": "Return Policy",
+  "returnEligibleDays": "Eligible for return within {days} days from completion date",
+  "returnNote": "Note",
+  "evidenceFiles": "Evidence Images/Videos",
+  "uploadEvidence": "Upload Evidence",
+  "uploadLimitExceeded": "Maximum {max} files allowed",
+  "fileSizeExceeded": "Each file must not exceed {size}MB",
+  "returnReasonRequired": "Please select a return reason",
+  "returnSuccess": "Return request submitted successfully",
+  "returnRejectReason": "Reject Reason",
+  "supplementEvidence": "Supplement Evidence",
+  "supplementSuccess": "Evidence supplemented successfully"
 }

@@ -11,6 +11,10 @@ export interface ToastItem {
   title?: string;
   message: string;
   duration?: number;
+  action?: {
+    label: string;
+    onClick: () => void;
+  };
 }
 
 interface BaseToastProps {
@@ -85,10 +89,27 @@ export const BaseToast: React.FC<BaseToastProps> = ({ toast, onClose }) => {
       }`}
       role="alert"
     >
-      <div className="mr-3 mt-0.5">{config.icon}</div>
-      <div className="flex-1 pr-6">
-        {toast.title && <h4 className="text-sm font-semibold text-gray-900 mb-1">{toast.title}</h4>}
-        <p className="text-sm text-gray-700 leading-relaxed break-words">{toast.message}</p>
+      <div className="flex flex-col flex-1 pr-2 mt-0.5">
+        <div className="flex items-start">
+          <div className="mr-3">{config.icon}</div>
+          <div className="flex-1">
+            {toast.title && (
+              <h4 className="text-sm font-semibold text-gray-900 mb-1">{toast.title}</h4>
+            )}
+            <p className="text-sm text-gray-700 leading-relaxed break-words">{toast.message}</p>
+          </div>
+        </div>
+        {toast.action && (
+          <button
+            onClick={() => {
+              toast.action!.onClick();
+              handleClose();
+            }}
+            className="mt-3 w-full py-2 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg text-sm font-semibold transition-colors"
+          >
+            {toast.action.label}
+          </button>
+        )}
       </div>
       <button
         onClick={handleClose}

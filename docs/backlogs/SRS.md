@@ -56,8 +56,8 @@ graph TD
     System -- "Nội dung Email, OTP" --> Gmail
     Gmail -- "Gửi mail" --> User
     
-    System -- "Upload hình ảnh SP" --> Cloudinary_MinIO
-    Cloudinary_MinIO -- "URL hình ảnh" --> System
+    System -- "Upload hình ảnh SP" --> Cloudinary
+    Cloudinary -- "URL hình ảnh" --> System
     
     User -- "Tương tác (ẩn)" --> Recaptcha
     Recaptcha -- "Score Token" --> System
@@ -69,7 +69,7 @@ graph TD
 | **API Cổng thanh toán (VNPay)** | Cần mạng Internet để gọi VNPay, phụ thuộc vào tốc độ và uptime của sandbox VNPay. | Có cơ chế fallback về thanh toán COD nếu VNPay lỗi; lưu trạng thái Pending rõ ràng. |
 | **Bảo mật và Bot spam** | Nguy cơ bị bot spam API đăng ký, gửi OTP, hoặc brute-force mật khẩu. | Tích hợp Google reCAPTCHA v3 (ngưỡng score < 0.5 bị chặn); rate limit Redis (5 req/phút). |
 | **Hệ thống Email (SMTP)** | Lỗi mạng, email bị đánh dấu spam, hết hạn ngạch gửi mail miễn phí. | Sử dụng Nodemailer; cho phép resend OTP (tối đa 5 lần); lưu log gửi email để debug. |
-| **Object Storage (Cloudinary/MinIO)** | Quản lý lưu trữ ảnh sản phẩm, ảnh avatar. Có thể hết dung lượng miễn phí trên Cloudinary. | Chuyển sang sử dụng MinIO nội bộ cho ảnh sản phẩm (S3 compatible), giúp lưu trữ lớn (hàng nghìn ảnh hi_res) mà không phụ thuộc bên ngoài. |
+| **Object Storage (Cloudinary)** | Quản lý lưu trữ ảnh sản phẩm, ảnh avatar. | Sử dụng duy nhất Cloudinary làm Object Storage chính thức để đơn giản hóa kiến trúc. |
 | **ML Service (FastAPI)** | Quá trình dự đoán mô hình có thể chậm hoặc server Python sập/quá tải. | Timeout internal API (5s) và fallback trả về Popular Items; cache kết quả trong Redis 1 giờ. |
 | **Đối tác vận chuyển (Grab/Be)** | Không có API thật, phụ thuộc vào việc Admin nhập tay đúng/kịp thời sau khi đặt xe ngoài hệ thống. | Quy trình thủ công (mục 5.6); không phát sinh rủi ro kỹ thuật tích hợp vì không gọi API bên ngoài. |
 
@@ -123,9 +123,11 @@ flowchart TD
 #### 3.1.2. Sơ đồ Use Case - Admin
 ```mermaid
 flowchart TD
+    Employee(("Nhân viên"))
     Admin(("Admin"))
     SAdmin(("Super Admin"))
 
+    Employee -.-> Admin
     Admin -.-> SAdmin
 
     UC1(["Dashboard thống kê"])
@@ -135,6 +137,10 @@ flowchart TD
     UC5(["Quản lý Người dùng"])
     UC6(["Quản lý Đánh giá"])
     UC7(["Tạo tài khoản Admin mới"])
+
+    Employee --> UC3
+    Employee --> UC4
+    Employee --> UC6
 
     Admin --> UC1
     Admin --> UC2
@@ -150,19 +156,19 @@ flowchart TD
 
 | ID | Chức năng | Mô tả chi tiết | Quyền |
 |---|---|---|---|
-| FR-01 | Đăng ký & Đăng nhập | Tạo tài khoản, đăng nhập JWT. Bắt buộc có Google reCAPTCHA v3. | Guest |
-| FR-02 | Xác thực Email (OTP) | Gửi OTP qua email (Hiệu lực 15 phút). Nhập đúng -> nâng quyền tự động, bắt buộc đổi mật khẩu. Sai 5 lần -> khóa tính năng gửi lại OTP 15 phút. Wording lỗi: *"Mã OTP không chính xác, vui lòng kiểm tra lại"*. | User (Unv) |
-| FR-03 | Quên / Reset Mật khẩu | Gửi link/OTP reset qua email đăng ký. Hết hạn sau 15p. | Guest, User |
+| FR-01 | Đăng nhập & Đăng ký Khách hàng | Khách hàng đăng nhập bằng Số điện thoại và xác thực OTP. Hệ thống tự động tạo tài khoản nếu SĐT chưa tồn tại. Bắt buộc có Google reCAPTCHA v3. Không sử dụng mật khẩu hay email cho xác thực. Chờ tích hợp SMS Gateway (Twilio/Zalo ZNS). | Guest |
+| FR-02 | Xác thực SMS OTP | Gửi OTP qua SMS/Zalo. Hiệu lực 5 phút. Nhập đúng -> cấp JWT. Sai 3 lần -> khóa 15 phút. Wording lỗi: *"Mã OTP không chính xác, vui lòng kiểm tra lại"*. | Guest |
+| FR-03 | Đăng nhập Admin/Nhân viên | Dành riêng cho luồng quản trị: Admin và Nhân viên đăng nhập bằng Email và Mật khẩu. | Admin, Employee |
 | FR-04 | Tìm kiếm & Lọc SP | Full-text search, lọc theo giá, category, rating. | All |
 | FR-05 | Quản lý Giỏ hàng | Thêm, xóa, cập nhật số lượng SP. Số lượng trong giỏ không được vượt quá tồn kho (`stock`) của sản phẩm tại thời điểm thao tác. | All (Local), User |
-| FR-06 | Checkout (Luồng Guest) | Guest chọn SP -> Điền form thông tin -> Hệ thống tự động tạo User ngầm, gửi OTP qua email -> Bắt buộc xác thực OTP & Tự đặt mật khẩu -> Tự động redirect về trang checkout và điền lại thông tin. | All |
+| FR-06 | Checkout (Luồng Guest) | Guest chọn SP -> Điền form thông tin nhận hàng (Danh xưng, Tên, SĐT, Tỉnh/Huyện/Xã, Địa chỉ cụ thể) -> Hệ thống tạo đơn hàng trực tiếp không bắt buộc tạo tài khoản. Khách lưu đơn hàng với `userId = null`. Luồng Guest **CHỈ áp dụng thanh toán COD** (Thanh toán khi nhận hàng) để tối giản, tránh rủi ro thanh toán lỗi không thể retry. | All |
 | FR-07 | Thanh toán & Nhận hàng | Khách hàng tuỳ chọn phương thức nhận hàng. Thanh toán VNPay (timeout 30 phút). COD sẽ tự động duyệt thành công dựa trên API Webhook đa kênh từ Shipper (GHN, SPX, Grab, Be...). | User (Ver) |
 | FR-08 | Hủy đơn hàng | Cho phép hủy đơn khi trạng thái là `Pending` hoặc `pending_payment`. | User (Ver) |
-| FR-09 | Trả hàng | Gửi yêu cầu trả hàng trong vòng 7 ngày sau khi đơn `Completed`. Bắt buộc chọn 1 trong 6 lý do hợp lệ (Lỗi NSX, Giao sai, Bể vỡ...). Admin có thể duyệt hoặc từ chối (`return_rejected`). | User (Ver) |
+| FR-09 | Trả hàng | Gửi yêu cầu trả hàng trong vòng 14 ngày sau khi đơn `Completed`. Bắt buộc chọn 1 trong 9 lý do hợp lệ (Lỗi NSX, Giao sai, Bể vỡ...). Admin có thể duyệt hoặc từ chối (`return_rejected`). Trạng thái `return_rejected` là trạng thái cuối (terminal), không thể yêu cầu trả hàng lại. | User (Ver) |
 | FR-10 | Realtime Tracking | Xem lịch sử đơn hàng, nhận SSE push trạng thái realtime. | User (Ver) |
 | FR-11 | Đánh giá Sản phẩm | Rate 1-5 sao và comment. *Chỉ đánh giá SP đã nhận hàng.* | User (Ver) |
 | FR-12 | Cá nhân hóa (RecSys) | Nhận danh sách gợi ý trên Home/Detail. | User (Ver) |
-| FR-13 | Tra cứu đơn hàng | Bắt buộc nhập **Mã đơn hàng + (SĐT hoặc Email)** (2 yếu tố) để tra cứu trạng thái đơn — không cho tra cứu chỉ bằng SĐT/Email để tránh lộ thông tin đơn hàng của người khác. | Guest, User |
+| FR-13 | Tra cứu đơn hàng | Bắt buộc nhập **Mã đơn hàng + SĐT** (2 yếu tố) để tra cứu trạng thái đơn — không cho tra cứu chỉ bằng SĐT để tránh lộ thông tin đơn hàng của người khác. | Guest, User |
 | FR-14 | Quản lý Profile | Cập nhật thông tin cá nhân (Tên, Ảnh đại diện, Địa chỉ giao hàng mặc định). | User (Ver) |
 | FR-15 | Xem chi tiết sản phẩm | Hiển thị mô tả chi tiết, ảnh gallery, phân trang đánh giá và khu vực gợi ý sản phẩm. | All |
 
@@ -173,7 +179,7 @@ flowchart TD
 | FR-A01 | Dashboard | Thống kê doanh thu, đơn hàng, tỷ lệ hủy, SP bán chạy. | Admin |
 | FR-A02 | Quản lý Sản phẩm & Danh mục | Thêm, sửa, ẩn/ngừng kinh doanh SP. Upload ảnh. | Admin |
 | FR-A03 | Quản lý Đơn hàng & Giao hàng | Xem đơn, duyệt đơn. Cho phép ghi nhận thông tin giao hàng thủ công như một cơ chế Fallback trong trường hợp luồng API Webhook của Shipper gặp lỗi. | Admin, Nhân viên |
-| FR-A04 | Quản lý Trả hàng & Hoàn tiền | Duyệt/từ chối yêu cầu trả hàng (Admin, Nhân viên). Hoàn tiền VNPay tự động / COD thủ công -> Refunded (chỉ Admin — Nhân viên không có quyền hoàn tiền). | Admin, Nhân viên (duyệt trả); Admin (hoàn tiền) |
+| FR-A04 | Quản lý Trả hàng & Hoàn tiền | Duyệt/từ chối yêu cầu trả hàng (khi từ chối phải nhập `returnRejectReason`). Hoàn tiền VNPay tự động / COD thủ công -> Refunded (chỉ Admin — Nhân viên không có quyền hoàn tiền). | Admin, Nhân viên (duyệt trả); Admin (hoàn tiền) |
 | FR-A05 | Quản lý Đánh giá | Xem, ẩn đánh giá vi phạm tiêu chuẩn cộng đồng. | Admin, Nhân viên |
 | FR-A06 | Phân quyền Admin & Nhân viên | Super Admin được tạo/vô hiệu hóa (Soft Delete) tài khoản Admin. Admin và Super Admin được tạo/vô hiệu hóa tài khoản Nhân viên. | Super Admin (Admin), Admin & Super Admin (Nhân viên) |
 | FR-A07 | Quản lý Voucher | Tạo, sửa, thiết lập thời hạn và giới hạn lượt sử dụng các mã giảm giá (Nội bộ). | Admin |
@@ -192,51 +198,26 @@ flowchart TD
 
 ### 3.5. Sơ đồ tuần tự (Sequence Diagrams)
 
-#### 3.5.1. Luồng Guest Checkout & Xác thực OTP
+#### 3.5.1. Luồng Guest Checkout (Không cần tài khoản)
 ```mermaid
 sequenceDiagram
     actor Guest
     participant Frontend
     participant Backend
-    participant Mailer
     
-    Guest->>Frontend: Thêm SP vào giỏ & Đặt hàng
-    Guest->>Frontend: Điền form thông tin (Email, SĐT, Địa chỉ)
-    Frontend->>Backend: Gửi yêu cầu Checkout (Guest Info)
-    Backend->>Backend: Tự động tạo User (is_verified=false, chưa có password)
-    Backend->>Backend: Lưu thông tin đơn hàng tạm (status=pending_payment/pending, chưa chốt)
-    Backend->>Mailer: Yêu cầu gửi OTP
-    Mailer-->>Guest: Email chứa OTP (15p)
-    Backend-->>Frontend: Yêu cầu xác thực OTP
-    Frontend-->>Guest: Hiển thị màn hình nhập OTP
-    
-    alt Nhập đúng OTP
-        Guest->>Frontend: Nhập mã OTP
-        Frontend->>Backend: Verify OTP
-        Backend-->>Frontend: Xác thực thành công (Token)
-        Frontend-->>Guest: Yêu cầu tạo mật khẩu (lần đầu, bắt buộc)
-        Guest->>Frontend: Nhập mật khẩu mới
-        Frontend->>Backend: Set mật khẩu + is_verified=true
-        Backend-->>Frontend: Success
-        Frontend-->>Guest: Chuyển hướng quay lại Đơn hàng
-        Guest->>Frontend: Hoàn tất thanh toán & Chốt đơn
-        Frontend->>Backend: Xác nhận đặt hàng
-        Backend-->>Frontend: Thành công
-    else Nhập sai OTP (< 5 lần)
-        Guest->>Frontend: Nhập sai OTP
-        Frontend->>Backend: Verify OTP
-        Backend-->>Frontend: Error "Mã OTP không chính xác, vui lòng kiểm tra lại"
-    else Sai OTP >= 5 lần
-        Guest->>Frontend: Nhập sai OTP (lần 5)
-        Frontend->>Backend: Verify OTP
-        Backend-->>Frontend: Error Bị khóa 15 phút
-    else Đóng trình duyệt (Interrupted)
-        Guest->>Frontend: Tắt trình duyệt ngang chừng
-        Note over Guest, Backend: Tài khoản (is_verified=false) & đơn hàng tạm chưa có password nên không login lại được ngay; nếu quay lại email đó, hệ thống nhận diện tài khoản đang chờ verify và gửi lại OTP thay vì tạo tài khoản mới. Job dọn dẹp sẽ tự xóa tài khoản/đơn tạm này nếu bỏ dở quá lâu (xem mục 3.6.4).
-    end
+    Guest->>Frontend: Thêm SP vào giỏ & Tiến hành Đặt hàng
+    Guest->>Frontend: Điền form thông tin (Danh xưng, Tên, SĐT, Địa chỉ)
+    Note over Guest, Frontend: KHÔNG yêu cầu Email, KHÔNG bắt buộc đăng nhập
+    Guest->>Frontend: Chọn hình thức thanh toán (Bắt buộc COD) & Đặt hàng
+    Frontend->>Backend: Gửi yêu cầu Checkout (Guest Info & Cart Items)
+    Backend->>Backend: Validate thông tin & Tồn kho
+    Backend->>Backend: Lưu thông tin đơn hàng (Gắn cờ Guest / userId null)
+    Backend-->>Frontend: Trả về OrderID (Thành công)
+    Frontend-->>Guest: Hiển thị trang thành công kèm Mã đơn hàng
+    Note over Guest, Frontend: Guest dùng Mã đơn hàng + SĐT để tra cứu sau này (Không cần thanh toán lại do chỉ dùng COD)
 ```
 
-**Lưu ý bảo mật:** không gửi mật khẩu mặc định qua email dạng plaintext — thay vào đó chỉ gửi OTP; mật khẩu do chính Guest tự đặt ngay sau khi verify OTP thành công, tránh rủi ro lộ mật khẩu qua đường email.
+**Lưu ý:** Luồng này tối ưu tỷ lệ chuyển đổi (conversion rate) bằng cách loại bỏ hoàn toàn ma sát từ việc bắt buộc đăng nhập hoặc xác thực OTP.
 
 #### 3.5.2. Luồng Thanh toán VNPay (IPN Callback & Edge Cases)
 ```mermaid
@@ -308,7 +289,23 @@ Khi đơn được tạo (kể cả ở `pending_payment`), `stock` của sản 
 - **Tài khoản chưa xác thực (Guest Account):** Nếu chưa kích hoạt sau **6 ngày**, hệ thống gửi 1 email cảnh báo. Nếu vẫn không kích hoạt đến **ngày thứ 7**, tài khoản sẽ bị tự động xóa kèm email thông báo đã xóa.
 
 #### 3.6.5. Tích hợp Webhook Vận chuyển đa kênh
-Sử dụng kiến trúc đa kênh, hệ thống tiếp nhận Webhook từ đối tác (Giao hàng tiêu chuẩn như SPX, GHN hoặc Giao hàng Hỏa tốc như Grab, Be). API Webhook sẽ tự động cập nhật trạng thái đơn (từ `handed_over` -> `delivering` -> `completed`) theo thực tế, qua đó tự động duyệt hoàn tất cho luồng thanh toán COD. Cập nhật thủ công chỉ áp dụng như một phương án Fallback khi webhook lỗi.
+Sử dụng kiến trúc đa kênh, hệ thống tiếp nhận Webhook từ đối tác giao hàng. Điều kiện kiên quyết: Đơn COD phải được Admin duyệt tay (`pending` -> `confirmed`) trước khi Webhook có thể xử lý các trạng thái tiếp theo. API Webhook sẽ tự động cập nhật trạng thái đơn từ `handed_over` -> `delivering` -> `completed` theo thực tế. Webhook tuyệt đối không tự động duyệt đơn thay con người. Cập nhật thủ công chỉ áp dụng như phương án Fallback.
+
+#### 3.6.6. Hệ thống Điểm thưởng (VIP Points)
+- **Tích điểm (`earnedVipPoints`):** Người dùng nhận điểm thưởng sau khi đơn hàng hoàn tất (`completed`).
+- **Tiêu điểm (`usedVipPoints`):** Áp dụng ngay khi thanh toán để giảm trừ trực tiếp tiền đơn hàng (Atomic Redeem để tránh Race-condition).
+- **Điểm âm / Nợ điểm (`vipPointsDebt`):** Nếu khách hàng trả hàng (`returned`) nhưng điểm thưởng từ đơn đó đã bị sử dụng cho đơn khác, hệ thống sẽ đưa tài khoản vào trạng thái nợ điểm, trừ bù vào các giao dịch mua hàng tương lai.
+- **Thời điểm hoàn điểm (`pointsCreditedAt`):** Lưu trữ chính xác thời gian điểm được hệ thống cộng vào ví.
+
+#### 3.6.7. Cơ chế Thanh toán & Đặt cọc
+- Cho phép khách hàng đặt cọc trước một phần (lưu vào `depositAmount`) để đảm bảo đơn hàng.
+- Khi đó cờ `isDepositPayment` = true, trạng thái thanh toán sẽ là `partially_paid` thay vì pending hoặc completed.
+
+#### 3.6.8. Cơ chế An toàn Hoàn tiền (Refund Safeguards)
+Đảm bảo tính toàn vẹn tài chính khi hoàn tiền:
+- `refundStatus` (PROCESSING / COMPLETED): Quản lý luồng hoàn tiền bất đồng bộ từ cổng thanh toán.
+- `isOrphanedPayment`: Cờ đánh dấu các thanh toán dư thừa, hoặc các thanh toán gửi về từ IPN nhưng đơn hàng đã bị hủy trước đó.
+- `auditTrail`: Lưu trữ toàn bộ lịch sử (JSON) mọi thao tác đổi trạng thái và dòng tiền của đơn hàng để dễ dàng đối soát.
 
 ---
 
@@ -329,11 +326,13 @@ Sử dụng kiến trúc đa kênh, hệ thống tiếp nhận Webhook từ đ�
 
 **1. Bảng `users`**
 - `id`: VARCHAR(UUID) (PK)
-- `email`: VARCHAR (Unique, Not Null)
-- `password`: VARCHAR (Hash, NOT NULL - validate: 1 Hoa, 1 Số, 1 Ký tự đặc biệt)
-- `role`: ENUM ('CUSTOMER', 'STAFF', 'ADMIN', 'SUPER_ADMIN')
-- `is_verified`: BOOLEAN (Default FALSE)
-- `password_set_at`: TIMESTAMP (Nullable — NULL nghĩa là tài khoản tạo từ Guest Checkout nhưng chưa hoàn tất verify + đặt mật khẩu, dùng để job dọn dẹp nhận diện)
+- `email`: VARCHAR (Unique, Nullable)
+- `phone`: VARCHAR (Unique, Nullable - Bắt buộc ở tầng DTO đối với Customer)
+- `password`: VARCHAR (Hash, Nullable)
+- `role`: ENUM ('CUSTOMER', 'EMPLOYEE', 'ADMIN', 'SUPER_ADMIN')
+- `is_active`: BOOLEAN (Default TRUE)
+- `vipPoints`: INT (Điểm thưởng hiện có)
+- `vipPointsDebt`: INT (Điểm nợ khi trả hàng)
 - `created_at`, `updated_at`
 
 **2. Bảng `categories`**
@@ -361,24 +360,38 @@ Sử dụng kiến trúc đa kênh, hệ thống tiếp nhận Webhook từ đ�
 *(Ghi chú: Cần thêm ràng buộc `UNIQUE(user_id, product_id)` để khi thêm SP đã có trong giỏ thì hệ thống chỉ cộng dồn `quantity`.)*
 
 **5. Bảng `orders`**
-- `id`: INT (PK)
-- `user_id`: INT (FK users)
+- `id`: VARCHAR(UUID) (PK)
+- `user_id`: VARCHAR(UUID) (FK users, Nullable)
 - `total_amount`: DECIMAL
 - `shipping_fee`: DECIMAL (Phí ship)
 - `discount_amount`: DECIMAL (Số tiền giảm giá do voucher)
-- `voucher_id`: INT (FK vouchers, nullable)
+- `voucher_id`: VARCHAR(UUID) (FK vouchers, nullable)
+- `depositAmount`: DECIMAL (Số tiền đặt cọc)
+- `isDepositPayment`: BOOLEAN (Cờ đánh dấu đơn có đặt cọc)
+- `earnedVipPoints`: INT (Điểm thưởng kiếm được)
+- `usedVipPoints`: INT (Điểm thưởng sử dụng)
+- `vipDiscountAmount`: DECIMAL (Số tiền giảm trừ từ điểm)
+- `pointsCreditedAt`: TIMESTAMP (Thời gian cộng điểm)
+- `isOrphanedPayment`: BOOLEAN (Cờ phát hiện GD bất thường)
+- `refundStatus`: ENUM ('PROCESSING', 'COMPLETED')
+- `auditTrail`: JSON (Lịch sử dòng tiền)
+- `returnRejectReason`: TEXT (Lý do Admin từ chối trả hàng)
 - `shipping_name`: VARCHAR
 - `shipping_phone`: VARCHAR
 - `shipping_address`: VARCHAR
 - `delivery_method`: VARCHAR (Giao tiêu chuẩn, Hỏa tốc...)
 - `delivery_partner`: VARCHAR (Tên đối tác thứ 3, vd: Grab, Be)
 - `tracking_id`: VARCHAR (Mã vận đơn)
-- `status`: ENUM ('pending', 'pending_payment', 'confirmed', 'handed_over', 'delivering', 'completed', 'return_requested', 'returned', 'refunded', 'cancelled')
-- `payment_method`: ENUM ('vnpay', 'cod')
-- `payment_status`: ENUM ('pending', 'completed', 'failed', 'refunded')
+- `status`: ENUM ('pending', 'pending_payment', 'confirmed', 'handed_over', 'delivering', 'completed', 'return_requested', 'return_rejected', 'returned', 'refunded', 'cancelled')
+- `payment_method`: ENUM ('vnpay', 'cod', 'stripe') (VietQR đã được duyệt thiết kế nhưng chưa cập nhật vào schema)
+- `payment_status`: ENUM ('pending', 'partially_paid', 'completed', 'failed', 'refunded')
 - `vnp_txn_ref`: VARCHAR
 - `vnp_transaction_no`: VARCHAR
 - `vnp_pay_date`: VARCHAR
+
+**5.1. Bảng `provinces` & `wards` (Địa lý 2026 - Mới)**
+- Bổ sung cấu trúc quản lý địa lý phân cấp (Vùng miền `region`: NORTH, CENTRAL, SOUTH).
+- Bổ sung cờ `mergedFrom` để xử lý sáp nhập hành chính (ví dụ sáp nhập 2 xã thành 1 xã mới).
 
 **5.1. Bảng `vouchers` (Mới)**
 - `id`: INT (PK)
@@ -437,12 +450,11 @@ Sử dụng kiến trúc đa kênh, hệ thống tiếp nhận Webhook từ đ�
   - FR-V3: Cung cấp API Refund để hoàn tiền khi đơn chuyển trạng thái `Returned`.
 
 ### 5.2. Tích hợp Email (Nodemailer + Gmail SMTP)
-- **Mục đích:** Gửi thông báo hệ thống tự động. Text đơn giản.
+- **Mục đích:** Gửi thông báo hệ thống tự động. Text đơn giản. Hệ thống KHÔNG gửi OTP đăng nhập/đăng ký Khách hàng qua Email (chuyển sang SMS).
 - **Yêu cầu:** 
-  - FR-E1: Gửi OTP xác thực (hết hạn 15p).
-  - FR-E2: Gửi hóa đơn khi đặt thành công.
-  - FR-E3: Gửi mail chúc mừng + link đánh giá khi đơn `Completed`.
-  - FR-E4: Gửi link/OTP đặt lại mật khẩu (hết hạn 15p, giới hạn 5 lần).
+  - FR-E1: Gửi hóa đơn khi đặt thành công.
+  - FR-E2: Gửi mail chúc mừng + link đánh giá khi đơn `Completed`.
+  - FR-E3: Gửi link/OTP đặt lại mật khẩu cho Admin/Nhân viên (hết hạn 15p, giới hạn 5 lần).
 
 ### 5.3. Tích hợp chống Spam (Google reCAPTCHA v3)
 - **Mục đích:** Ngăn chặn bot cào dữ liệu và spam API.
@@ -479,6 +491,7 @@ Sử dụng kiến trúc đa kênh, hệ thống tiếp nhận Webhook từ đ�
    - Logging/Monitoring: Ghi log lỗi vào file hoặc console chuẩn để phục vụ debug (VD: VNPay callback lỗi, ML Service down).
    - Uptime/Availability: Mục tiêu hệ thống hoạt động ổn định 99% thời gian để phục vụ người dùng và demo.
 5. **Tương thích:** Responsive trên Mobile, Tablet, Desktop. Hỗ trợ Chrome, Safari, Edge.
+6. **Đa ngôn ngữ (i18n):** Bắt buộc áp dụng Đa ngôn ngữ 100% bằng thư viện `next-intl` cho mọi giao diện. Nghiêm cấm hardcode chuỗi văn bản tĩnh.
 
 ---
 
@@ -517,6 +530,6 @@ Yêu cầu phủ sóng các module lõi (Sử dụng Jest / Pytest):
 
 ### B. Các câu hỏi mở / Chờ quyết định
 1. **Nền tảng Deploy (Railway vs Supabase):** Đã chốt chọn Railway. Lý do: Ứng dụng có cả backend NestJS và FastAPI ML, Railway hỗ trợ Docker và chạy đa service dễ dàng, phù hợp hơn Supabase (vốn thiên về Backend-as-a-Service).
-2. **Tính năng hoàn tiền bằng credit / điểm thưởng:** Chưa quyết định. Hiện tại chỉ xử lý hoàn tiền trực tiếp qua VNPay hoặc COD thủ công, có thể phát triển thêm hệ thống điểm thưởng sau này nếu có dư dả thời gian.
-3. **Đa ngôn ngữ (i18n):** Ưu tiên thấp (Nice-to-have). Sẽ dùng tiếng Việt làm mặc định, nếu dư dả thời gian sau Tuần 14 mới triển khai nút toggle sang Tiếng Anh.
+2. **Tính năng điểm thưởng (VIP Points):** Đã thực hiện. Khách hàng được tích điểm (`earnedVipPoints`) để dùng trừ tiền trực tiếp cho lần mua sau. Đã xử lý toàn vẹn dữ liệu nợ điểm (`vipPointsDebt`) khi người dùng trả hàng.
+3. **Đa ngôn ngữ (i18n):** Đã chốt bắt buộc 100% (next-intl).
 4. **Tài khoản test VNPay:** Yêu cầu admin/bạn cung cấp credentials VNPay Sandbox lưu vào file `.env` khi code module thanh toán.

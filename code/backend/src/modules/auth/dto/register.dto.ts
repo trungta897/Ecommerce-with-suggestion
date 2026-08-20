@@ -21,9 +21,8 @@ export class RegisterDto {
   @IsString()
   @MinLength(6, { message: i18nValidationMessage('auth.PASSWORD_TOO_SHORT') })
   @MaxLength(32)
-  @Matches(/((?=.*\d)|(?=.*\W+))(?![.\n])(?=.*[A-Z])(?=.*[a-z]).*$/, {
-    message:
-      'Password must contain at least one uppercase letter, one lowercase letter, and one number or special character',
+  @Matches(/^(?=.*[A-Z])(?=.*[a-z])(?=.*[\d\W]).{6,32}$/, {
+    message: i18nValidationMessage('auth.WEAK_PASSWORD'),
   })
   password: string;
 }

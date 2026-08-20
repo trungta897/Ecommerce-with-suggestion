@@ -2,13 +2,32 @@
 
 import { useTranslations, useLocale } from 'next-intl';
 import { BaseInput } from '@/components/base';
-import { Search, Eye, CheckCircle2, Clock } from '@/components/base/icons';
+import { Search, Eye, CheckCircle2, Clock, XCircle } from '@/components/base/icons';
 import { formatPrice } from '@/utils/format';
+import { useState } from 'react';
+import { ReturnRejectModal } from '@/components/features/orders/ReturnRejectModal';
+import { orderService } from '@/services/order-service';
+import { useToast } from '@/providers/toast-provider';
 
 export default function AdminOrdersPage() {
   const t = useTranslations('admin.orders');
   const tOrder = useTranslations('order');
   const locale = useLocale();
+  const toast = useToast();
+
+  const [rejectModalOpen, setRejectModalOpen] = useState(false);
+  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
+
+  const handleApproveReturn = async (orderId: string) => {
+    try {
+      await orderService.approveReturn(orderId);
+      toast.success('Đã duyệt yêu cầu trả hàng');
+      // refetch orders
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Lỗi khi duyệt trả hàng');
+    }
+  };
 
   const mockOrders = [
     {
@@ -65,6 +84,15 @@ export default function AdminOrdersPage() {
       payment: 'cod',
       date: '15/07/2026',
     },
+    {
+      id: 'ORD-240714',
+      customer: 'Võ Thị G',
+      email: 'g@gmail.com',
+      total: 12500000,
+      status: 'return_requested',
+      payment: 'vnpay',
+      date: '14/07/2026',
+    },
   ];
 
   const statusColors: Record<string, string> = {
@@ -74,6 +102,7 @@ export default function AdminOrdersPage() {
     delivering: 'bg-cyan-100 text-cyan-800',
     completed: 'bg-green-100 text-green-800',
     cancelled: 'bg-red-100 text-red-800',
+    return_requested: 'bg-purple-100 text-purple-800',
   };
 
   return (
@@ -151,6 +180,27 @@ export default function AdminOrdersPage() {
                           <CheckCircle2 className="w-4 h-4" />
                         </button>
                       )}
+                      {order.status === 'return_requested' && (
+                        <>
+                          <button
+                            onClick={() => handleApproveReturn(order.id)}
+                            className="p-1.5 rounded-lg hover:bg-green-50 text-ink-2 hover:text-green-600 transition-colors"
+                            title="Duyệt trả hàng"
+                          >
+                            <CheckCircle2 className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => {
+                              setSelectedOrderId(order.id);
+                              setRejectModalOpen(true);
+                            }}
+                            className="p-1.5 rounded-lg hover:bg-red-50 text-ink-2 hover:text-red-600 transition-colors"
+                            title="Từ chối trả hàng"
+                          >
+                            <XCircle className="w-4 h-4" />
+                          </button>
+                        </>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -159,6 +209,17 @@ export default function AdminOrdersPage() {
           </table>
         </div>
       </div>
+
+      {selectedOrderId && (
+        <ReturnRejectModal
+          isOpen={rejectModalOpen}
+          onClose={() => setRejectModalOpen(false)}
+          orderId={selectedOrderId}
+          onSuccess={() => {
+            // refetch orders
+          }}
+        />
+      )}
     </div>
   );
 }

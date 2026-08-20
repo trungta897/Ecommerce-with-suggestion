@@ -14,6 +14,8 @@ export interface AddressSelectorProps {
       districtName: string;
       wardName: string;
       street: string;
+      provinceId?: string;
+      wardId?: string;
     }
   ) => void;
   error?: string;
@@ -138,9 +140,14 @@ export const AddressSelector: React.FC<AddressSelectorProps> = ({
     [wards, searchWard]
   );
 
+  const onAddressChangeRef = useRef(onAddressChange);
+  useEffect(() => {
+    onAddressChangeRef.current = onAddressChange;
+  }, [onAddressChange]);
+
   // Compute Full Address & Notify parent
   useEffect(() => {
-    if (onAddressChange) {
+    if (onAddressChangeRef.current) {
       const parts: string[] = [];
       if (street.trim()) parts.push(street.trim());
       if (selectedWard) parts.push(selectedWard.fullName);
@@ -148,14 +155,16 @@ export const AddressSelector: React.FC<AddressSelectorProps> = ({
       if (selectedProvince) parts.push(selectedProvince.fullName);
 
       const fullAddr = parts.join(', ');
-      onAddressChange(fullAddr || initialAddress, {
+      onAddressChangeRef.current(fullAddr || initialAddress, {
         provinceName: selectedProvince?.fullName || '',
         districtName: selectedDistrict?.fullName || '',
         wardName: selectedWard?.fullName || '',
         street: street.trim(),
+        provinceId: selectedProvince?.id || undefined,
+        wardId: selectedWard?.id || undefined,
       });
     }
-  }, [selectedProvince, selectedDistrict, selectedWard, street, initialAddress, onAddressChange]);
+  }, [selectedProvince, selectedDistrict, selectedWard, street, initialAddress]);
 
   return (
     <div className="w-full space-y-4">

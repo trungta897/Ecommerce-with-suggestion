@@ -1,0 +1,5 @@
+{
+  "SEND_FAILED": "Không thể gửi email xác thực. Vui lòng thử lại sau.",
+  "OTP_SUBJECT_REGISTER": "Mã xác nhận đăng ký tài khoản",
+  "OTP_SUBJECT_FORGOT": "Mã xác nhận khôi phục mật khẩu"
+}

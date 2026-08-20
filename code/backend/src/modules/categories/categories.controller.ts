@@ -14,6 +14,8 @@ import { AuthGuard } from '@nestjs/passport';
 import { CategoriesService } from './categories.service';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
+import { Roles } from '../../common/decorators/roles.decorator';
+import { RolesGuard } from '../../common/guards/roles.guard';
 
 @Controller('categories')
 export class CategoriesController {
@@ -33,7 +35,8 @@ export class CategoriesController {
     return this.categoriesService.findOne(id, lang);
   }
 
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles('ADMIN')
   @Post()
   create(
     @Body() createCategoryDto: CreateCategoryDto,
@@ -42,7 +45,8 @@ export class CategoriesController {
     return this.categoriesService.create(createCategoryDto, lang);
   }
 
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles('ADMIN')
   @Patch(':id')
   update(
     @Param('id') id: string,
@@ -52,7 +56,8 @@ export class CategoriesController {
     return this.categoriesService.update(id, updateCategoryDto, lang);
   }
 
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles('ADMIN')
   @Delete(':id')
   remove(
     @Param('id') id: string,

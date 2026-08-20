@@ -26,7 +26,7 @@
   "filterProducts": "Filter products",
   "showAllCount": "Show all ({total} products)",
   "showAll": "Show all products",
-  "addedToCartSuccess": "Successfully added \"{name}\" to your cart!",
+  "addedToCartSuccess": "Successfully added to your cart!",
   "addedToCartFailed": "Failed to add to cart",
   "addedToCartTitle": "Success",
   "redirectingToCheckout": "Redirecting to checkout...",

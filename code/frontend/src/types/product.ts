@@ -36,13 +36,3 @@ export interface Product {
   isActive: boolean;
   createdAt: string;
 }
-
-export interface Review {
-  id: string; // UUID from Prisma
-  user_id: string; // Since user id is UUID
-  product_id: string;
-  order_id?: string;
-  rating: number;
-  comment: string;
-  status: 'visible' | 'hidden';
-}

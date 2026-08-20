@@ -50,7 +50,7 @@ export function useCart() {
   const addItem = async (item: CartItem) => {
     if (isAuthenticated) {
       await addItemMutation.mutateAsync({
-        productId: item.product_id,
+        productId: item.productId,
         quantity: item.quantity,
       });
     } else {

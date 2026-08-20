@@ -5,11 +5,14 @@ import { Package, Truck, CheckCircle2, Clock, ChevronRight } from '@/components/
 import { BaseButton } from '@/components/base';
 import Link from 'next/link';
 import { formatPrice } from '@/utils/format';
+import { useState } from 'react';
+import { ReturnModal } from '@/components/features/orders/ReturnModal';
 
 export default function OrderDetailPage({ params }: { params: { id: string } }) {
   const locale = useLocale();
   const t = useTranslations('order');
   const tCommon = useTranslations('common');
+  const [isReturnModalOpen, setIsReturnModalOpen] = useState(false);
 
   // Mock order data
   const order = {
@@ -150,12 +153,23 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
       {/* Actions */}
       <div className="flex gap-3">
         {order.status === 'completed' && (
-          <BaseButton variant="outline">{t('returnOrder')}</BaseButton>
+          <BaseButton variant="outline" onClick={() => setIsReturnModalOpen(true)}>
+            {t('returnOrder')}
+          </BaseButton>
         )}
         {(order.status === 'pending' || order.status === 'pending_payment') && (
           <BaseButton variant="destructive">{t('cancelOrder')}</BaseButton>
         )}
       </div>
+
+      <ReturnModal
+        isOpen={isReturnModalOpen}
+        onClose={() => setIsReturnModalOpen(false)}
+        orderId={order.id}
+        onSuccess={() => {
+          // Normally we would refetch order data here
+        }}
+      />
     </div>
   );
 }

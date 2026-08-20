@@ -69,15 +69,24 @@
 - **Backend (NestJS)**: Mọi hằng số chung (Mã lỗi, giá trị cấu hình mặc định, regex...) bắt buộc lưu tại `src/common/constants/` hoặc các file `.constant.ts` thuộc từng module chuyên biệt.
 - **Single Source of Truth & Dynamic Logic**: Các hàm tiện ích và service xử lý logic (tại `utils/` hay `services/`) chỉ được phép import hằng số từ thư mục `constants` để tính toán động (ví dụ: dùng `.reduce()` hay `.map()` từ mảng hằng số), tuyệt đối không định nghĩa lại hay hardcode các giá trị chuỗi/số (magic string / magic number) ngay bên trong code logic.
 
+## Documentation Cross-Check Before Commit Mandate
+
+**Rule**: Bắt buộc phải kiểm tra, đối soát các tài liệu trong thư mục `docs/` (như SRS, backlog, thiết kế) với code thực tế TRƯỚC KHI thực hiện mỗi commit hoặc khi được yêu cầu tổng hợp trước commit. Nếu phát hiện có sự chênh lệch (gap) giữa tài liệu và code, **BẮT BUỘC** phải tiến hành cập nhật tài liệu để phản ánh đúng thực trạng trước khi hoàn tất commit.
+
 ## Pre-Commit Summary Mandate
 
 **Rule**: Bắt buộc tạo một bản tổng kết (summary) những thay đổi so với commit trước đó, TRƯỚC KHI thực hiện lệnh commit lên GitHub.
 - Bản tổng kết này phải được lưu vào một file nằm trong thư mục `summary/` của dự án.
 - Tên file tổng kết nên chứa timestamp hoặc thông tin commit (ví dụ: `summary_YYYYMMDD_HHMMSS.md`).
 - Nội dung tóm tắt rõ ràng các file đã sửa đổi, tính năng đã thêm hoặc lỗi đã sửa để tiện theo dõi.
+- **BẮT BUỘC** phải viết thêm cả gợi ý `commit message` (theo chuẩn Conventional Commits) cho từng nhóm thay đổi (ví dụ: chia riêng commit cho `docs`, `backend`, `frontend`) bên trong file tổng kết này.
 
 ## Code Formatting & Type Safety Mandate
 
 **Rule**: Tuyệt đối tránh các lỗi liên quan đến dư thừa khoảng trắng (trailing spaces) hoặc ép kiểu không cần thiết (unnecessary type assertions) trong file code (ví dụ dùng `as any` khi Type đã tương thích).
 - Agent **BẮT BUỘC** phải chạy script để format (ví dụ: `npm run format` hoặc `npx prettier --write <file>`) sau khi sửa đổi file code nếu phát sinh các lỗi liên quan tới định dạng (formatting).
 - Agent **BẮT BUỘC** sử dụng kiểu dữ liệu chặt chẽ và chỉ sử dụng ép kiểu (`as`) khi thực sự cần thiết, hạn chế tối đa việc sử dụng kiểu `any`.
+
+## Safe Execution Mandate
+
+**Rule**: KHÔNG THỰC HIỆN BẤT KỲ HÀNH ĐỘNG DESTRUCTIVE NÀO BAO GỒM XÓA FILE, XÓA DỮ LIỆU, GHI ĐÈ KHÔNG CÓ BACKUP, HOẶC THAY ĐỔI KHÔNG THỂ HOÀN TÁC. KHÔNG NÂNG CẤP, HẠ CẤP HOẶC THAY ĐỔI PHIÊN BẢN FRAMEWORK, THƯ VIỆN, HỆ ĐIỀU HÀNH KHI CHƯA CÓ CHỈ ĐỊNH RÕ RÀNG. LUÔN HỎI LẠI TRƯỚC KHI THỰC HIỆN HÀNH ĐỘNG ẢNH HƯỞNG HỆ THỐNG. ƯU TIÊN GIẢI PHÁP KHÔNG PHÁ VỠ, CÓ THỂ HOÀN TÁC. TẠO BẢN SAO LƯU TRƯỚC KHI CHỈNH SỬA QUAN TRỌNG. KHÔNG TỰ ĐỘNG CHẠY SCRIPT NGUY HIỂM. BẢO TOÀN TÍNH TOÀN VẸN DỮ LIỆU VÀ MÔI TRƯỜNG PHÁT TRIỂN. LUÔN MINH BẠCH VỀ RỦI RO TRƯỚC KHI HÀNH ĐỘNG.

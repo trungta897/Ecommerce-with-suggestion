@@ -36,7 +36,7 @@ export default function CartPage() {
   // Map cart items to product data
   const cartProducts = items
     .map((item) => {
-      const product = products.find((p) => p.id === item.product_id) || item.product;
+      const product = products.find((p) => p.id === item.productId) || item.product;
       return { ...item, product };
     })
     .filter((item) => item.product);
@@ -97,7 +97,7 @@ export default function CartPage() {
         <div className="lg:col-span-8 space-y-4">
           {cartProducts.map((item) => (
             <div
-              key={item.product_id}
+              key={item.productId}
               className="flex gap-4 p-4 bg-white border border-rule rounded-xl"
             >
               <div className="w-24 h-24 rounded-lg bg-paper-2 flex-shrink-0 flex items-center justify-center overflow-hidden relative">
@@ -121,7 +121,7 @@ export default function CartPage() {
 
               <div className="flex flex-col items-end justify-between">
                 <button
-                  onClick={() => handleRemoveItem(item.product_id)}
+                  onClick={() => handleRemoveItem(item.productId)}
                   className="p-1 text-muted hover:text-red-500 transition-colors"
                   aria-label={t('remove')}
                 >
@@ -130,7 +130,7 @@ export default function CartPage() {
 
                 <div className="flex items-center border border-rule rounded-lg">
                   <button
-                    onClick={() => updateQuantity(item.product_id, Math.max(1, item.quantity - 1))}
+                    onClick={() => updateQuantity(item.productId, Math.max(1, item.quantity - 1))}
                     className="p-1.5 hover:bg-paper-2 transition-colors rounded-l-lg"
                   >
                     <Minus className="w-3 h-3" />
@@ -139,7 +139,7 @@ export default function CartPage() {
                   <button
                     onClick={() =>
                       updateQuantity(
-                        item.product_id,
+                        item.productId,
                         Math.min(item.quantity + 1, item.product?.stock || Number.MAX_SAFE_INTEGER)
                       )
                     }

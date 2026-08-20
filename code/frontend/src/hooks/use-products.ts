@@ -9,14 +9,6 @@ export function useProducts(params?: ProductQueryParams) {
   });
 }
 
-export function useProduct(id: string) {
-  return useQuery({
-    queryKey: queryKeys.products.detail(id),
-    queryFn: () => productService.getById(id),
-    enabled: !!id,
-  });
-}
-
 export function useProductBySlug(slug: string) {
   return useQuery({
     queryKey: ['products', 'slug', slug],

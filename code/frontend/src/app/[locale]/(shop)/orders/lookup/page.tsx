@@ -3,11 +3,25 @@
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { BaseButton, BaseInput } from '@/components/base';
-import { Search, Package } from '@/components/base/icons';
+import { Search } from '@/components/base/icons';
+import { useRouter } from 'next/navigation';
+import toast from 'react-hot-toast';
 
 export default function OrderLookupPage() {
   const t = useTranslations('order');
-  const [searched, setSearched] = useState(false);
+  const router = useRouter();
+  const [orderId, setOrderId] = useState('');
+  const [phone, setPhone] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleLookup = () => {
+    if (!orderId || !phone) {
+      toast.error('Vui lòng nhập đầy đủ Mã đơn hàng và Số điện thoại');
+      return;
+    }
+    setLoading(true);
+    router.push(`/orders/guest/${orderId.trim()}?phone=${phone.trim()}`);
+  };
 
   return (
     <div className="max-w-xl mx-auto px-4 py-16">
@@ -22,23 +36,24 @@ export default function OrderLookupPage() {
       <div className="bg-white border border-rule rounded-xl p-6 space-y-4">
         <div className="space-y-1">
           <label className="text-sm font-medium text-ink">{t('lookupOrderId')}</label>
-          <BaseInput placeholder="ORD-XXXXXX" />
+          <BaseInput
+            placeholder="ORD-XXXXXX"
+            value={orderId}
+            onChange={(e) => setOrderId(e.target.value)}
+          />
         </div>
         <div className="space-y-1">
           <label className="text-sm font-medium text-ink">{t('lookupContact')}</label>
-          <BaseInput placeholder="0900 000 000" />
+          <BaseInput
+            placeholder="0900 000 000"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+          />
         </div>
-        <BaseButton className="w-full" onClick={() => setSearched(true)}>
-          {t('lookupButton')}
+        <BaseButton className="w-full" onClick={handleLookup} disabled={loading}>
+          {loading ? 'Đang tìm...' : t('lookupButton')}
         </BaseButton>
       </div>
-
-      {searched && (
-        <div className="mt-8 text-center py-12 bg-white border border-rule rounded-xl">
-          <Package className="w-12 h-12 mx-auto mb-3 text-muted" />
-          <p className="text-ink-2">{t('lookupNotFound')}</p>
-        </div>
-      )}
     </div>
   );
 }

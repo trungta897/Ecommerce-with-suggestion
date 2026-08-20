@@ -7,21 +7,30 @@ import {
   IsArray,
   IsObject,
   Min,
+  IsNotEmpty,
+  MaxLength,
+  IsUrl,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class CreateProductDto {
   @IsUUID()
+  @IsNotEmpty()
   categoryId: string;
 
   @IsString()
+  @IsNotEmpty()
+  @MaxLength(255)
   name: string;
 
   @IsString()
+  @IsNotEmpty()
+  @MaxLength(255)
   slug: string;
 
   @IsString()
   @IsOptional()
+  @MaxLength(255)
   brand?: string;
 
   @IsString()
@@ -30,13 +39,14 @@ export class CreateProductDto {
 
   @IsOptional()
   @IsObject()
-  specifications?: any;
+  specifications?: Record<string, unknown>;
 
   @IsOptional()
   @IsArray()
   tags?: string[];
 
   @IsNumber()
+  @IsNotEmpty()
   @Type(() => Number)
   @Min(0)
   price: number;
@@ -55,6 +65,7 @@ export class CreateProductDto {
 
   @IsOptional()
   @IsArray()
+  @IsUrl({}, { each: true })
   images?: string[];
 
   @IsBoolean()

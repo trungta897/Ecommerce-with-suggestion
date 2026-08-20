@@ -1,7 +1,7 @@
 import { Product } from './product';
 import { User } from './user';
 
-export enum OrderStatus {
+enum OrderStatus {
   PENDING = 'pending',
   PENDING_PAYMENT = 'pending_payment',
   CONFIRMED = 'confirmed',
@@ -14,54 +14,55 @@ export enum OrderStatus {
   CANCELLED = 'cancelled',
 }
 
-export enum PaymentMethod {
+enum PaymentMethod {
   VNPAY = 'vnpay',
   COD = 'cod',
+  STRIPE = 'stripe',
 }
 
-export enum PaymentStatus {
+enum PaymentStatus {
   PENDING = 'pending',
   COMPLETED = 'completed',
   FAILED = 'failed',
   REFUNDED = 'refunded',
 }
 
-export interface OrderItem {
+interface OrderItem {
   id: string;
-  order_id: string;
-  product_id: string;
+  orderId: string;
+  productId: string;
   quantity: number;
-  unit_price: number;
+  unitPrice: number;
   product?: Product;
 }
 
 export interface Order {
   id: string;
-  user_id: string;
-  total_amount: number;
-  shipping_fee: number;
-  discount_amount: number;
-  voucher_id?: string | null;
-  shipping_name: string;
-  shipping_phone: string;
-  shipping_address: string;
-  delivery_method: string;
-  delivery_partner?: string | null;
-  tracking_id?: string | null;
+  userId?: string | null;
+  totalAmount: number;
+  shippingFee: number;
+  discountAmount: number;
+  voucherId?: string | null;
+  shippingName: string;
+  shippingPhone: string;
+  shippingAddress: string;
+  deliveryMethod: string;
+  deliveryPartner?: string | null;
+  trackingId?: string | null;
   status: OrderStatus;
-  payment_method: PaymentMethod;
-  payment_status: PaymentStatus;
-  vnp_txn_ref?: string | null;
-  vnp_transaction_no?: string | null;
-  vnp_pay_date?: string | null;
+  paymentMethod: PaymentMethod | string;
+  paymentStatus: PaymentStatus;
+  vnpTxnRef?: string | null;
+  vnpTransactionNo?: string | null;
+  vnpPayDate?: string | null;
   items?: OrderItem[];
   user?: User; // Depending on eager loading
 }
 
 export interface CartItem {
   id: string;
-  user_id: string;
-  product_id: string;
+  userId: string;
+  productId: string;
   quantity: number;
   product?: Product;
 }

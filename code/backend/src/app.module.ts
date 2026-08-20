@@ -14,10 +14,23 @@ import { ProductsModule } from './modules/products/products.module';
 import { LocationsModule } from './modules/locations/locations.module';
 import { CartModule } from './modules/cart/cart.module';
 import { ScheduleModule } from '@nestjs/schedule';
+import { DatabaseModule } from './database/database.module';
+import { ConfigModule } from '@nestjs/config';
+import { MailModule } from './modules/mail/mail.module';
+import { OrdersModule } from './modules/orders/orders.module';
+import { PaymentModule } from './modules/payment/payment.module';
+import { EventEmitterModule } from '@nestjs/event-emitter';
+import { VouchersModule } from './modules/vouchers/vouchers.module';
+import { ReviewsModule } from './modules/reviews/reviews.module';
 
 @Module({
   imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+    }),
+    DatabaseModule,
     ScheduleModule.forRoot(),
+    EventEmitterModule.forRoot(),
     ThrottlerModule.forRoot([
       {
         ttl: 60000,
@@ -43,6 +56,11 @@ import { ScheduleModule } from '@nestjs/schedule';
     ProductsModule,
     LocationsModule,
     CartModule,
+    MailModule,
+    OrdersModule,
+    PaymentModule,
+    VouchersModule,
+    ReviewsModule,
   ],
   controllers: [AppController],
   providers: [

@@ -1,7 +1,8 @@
-﻿'use client';
+'use client';
 
 import Link from 'next/link';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { ShoppingCart } from '@/components/base/icons';
 import { useCart } from '@/hooks/use-cart';
@@ -21,8 +22,11 @@ interface ProductCardProps {
 export default function ProductCard({ product, isFlashSale, flashSaleData }: ProductCardProps) {
   const locale = useLocale();
   const t = useTranslations('product');
+  const tCommon = useTranslations('common');
   const { addItem } = useCart();
   const toast = useToast();
+
+  const router = useRouter();
 
   const hasDiscount = !!(
     product.discountPrice && Number(product.discountPrice) < Number(product.price)
@@ -39,12 +43,15 @@ export default function ProductCard({ product, isFlashSale, flashSaleData }: Pro
     try {
       addItem({
         id: product.id,
-        user_id: '',
-        product_id: product.id,
+        userId: '',
+        productId: product.id,
         quantity: 1,
         product,
       });
-      toast.success(t('addedToCartSuccess', { name: product.name }));
+      toast.success(t('addedToCartSuccess'), undefined, undefined, {
+        label: tCommon('viewCart'),
+        onClick: () => router.push('/cart')
+      });
     } catch {
       toast.error(t('addedToCartFailed'));
     }

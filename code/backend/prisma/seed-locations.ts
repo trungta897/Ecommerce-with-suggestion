@@ -29,6 +29,84 @@ const PRIMARY_URL = 'https://provinces.open-api.vn/api/?depth=3';
 const BACKUP_URL =
   'https://raw.githubusercontent.com/madnh/vietnam-provinces/master/data.json';
 
+function getRegion(provinceName: string): 'NORTH' | 'CENTRAL' | 'SOUTH' {
+  const northProvinces = [
+    'Hà Nội',
+    'Hà Giang',
+    'Cao Bằng',
+    'Bắc Kạn',
+    'Tuyên Quang',
+    'Lào Cai',
+    'Điện Biên',
+    'Lai Châu',
+    'Sơn La',
+    'Yên Bái',
+    'Hoà Bình',
+    'Thái Nguyên',
+    'Lạng Sơn',
+    'Quảng Ninh',
+    'Bắc Giang',
+    'Phú Thọ',
+    'Vĩnh Phúc',
+    'Bắc Ninh',
+    'Hải Dương',
+    'Hải Phòng',
+    'Hưng Yên',
+    'Thái Bình',
+    'Hà Nam',
+    'Nam Định',
+    'Ninh Bình',
+  ];
+  const centralProvinces = [
+    'Thanh Hóa',
+    'Nghệ An',
+    'Hà Tĩnh',
+    'Quảng Bình',
+    'Quảng Trị',
+    'Thừa Thiên Huế',
+    'Đà Nẵng',
+    'Quảng Nam',
+    'Quảng Ngãi',
+    'Bình Định',
+    'Phú Yên',
+    'Khánh Hòa',
+    'Ninh Thuận',
+    'Bình Thuận',
+    'Kon Tum',
+    'Gia Lai',
+    'Đắk Lắk',
+    'Đắk Nông',
+    'Lâm Đồng',
+  ];
+  const southProvinces = [
+    'Bình Phước',
+    'Tây Ninh',
+    'Bình Dương',
+    'Đồng Nai',
+    'Bà Rịa - Vũng Tàu',
+    'Hồ Chí Minh',
+    'Long An',
+    'Tiền Giang',
+    'Bến Tre',
+    'Trà Vinh',
+    'Vĩnh Long',
+    'Đồng Tháp',
+    'An Giang',
+    'Kiên Giang',
+    'Cần Thơ',
+    'Hậu Giang',
+    'Sóc Trăng',
+    'Bạc Liêu',
+    'Cà Mau',
+  ];
+
+  const normalized = provinceName.replace(/Tỉnh |Thành phố /g, '');
+  if (northProvinces.some((p) => normalized.includes(p))) return 'NORTH';
+  if (centralProvinces.some((p) => normalized.includes(p))) return 'CENTRAL';
+  if (southProvinces.some((p) => normalized.includes(p))) return 'SOUTH';
+  return 'NORTH';
+}
+
 async function fetchProvincesData(): Promise<RawProvince[]> {
   console.log('📡 Đang tải bộ dữ liệu Hành chính Việt Nam từ internet...');
   try {
@@ -66,18 +144,18 @@ async function main() {
 
   const rawData = await fetchProvincesData();
 
-  const provincesData: { id: string; name: string; fullName: string }[] = [];
-  const districtsData: {
+  const provincesData: {
+    id: string;
+    name: string;
+    fullName: string;
+    region: 'NORTH' | 'CENTRAL' | 'SOUTH';
+  }[] = [];
+  const wardsData: {
     id: string;
     provinceId: string;
     name: string;
     fullName: string;
-  }[] = [];
-  const wardsData: {
-    id: string;
-    districtId: string;
-    name: string;
-    fullName: string;
+    mergedFrom: string;
   }[] = [];
 
   for (const p of rawData) {
@@ -85,24 +163,19 @@ async function main() {
       id: String(p.code),
       name: p.name,
       fullName: p.name_with_type || p.name,
+      region: getRegion(p.name),
     });
 
     if (p.districts && Array.isArray(p.districts)) {
       for (const d of p.districts) {
-        districtsData.push({
-          id: String(d.code),
-          provinceId: String(p.code),
-          name: d.name,
-          fullName: d.name_with_type || d.name,
-        });
-
         if (d.wards && Array.isArray(d.wards)) {
           for (const w of d.wards) {
             wardsData.push({
               id: String(w.code),
-              districtId: String(d.code),
+              provinceId: String(p.code),
               name: w.name,
               fullName: w.name_with_type || w.name,
+              mergedFrom: d.name_with_type || d.name,
             });
           }
         }
@@ -111,8 +184,14 @@ async function main() {
   }
 
   console.log(
-    `📊 Dữ liệu đã xử lý: ${provincesData.length} Tỉnh/Thành, ${districtsData.length} Quận/Huyện, ${wardsData.length} Phường/Xã.`,
+    `📊 Dữ liệu đã xử lý: ${provincesData.length} Tỉnh/Thành, ${wardsData.length} Phường/Xã.`,
   );
+
+  console.log('⏳ Đang xóa dữ liệu cũ...');
+  await prisma.$executeRawUnsafe('SET FOREIGN_KEY_CHECKS=0;');
+  await prisma.$executeRawUnsafe('TRUNCATE TABLE wards;');
+  await prisma.$executeRawUnsafe('TRUNCATE TABLE provinces;');
+  await prisma.$executeRawUnsafe('SET FOREIGN_KEY_CHECKS=1;');
 
   console.log('⏳ Đang nạp bảng Province (Tỉnh/Thành phố)...');
   await prisma.province.createMany({
@@ -120,16 +199,6 @@ async function main() {
     skipDuplicates: true,
   });
   console.log('✅ Đã nạp xong bảng Province!');
-
-  console.log('⏳ Đang nạp bảng District (Quận/Huyện)...');
-  const districtChunks = chunkArray(districtsData, 1000);
-  for (const chunk of districtChunks) {
-    await prisma.district.createMany({
-      data: chunk,
-      skipDuplicates: true,
-    });
-  }
-  console.log('✅ Đã nạp xong bảng District!');
 
   console.log('⏳ Đang nạp bảng Ward (Phường/Xã) theo cụm (chunks)...');
   const wardChunks = chunkArray(wardsData, 1000);

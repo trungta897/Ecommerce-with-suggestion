@@ -21,17 +21,17 @@ export const useCartStore = create<CartState>()(
       setMerging: (isMerging) => set({ isMerging }),
       addItem: (item) => {
         // Guard: reject invalid items missing required fields
-        if (!item.product_id || !item.quantity || item.quantity <= 0) {
+        if (!item.productId || !item.quantity || item.quantity <= 0) {
           console.warn('[CartStore] Rejected invalid item:', item);
           return;
         }
         set((state) => {
-          const existingItem = state.items.find((i) => i.product_id === item.product_id);
+          const existingItem = state.items.find((i) => i.productId === item.productId);
           const stock = item.product?.stock || Number.MAX_SAFE_INTEGER;
           if (existingItem) {
             return {
               items: state.items.map((i) =>
-                i.product_id === item.product_id
+                i.productId === item.productId
                   ? { ...i, quantity: Math.min(i.quantity + item.quantity, stock) }
                   : i
               ),
@@ -42,12 +42,12 @@ export const useCartStore = create<CartState>()(
       },
       removeItem: (productId) => {
         set((state) => ({
-          items: state.items.filter((i) => i.product_id !== productId),
+          items: state.items.filter((i) => i.productId !== productId),
         }));
       },
       updateQuantity: (productId, quantity) => {
         set((state) => ({
-          items: state.items.map((i) => (i.product_id === productId ? { ...i, quantity } : i)),
+          items: state.items.map((i) => (i.productId === productId ? { ...i, quantity } : i)),
         }));
       },
       clearCart: () => set({ items: [] }),

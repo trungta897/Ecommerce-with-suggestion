@@ -27,69 +27,52 @@ Các công việc phục vụ vận hành kỹ thuật hoặc đánh giá học 
 
 ## 4. Epic AUTH — Tài khoản và xác thực
 
-### US-AUTH-01 — Đăng ký tài khoản
+### US-AUTH-01 — Đăng nhập & Đăng ký Khách hàng (Qua SĐT)
 
-**User Story:** Là Guest, tôi muốn đăng ký tài khoản bằng email để có thể sử dụng các chức năng dành cho khách hàng.
-
-**Ưu tiên:** Must  
-**Truy vết:** FR-01, Mục 5.3, NFR bảo mật
-
-**Acceptance Criteria:**
-
-1. **Given** Guest cung cấp thông tin đăng ký hợp lệ, **when** gửi yêu cầu đăng ký (vượt qua reCAPTCHA nếu phát hiện nghi ngờ spam), **then** hệ thống tạo tài khoản chưa xác thực và bắt đầu luồng xác thực email.
-2. **Given** phát hiện hành vi spam (điểm reCAPTCHA < `0.5`), **when** Guest gửi yêu cầu, **then** hệ thống từ chối đăng ký.
-3. **Given** dữ liệu đầu vào không hợp lệ, **when** Guest gửi yêu cầu, **then** hệ thống không tạo tài khoản và trả phản hồi lỗi phù hợp.
-
-### US-AUTH-02 — Đăng nhập
-
-**User Story:** Là khách hàng, tôi muốn đăng nhập an toàn để truy cập tài khoản và các chức năng cá nhân.
+**User Story:** Là Guest/Khách hàng, tôi muốn đăng nhập bằng số điện thoại để mua hàng nhanh chóng mà không cần mật khẩu hay email.
 
 **Ưu tiên:** Must  
 **Truy vết:** FR-01, Mục 5.3, NFR bảo mật
 
 **Acceptance Criteria:**
 
-1. **Given** tài khoản hợp lệ, đã xác thực và thông tin đăng nhập chính xác, **when** người dùng đăng nhập, **then** hệ thống cấp phiên đăng nhập.
-2. **Given** thông tin đăng nhập không chính xác, **when** người dùng đăng nhập, **then** hệ thống từ chối truy cập và không tiết lộ thông tin nhạy cảm.
-3. **Given** có dấu hiệu spam (điểm reCAPTCHA < `0.5`), **when** người dùng gửi yêu cầu đăng nhập, **then** hệ thống chặn yêu cầu.
+1. **Given** Guest cung cấp Số điện thoại hợp lệ, **when** gửi yêu cầu (vượt qua reCAPTCHA nếu nghi ngờ spam), **then** hệ thống tạo OTP và gửi qua SMS (hoặc giả lập ở Dev).
+2. **Given** phát hiện hành vi spam (điểm reCAPTCHA < `0.5`), **when** Guest gửi yêu cầu, **then** hệ thống từ chối đăng nhập.
 
-### US-AUTH-03 — Xác thực email bằng OTP
+### US-AUTH-02 — Xác thực SMS OTP
 
-**User Story:** Là người dùng chưa xác thực, tôi muốn xác thực email bằng OTP để kích hoạt tài khoản.
+**User Story:** Là người dùng đang chờ xác thực, tôi muốn nhập mã OTP để hoàn tất đăng nhập vào hệ thống.
 
 **Ưu tiên:** Must  
-**Truy vết:** FR-02, FR-E1, Mục 3.5.1
+**Truy vết:** FR-02
 
 **Acceptance Criteria:**
 
-1. **Given** OTP còn hiệu lực, **when** người dùng nhập đúng OTP, **then** hệ thống xác thực email, cấp lại quyền truy cập đã xác thực và yêu cầu người dùng tự đặt mật khẩu.
-2. **Given** OTP sai và số lần sai nhỏ hơn 5, **when** người dùng xác nhận, **then** hệ thống hiển thị “Mã OTP không chính xác, vui lòng kiểm tra lại”.
-3. **Given** người dùng nhập sai OTP lần thứ 5, **when** xác nhận, **then** hệ thống khóa chức năng gửi lại OTP trong 15 phút.
+1. **Given** OTP còn hiệu lực (5 phút), **when** người dùng nhập đúng OTP, **then** hệ thống cấp JWT (tự động tạo tài khoản nếu SĐT chưa tồn tại).
+2. **Given** OTP sai, **when** người dùng xác nhận, **then** hệ thống báo “Mã OTP không chính xác”. Sai 3 lần sẽ bị khóa gửi OTP trong 15 phút.
 
-### US-AUTH-04 — Đặt mật khẩu sau xác thực
+### US-AUTH-03 — Đăng nhập Nội bộ (Admin/Nhân viên)
 
-**User Story:** Là người dùng vừa xác thực email, tôi muốn tự đặt mật khẩu để hoàn tất kích hoạt tài khoản an toàn (Không sử dụng mật khẩu mặc định qua email).
+**User Story:** Là Admin hoặc Nhân viên, tôi muốn đăng nhập bằng Email và Mật khẩu để quản lý hệ thống.
 
 **Ưu tiên:** Must  
-**Truy vết:** FR-02, Mục 3.5.1, Mục 4.2
+**Truy vết:** FR-03, FR-A06
 
 **Acceptance Criteria:**
 
-1. **Given** người dùng vừa xác thực OTP thành công, **when** cung cấp mật khẩu đáp ứng tối thiểu một chữ hoa, một chữ số và một ký tự đặc biệt, **then** hệ thống lưu mật khẩu an toàn và đánh dấu tài khoản đã xác thực.
-2. **Given** người dùng đang trong luồng mua hàng (Checkout), **when** đặt mật khẩu thành công, **then** hệ thống tự động điều hướng (redirect) về lại trang đơn hàng trước đó và tự động điền thông tin (merge cart & auto-fill).
-3. **Given** mật khẩu không đáp ứng chính sách, **when** người dùng gửi yêu cầu, **then** hệ thống từ chối và yêu cầu sửa.
+1. **Given** tài khoản nội bộ hợp lệ, **when** người dùng nhập đúng Email và Mật khẩu, **then** hệ thống cấp JWT với quyền quản trị tương ứng.
 
-### US-AUTH-05 — Khôi phục mật khẩu
+### US-AUTH-04 — Đặt lại mật khẩu (Dành cho Admin/Nhân viên)
 
-**User Story:** Là Guest hoặc khách hàng, tôi muốn khôi phục mật khẩu qua email đăng ký để lấy lại quyền truy cập.
+**User Story:** Là Admin/Nhân viên, tôi muốn khôi phục mật khẩu qua Email khi quên.
 
-**Ưu tiên:** Must  
-**Truy vết:** FR-03, FR-E4
+**Ưu tiên:** Should  
+**Truy vết:** FR-03
 
 **Acceptance Criteria:**
 
-1. **Given** yêu cầu hợp lệ, **when** người dùng yêu cầu khôi phục, **then** hệ thống gửi link hoặc OTP khôi phục đến email.
-2. **Given** link hoặc OTP còn trong thời hạn 15 phút, **when** người dùng xác minh, **then** hệ thống cho phép đặt mật khẩu mới.
+1. **Given** email nội bộ hợp lệ, **when** yêu cầu khôi phục, **then** hệ thống gửi link reset có JWT (15 phút).
+2. **Given** link hợp lệ, **when** cập nhật mật khẩu, **then** hệ thống lưu mật khẩu mới.
 
 ### US-AUTH-06 — Quản lý Profile
 
@@ -161,29 +144,18 @@ Các công việc phục vụ vận hành kỹ thuật hoặc đánh giá học 
 
 ## 7. Epic CHECKOUT — Đặt hàng và thanh toán
 
-### US-CHK-01 — Guest bắt đầu checkout
+### US-CHK-01 — Guest Checkout (Không cần tài khoản)
 
-**User Story:** Là Guest, tôi muốn checkout bằng thông tin nhận hàng để có thể mua mà không phải đăng ký trước.
+**User Story:** Là Guest, tôi muốn mua hàng trực tiếp bằng cách điền thông tin nhận hàng cơ bản (Tên, SĐT, Địa chỉ) mà không bị ép buộc tạo tài khoản hay xác thực qua email/OTP.
 
 **Ưu tiên:** Must  
-**Truy vết:** FR-06, Mục 3.5.1
+**Truy vết:** FR-06
 
 **Acceptance Criteria:**
 
-1. **Given** giỏ hàng hợp lệ, **when** Guest nhập email, SĐT và địa chỉ, **then** hệ thống tạo tài khoản chưa xác thực, gửi OTP và giữ đơn ở trạng thái tạm.
-2. **Given** Guest chưa xác thực OTP, **when** luồng bị gián đoạn, **then** đơn vẫn ở trạng thái tạm và chưa chốt.
-
-### US-CHK-02 — Hoàn tất Guest Checkout
-
-**User Story:** Là Guest đã xác thực OTP và tự đặt mật khẩu thành công, tôi muốn hệ thống tự động khôi phục lại đơn hàng đang thực hiện để tiếp tục.
-
-**Ưu tiên:** Must  
-**Truy vết:** FR-06, FR-07, Mục 3.5.1
-
-**Acceptance Criteria:**
-
-1. **Given** Guest hoàn tất kích hoạt, **when** trở lại luồng, **then** hệ thống hiển thị lại giỏ hàng và tự điền thông tin người nhận đã nhập trước đó.
-2. **Given** thông tin đơn hợp lệ, **when** xác nhận đặt hàng, **then** hệ thống kiểm tra tồn kho cuối cùng và chốt đơn theo phương thức thanh toán.
+1. **Given** giỏ hàng hợp lệ, **when** Guest nhập đầy đủ Danh xưng, Tên, SĐT, Tỉnh/Huyện/Xã và Địa chỉ cụ thể, **then** hệ thống cho phép chọn phương thức thanh toán (COD hoặc VNPay).
+2. **Given** thông tin hợp lệ, **when** Guest bấm "Xác nhận đặt hàng", **then** hệ thống kiểm tra tồn kho và tạo đơn hàng thành công, hiển thị trang hoàn tất kèm Mã đơn hàng.
+3. **Given** Guest không có tài khoản, **when** tạo đơn, **then** thông tin đơn hàng được lưu dạng ẩn danh (`userId = null`), cho phép theo dõi đơn và thanh toán lại (VNPay) qua SĐT và Mã đơn hàng.
 
 ### US-CHK-03 — Áp dụng voucher
 
@@ -272,15 +244,15 @@ Các công việc phục vụ vận hành kỹ thuật hoặc đánh giá học 
 
 ### US-ORD-03 — Yêu cầu trả hàng với lý do tiêu chuẩn
 
-**User Story:** Là khách hàng, tôi muốn yêu cầu trả sản phẩm trong 7 ngày theo danh sách lý do hợp lệ.
+**User Story:** Là khách hàng, tôi muốn yêu cầu trả sản phẩm trong 14 ngày theo danh sách lý do hợp lệ.
 
 **Ưu tiên:** Should  
 **Truy vết:** FR-09, Mục 3.6.1
 
 **Acceptance Criteria:**
 
-1. **Given** đơn ở `completed` chưa quá 7 ngày, **when** khách hàng yêu cầu trả hàng, **then** bắt buộc phải chọn 1 trong 6 lý do hợp lệ: Bể vỡ/móp méo, Lỗi kỹ thuật, Sai sản phẩm, Thiếu phụ kiện, Hàng đã qua sử dụng, Hàng giả/nhái (Không chấp nhận lý do "Không thích"). Yêu cầu phải đính kèm ảnh/video chứng minh.
-2. **Given** yêu cầu trả hàng bị từ chối (đơn chuyển sang `return_rejected`), **when** khách hàng xem chi tiết đơn, **then** hệ thống hiển thị trạng thái từ chối kèm lý do.
+1. **Given** đơn ở `completed` chưa quá 14 ngày (dựa vào `completedAt`), **when** khách hàng yêu cầu trả hàng, **then** bắt buộc phải chọn 1 trong 9 lý do hợp lệ. Yêu cầu phải đính kèm ảnh/video chứng minh (upload best-effort có thể thất bại một phần).
+2. **Given** yêu cầu trả hàng bị từ chối (đơn chuyển sang `return_rejected`), **when** khách hàng xem chi tiết đơn, **then** hệ thống hiển thị trạng thái từ chối kèm lý do, đây là trạng thái cuối (terminal) và khách hàng không thể yêu cầu trả hàng lần nữa.
 
 ### US-ORD-04 — Tra cứu đơn bằng hai yếu tố
 

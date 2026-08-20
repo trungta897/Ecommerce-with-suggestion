@@ -1,7 +1,7 @@
 'use client';
 
 import { useLocale, useTranslations } from 'next-intl';
-import { useProduct } from '@/hooks/use-products';
+import { useProductBySlug } from '@/hooks/use-products';
 import {
   Star,
   Minus,
@@ -11,7 +11,8 @@ import {
   Sparkles,
   ChevronRight,
 } from '@/components/base/icons';
-import { BaseButton } from '@/components/base';
+import { BaseButton } from '@/components/base/BaseButton';
+import { ProductReviews } from '@/components/features/product/ProductReviews';
 import { useCart } from '@/hooks/use-cart';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -30,7 +31,7 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
   const [quantity, setQuantity] = useState(1);
   const [activeTab, setActiveTab] = useState<'description' | 'reviews'>('description');
 
-  const { data: product, isLoading } = useProduct(params.id);
+  const { data: product, isLoading } = useProductBySlug(params.id);
 
   if (isLoading) {
     return (
@@ -74,12 +75,15 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
     try {
       await addItem({
         id: `${Date.now()}`,
-        user_id: '',
-        product_id: product.id,
+        userId: '',
+        productId: product.id,
         quantity,
         product,
       });
-      toast.success(t('addedToCartSuccess', { name: product.name }), t('addedToCartTitle'));
+      toast.success(t('addedToCartSuccess'), t('addedToCartTitle'), undefined, {
+        label: tCommon('viewCart'),
+        onClick: () => router.push('/cart')
+      });
     } catch {
       toast.error(t('addedToCartFailed'));
     }
@@ -89,8 +93,8 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
     try {
       await addItem({
         id: `${Date.now()}`,
-        user_id: '',
-        product_id: product.id,
+        userId: '',
+        productId: product.id,
         quantity,
         product,
       });
@@ -280,14 +284,8 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
             </div>
           ) : (
             <div className="space-y-6">
-              {/* AI Review Summary */}
-              <div className="p-5 bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-100 rounded-xl">
-                <h3 className="font-semibold text-purple-700 flex items-center gap-2 mb-3">
-                  <Sparkles className="w-5 h-5" />
-                  {t('aiSummary')}
-                </h3>
-                <p className="text-sm text-ink-2">{t('noReviews')}</p>
-              </div>
+              {/* AI Review Summary (can be re-added later if needed) */}
+              <ProductReviews productId={product.id} />
             </div>
           )}
         </div>

@@ -5,6 +5,7 @@ import {
   HttpCode,
   HttpStatus,
   Res,
+  BadRequestException,
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import type { Response } from 'express';
@@ -14,16 +15,10 @@ import { LoginDto } from './dto/login.dto';
 import { VerifyEmailDto } from './dto/verify-email.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
-import { GoogleAuthService } from './google-auth.service';
-import { GoogleLoginDto } from './dto/google-login.dto';
-import { GoogleCompleteDto } from './dto/google-complete.dto';
 
 @Controller('auth')
 export class AuthController {
-  constructor(
-    private readonly authService: AuthService,
-    private readonly googleAuthService: GoogleAuthService,
-  ) {}
+  constructor(private readonly authService: AuthService) {}
 
   @Throttle({ default: { limit: 5, ttl: 60000 } })
   @Post('register')
@@ -67,40 +62,6 @@ export class AuthController {
   }
 
   @HttpCode(HttpStatus.OK)
-  @Post('google')
-  async googleAuth(
-    @Body() dto: GoogleLoginDto,
-    @Res({ passthrough: true }) res: Response,
-  ) {
-    const result = await this.googleAuthService.verifyGoogleToken(dto);
-    if (
-      result &&
-      'accessToken' in result &&
-      typeof result.accessToken === 'string'
-    ) {
-      this.setAuthCookie(res, result.accessToken);
-    }
-    return result;
-  }
-
-  @HttpCode(HttpStatus.OK)
-  @Post('google/complete')
-  async googleComplete(
-    @Body() dto: GoogleCompleteDto,
-    @Res({ passthrough: true }) res: Response,
-  ) {
-    const result = await this.googleAuthService.completeRegistration(dto);
-    if (
-      result &&
-      'accessToken' in result &&
-      typeof result.accessToken === 'string'
-    ) {
-      this.setAuthCookie(res, result.accessToken);
-    }
-    return result;
-  }
-
-  @HttpCode(HttpStatus.OK)
   @Post('logout')
   logout(@Res({ passthrough: true }) res: Response): { message: string } {
     res.clearCookie('access_token', {
@@ -109,6 +70,22 @@ export class AuthController {
       sameSite: 'lax',
     });
     return this.authService.logout();
+  }
+
+  @Post('phone/login')
+  async requestPhoneOtp(@Body('phone') phone: string) {
+    if (!phone) {
+      throw new BadRequestException('Số điện thoại là bắt buộc');
+    }
+    return this.authService.requestPhoneOtp(phone);
+  }
+
+  @Post('phone/verify')
+  async verifyPhoneOtp(@Body('phone') phone: string, @Body('otp') otp: string) {
+    if (!phone || !otp) {
+      throw new BadRequestException('Số điện thoại và mã OTP là bắt buộc');
+    }
+    return this.authService.verifyPhoneOtp(phone, otp);
   }
 
   private setAuthCookie(res: Response, accessToken: string) {
