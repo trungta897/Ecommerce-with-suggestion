@@ -69,6 +69,10 @@
 - **Backend (NestJS)**: Mọi hằng số chung (Mã lỗi, giá trị cấu hình mặc định, regex...) bắt buộc lưu tại `src/common/constants/` hoặc các file `.constant.ts` thuộc từng module chuyên biệt.
 - **Single Source of Truth & Dynamic Logic**: Các hàm tiện ích và service xử lý logic (tại `utils/` hay `services/`) chỉ được phép import hằng số từ thư mục `constants` để tính toán động (ví dụ: dùng `.reduce()` hay `.map()` từ mảng hằng số), tuyệt đối không định nghĩa lại hay hardcode các giá trị chuỗi/số (magic string / magic number) ngay bên trong code logic.
 
+## Documentation Cross-Check Before Commit Mandate
+
+**Rule**: Bắt buộc phải kiểm tra, đối soát các tài liệu trong thư mục `docs/` (như SRS, backlog, thiết kế) với code thực tế TRƯỚC KHI thực hiện mỗi commit hoặc khi được yêu cầu tổng hợp trước commit. Nếu phát hiện có sự chênh lệch (gap) giữa tài liệu và code, **BẮT BUỘC** phải tiến hành cập nhật tài liệu để phản ánh đúng thực trạng trước khi hoàn tất commit.
+
 ## Pre-Commit Summary Mandate
 
 **Rule**: Bắt buộc tạo một bản tổng kết (summary) những thay đổi so với commit trước đó, TRƯỚC KHI thực hiện lệnh commit lên GitHub.
