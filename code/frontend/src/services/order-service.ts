@@ -30,37 +30,40 @@ export interface CreateOrderDto {
 
 export const orderService = {
   async createOrder(dto: CreateOrderDto): Promise<Order> {
-    const { data } = await apiClient.post<{ data: Order }>('/orders', dto);
-    return data.data;
+    const { data } = await apiClient.post<Order | { data: Order }>('/orders', dto);
+    return ((data as { data?: Order })?.data || data) as Order;
   },
 
   async createGuestOrder(dto: CreateOrderDto): Promise<Order> {
-    const { data } = await apiClient.post<{ data: Order }>('/orders/guest', dto);
-    return data.data;
+    const { data } = await apiClient.post<Order | { data: Order }>('/orders/guest', dto);
+    return ((data as { data?: Order })?.data || data) as Order;
   },
 
   async payAgain(orderId: string): Promise<Order> {
-    const { data } = await apiClient.post<{ data: Order }>(`/orders/${orderId}/pay-again`);
-    return data.data;
+    const { data } = await apiClient.post<Order | { data: Order }>(`/orders/${orderId}/pay-again`);
+    return ((data as { data?: Order })?.data || data) as Order;
   },
 
   async payAgainGuest(orderId: string, phone: string): Promise<Order> {
-    const { data } = await apiClient.post<{ data: Order }>(`/orders/guest/${orderId}/pay-again`, {
-      phone,
-    });
-    return data.data;
+    const { data } = await apiClient.post<Order | { data: Order }>(
+      `/orders/guest/${orderId}/pay-again`,
+      {
+        phone,
+      }
+    );
+    return ((data as { data?: Order })?.data || data) as Order;
   },
 
   async getOrderById(orderId: string): Promise<Order> {
-    const { data } = await apiClient.get<{ data: Order }>(`/orders/${orderId}`);
-    return data.data;
+    const { data } = await apiClient.get<Order | { data: Order }>(`/orders/${orderId}`);
+    return ((data as { data?: Order })?.data || data) as Order;
   },
 
   async getGuestOrderById(orderId: string, phone: string): Promise<Order> {
-    const { data } = await apiClient.get<{ data: Order }>(`/orders/guest/${orderId}`, {
+    const { data } = await apiClient.get<Order | { data: Order }>(`/orders/guest/${orderId}`, {
       params: { phone },
     });
-    return data.data;
+    return ((data as { data?: Order })?.data || data) as Order;
   },
 
   async checkReturnEligibility(orderId: string): Promise<ReturnEligibilityResponse> {
