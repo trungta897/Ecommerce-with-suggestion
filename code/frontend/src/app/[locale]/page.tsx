@@ -1,10 +1,12 @@
-﻿'use client';
+'use client';
 
 import Hero from '@/components/home/Hero';
 import FlashSaleSection from '@/components/home/FlashSaleSection';
 import { Features } from '@/components/home/Features';
 import { Newsletter } from '@/components/home/Newsletter';
 import CategorySection from '@/components/features/product/CategorySection';
+import { RecentlyViewedSlider } from '@/components/features/product/RecentlyViewedSlider';
+import { RecommendedProducts } from '@/components/features/product/RecommendedProducts';
 import { useProducts } from '@/hooks/use-products';
 import { useTranslations } from 'next-intl';
 import { classifyAllProducts } from '@/utils/classify-product';
@@ -132,6 +134,16 @@ export default function Home() {
           </Link>
         </div>
       </section>
+
+      {/* RECOMMENDED PRODUCTS SECTION */}
+      <div className="container mx-auto px-4 lg:px-8 max-w-7xl">
+        <RecommendedProducts />
+      </div>
+
+      {/* RECENTLY VIEWED SECTION */}
+      <div className="container mx-auto px-4 lg:px-8 max-w-7xl">
+        <RecentlyViewedSlider />
+      </div>
 
       <Features />
 

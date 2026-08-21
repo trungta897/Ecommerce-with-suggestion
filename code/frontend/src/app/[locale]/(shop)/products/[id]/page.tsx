@@ -16,22 +16,46 @@ import { ProductReviews } from '@/components/features/product/ProductReviews';
 import { useCart } from '@/hooks/use-cart';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ProductImageCarousel } from '@/components/features/product/ProductImageCarousel';
 import { useToast } from '@/providers/toast-provider';
 import { formatPrice } from '@/utils/format';
+import { useRecentlyViewedStore } from '@/store/useRecentlyViewedStore';
+import { getOrCreateSessionId } from '@/utils/session';
+import { RecentlyViewedSlider } from '@/components/features/product/RecentlyViewedSlider';
+import { RecommendedProducts } from '@/components/features/product/RecommendedProducts';
 
 export default function ProductDetailPage({ params }: { params: { id: string } }) {
   const locale = useLocale();
   const t = useTranslations('product');
   const tCommon = useTranslations('common');
   const { addItem } = useCart();
+  const { addItem: addRecentlyViewed } = useRecentlyViewedStore();
   const toast = useToast();
   const router = useRouter();
   const [quantity, setQuantity] = useState(1);
   const [activeTab, setActiveTab] = useState<'description' | 'reviews'>('description');
 
   const { data: product, isLoading } = useProductBySlug(params.id);
+
+  // Track product view and save to recently viewed store
+  useEffect(() => {
+    if (product && product.id) {
+      addRecentlyViewed(product);
+      const sessionId = getOrCreateSessionId();
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+      fetch(`${apiUrl}/activities/log`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          action: 'VIEW',
+          productId: product.id,
+          sessionId,
+        }),
+      }).catch(() => {});
+    }
+  }, [product, addRecentlyViewed]);
 
   if (isLoading) {
     return (
@@ -82,7 +106,7 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
       });
       toast.success(t('addedToCartSuccess'), t('addedToCartTitle'), undefined, {
         label: tCommon('viewCart'),
-        onClick: () => router.push('/cart')
+        onClick: () => router.push('/cart'),
       });
     } catch {
       toast.error(t('addedToCartFailed'));
@@ -290,6 +314,12 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
           )}
         </div>
       </div>
+
+      {/* Recommended for You */}
+      <RecommendedProducts currentProductId={product.id} className="mt-14" />
+
+      {/* Recently Viewed */}
+      <RecentlyViewedSlider excludeProductId={product.id} className="mt-12" />
     </div>
   );
 }

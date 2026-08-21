@@ -30,5 +30,9 @@
   "addedToCartFailed": "Thêm vào giỏ hàng thất bại",
   "addedToCartTitle": "Thành công",
   "redirectingToCheckout": "Đang chuyển đến trang thanh toán...",
-  "flashSaleLeft": "🔥 Còn {left}/{total} suất"
+  "flashSaleLeft": "🔥 Còn {left}/{total} suất",
+  "recentlyViewed": "Sản phẩm vừa xem",
+  "clearHistory": "Xóa lịch sử",
+  "recommendedForYou": "Gợi ý dành cho bạn",
+  "emptyRecentlyViewed": "Chưa có sản phẩm vừa xem"
 }

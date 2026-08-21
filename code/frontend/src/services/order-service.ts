@@ -1,5 +1,6 @@
 import { apiClient } from '@/lib/api-client';
 import { Order } from '@/types/order';
+import { getOrCreateSessionId } from '@/utils/session';
 
 export interface ReturnEligibilityResponse {
   eligible: boolean;
@@ -26,16 +27,25 @@ export interface CreateOrderDto {
   voucherId?: string;
   email?: string;
   items?: { productId: string; quantity: number }[];
+  sessionId?: string;
 }
 
 export const orderService = {
   async createOrder(dto: CreateOrderDto): Promise<Order> {
-    const { data } = await apiClient.post<Order | { data: Order }>('/orders', dto);
+    const payload = {
+      ...dto,
+      sessionId: dto.sessionId || getOrCreateSessionId(),
+    };
+    const { data } = await apiClient.post<Order | { data: Order }>('/orders', payload);
     return ((data as { data?: Order })?.data || data) as Order;
   },
 
   async createGuestOrder(dto: CreateOrderDto): Promise<Order> {
-    const { data } = await apiClient.post<Order | { data: Order }>('/orders/guest', dto);
+    const payload = {
+      ...dto,
+      sessionId: dto.sessionId || getOrCreateSessionId(),
+    };
+    const { data } = await apiClient.post<Order | { data: Order }>('/orders/guest', payload);
     return ((data as { data?: Order })?.data || data) as Order;
   },
 

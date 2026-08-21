@@ -16,7 +16,10 @@ export const userService = {
     page = 1,
     limit = 10,
     role?: string
-  ): Promise<{ data: User[]; meta: Record<string, unknown> }> => {
+  ): Promise<{
+    data: User[];
+    meta: { totalPages: number; totalItems?: number; page?: number; limit?: number };
+  }> => {
     const { data } = await apiClient.get('/admin/users', { params: { page, limit, role } });
     return data;
   },

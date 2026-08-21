@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { User } from '@/types';
+import { clearSessionAndRegenerate } from '@/utils/session';
 
 interface AuthState {
   user: User | null;
@@ -24,6 +25,7 @@ export const useAuthStore = create<AuthState>()(
             method: 'POST',
             credentials: 'include',
           }).catch(() => {});
+          clearSessionAndRegenerate();
         }
         set({ user: null, accessToken: null, isAuthenticated: false });
       },

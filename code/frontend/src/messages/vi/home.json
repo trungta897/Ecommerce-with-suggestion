@@ -58,7 +58,12 @@
     "on_sale_subtitle": "Ưu đãi đặc biệt dành cho bạn",
     "flash_sale_title": "Giờ Vàng Giá Sốc",
     "flash_sale_subtitle": "Số lượng có hạn, chớp ngay kẻo lỡ",
-    "top_categories": "Danh mục nổi bật"
+    "top_categories": "Danh mục nổi bật",
+    "recently_viewed_title": "Sản phẩm vừa xem",
+    "recently_viewed_subtitle": "Các sản phẩm bạn đã xem gần đây",
+    "clear_history": "Xóa lịch sử",
+    "recommended_for_you_title": "Gợi ý dành riêng cho bạn",
+    "recommended_for_you_subtitle": "Được AI cá nhân hóa theo sở thích của bạn"
   },
   "features": {
     "free_shipping": "Giao hàng miễn phí",

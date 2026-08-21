@@ -1,9 +1,14 @@
 import { AuthResponse } from '@/types';
 import { apiClient } from './api-client';
+import { getOrCreateSessionId, clearSessionAndRegenerate } from '@/utils/session';
 
 export const authService = {
   login: async (credentials: Record<string, unknown>): Promise<AuthResponse> => {
-    const response = await apiClient.post<AuthResponse>('/auth/login', credentials);
+    const sessionId = getOrCreateSessionId();
+    const response = await apiClient.post<AuthResponse>('/auth/login', {
+      ...credentials,
+      sessionId,
+    });
     return response.data;
   },
 
@@ -13,7 +18,12 @@ export const authService = {
   },
 
   verifyPhoneOtp: async (phone: string, otp: string): Promise<AuthResponse> => {
-    const response = await apiClient.post<AuthResponse>('/auth/phone/verify', { phone, otp });
+    const sessionId = getOrCreateSessionId();
+    const response = await apiClient.post<AuthResponse>('/auth/phone/verify', {
+      phone,
+      otp,
+      sessionId,
+    });
     return response.data;
   },
 
@@ -26,6 +36,8 @@ export const authService = {
       await apiClient.post('/auth/logout');
     } catch {
       // Bỏ qua nếu server offline hoặc đang dùng UI mock
+    } finally {
+      clearSessionAndRegenerate();
     }
   },
 };

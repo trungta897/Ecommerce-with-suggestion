@@ -58,7 +58,12 @@
     "on_sale_subtitle": "Special offers just for you",
     "flash_sale_title": "Flash Sale",
     "flash_sale_subtitle": "Limited quantity, grab it now",
-    "top_categories": "Top Categories"
+    "top_categories": "Top Categories",
+    "recently_viewed_title": "Recently Viewed",
+    "recently_viewed_subtitle": "Products you recently browsed",
+    "clear_history": "Clear History",
+    "recommended_for_you_title": "Recommended For You",
+    "recommended_for_you_subtitle": "Personalized by AI based on your preferences"
   },
   "features": {
     "free_shipping": "Free Shipping",
