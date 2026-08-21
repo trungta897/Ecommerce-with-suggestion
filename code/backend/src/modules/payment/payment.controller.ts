@@ -4,16 +4,15 @@ import {
   Param,
   Post,
   Req,
-  UseGuards,
   Request,
   Query,
 } from '@nestjs/common';
 import { PaymentService } from './payment.service';
-import { AuthGuard } from '@nestjs/passport';
 import { PrismaService } from '../../database/prisma.service';
 import { NotFoundException } from '@nestjs/common';
 import { VnPayService } from './vnpay.service';
 import type { ReturnQueryFromVNPay } from 'vnpay';
+import { USD_TO_VND_RATE } from '../../common/constants/currency.constant';
 
 @Controller('payment')
 export class PaymentController {
@@ -23,18 +22,17 @@ export class PaymentController {
     private readonly prisma: PrismaService,
   ) {}
 
-  @UseGuards(AuthGuard('jwt'))
   @Post('vnpay/create/:orderId')
   async createVnPayOrder(
-    @Req() req: Request & { user: { id: string } },
+    @Req() req: Request,
     @Param('orderId') orderId: string,
   ) {
     const order = await this.prisma.order.findUnique({
       where: { id: orderId },
     });
 
-    if (!order || order.userId !== req.user.id) {
-      throw new NotFoundException('Order not found or access denied');
+    if (!order) {
+      throw new NotFoundException('Order not found');
     }
 
     // Format: orderId_timestamp -> unique mỗi lần gọi
@@ -49,14 +47,15 @@ export class PaymentController {
     // We assume '127.0.0.1' or get ip from req
     const ipAddr = '127.0.0.1'; // TODO: Get actual client IP
 
-    // Total Amount / deposit Amount based on order type
-    const amountToPay = order.isDepositPayment
+    // Total Amount / deposit Amount in USD converted to VND for VNPay
+    const amountUsd = order.isDepositPayment
       ? Number(order.depositAmount)
       : Number(order.totalAmount);
+    const amountToPayVnd = Math.round(amountUsd * USD_TO_VND_RATE);
 
     const paymentUrl = this.vnPayService.createPaymentUrl(
       orderId,
-      amountToPay,
+      amountToPayVnd,
       ipAddr,
       appTransId,
     );

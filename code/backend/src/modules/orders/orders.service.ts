@@ -150,9 +150,9 @@ export class OrdersService {
     let isDepositPayment = false;
     let depositAmount: number | null = null;
 
-    if (createOrderDto.deliveryMethod !== 'PICKUP' && subtotal < 200000) {
+    if (createOrderDto.deliveryMethod !== 'PICKUP' && subtotal < 8) {
       isDepositPayment = true;
-      depositAmount = 50000;
+      depositAmount = 2;
     }
 
     if (
