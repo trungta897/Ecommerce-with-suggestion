@@ -46,4 +46,8 @@ export class CreateOrderDto {
 
   @IsOptional()
   useVipPoints?: boolean;
+
+  @IsOptional()
+  @IsString()
+  sessionId?: string;
 }

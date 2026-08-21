@@ -81,11 +81,20 @@ export class AuthController {
   }
 
   @Post('phone/verify')
-  async verifyPhoneOtp(@Body('phone') phone: string, @Body('otp') otp: string) {
+  async verifyPhoneOtp(
+    @Body('phone') phone: string,
+    @Body('otp') otp: string,
+    @Body('sessionId') sessionId: string,
+    @Res({ passthrough: true }) res: Response,
+  ) {
     if (!phone || !otp) {
       throw new BadRequestException('Số điện thoại và mã OTP là bắt buộc');
     }
-    return this.authService.verifyPhoneOtp(phone, otp);
+    const result = await this.authService.verifyPhoneOtp(phone, otp, sessionId);
+    if (result?.accessToken) {
+      this.setAuthCookie(res, result.accessToken);
+    }
+    return result;
   }
 
   private setAuthCookie(res: Response, accessToken: string) {

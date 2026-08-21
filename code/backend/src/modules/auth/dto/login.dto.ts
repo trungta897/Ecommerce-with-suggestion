@@ -1,4 +1,4 @@
-import { IsEmail, IsNotEmpty, IsString } from 'class-validator';
+import { IsEmail, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 import { i18nValidationMessage } from 'nestjs-i18n';
 
 export class LoginDto {
@@ -9,4 +9,8 @@ export class LoginDto {
   @IsString()
   @IsNotEmpty({ message: i18nValidationMessage('auth.INVALID_PASSWORD') })
   password: string;
+
+  @IsOptional()
+  @IsString()
+  sessionId?: string;
 }

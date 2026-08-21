@@ -173,6 +173,18 @@ export class AuthService {
       throw new BadRequestException(msg);
     }
 
+    // Merge guest activity logs if sessionId provided
+    if (dto.sessionId) {
+      try {
+        await this.prisma.userActivityLog.updateMany({
+          where: { sessionId: dto.sessionId, userId: null },
+          data: { userId: user.id },
+        });
+      } catch (err) {
+        console.error('Failed to merge activity logs on login:', err);
+      }
+    }
+
     // Generate JWT
     const payload = { sub: user.id, email: user.email, role: user.role };
     const accessToken = this.jwtService.sign(payload);
@@ -218,7 +230,7 @@ export class AuthService {
     };
   }
 
-  async verifyPhoneOtp(phone: string, otp: string) {
+  async verifyPhoneOtp(phone: string, otp: string, sessionId?: string) {
     const redisKey = `OTP:PHONE:${phone}`;
     const failKey = `OTP:FAIL_PHONE:${phone}`;
 
@@ -249,7 +261,7 @@ export class AuthService {
       user = await this.prisma.user.create({
         data: {
           phone,
-          email: `${phone}@placeholder.local`, // Mock email since it is @unique in schema. Wait, email is unique. It should be unique.
+          email: `${phone}@placeholder.local`, // Mock email since it is @unique in schema
           fullName: 'Khách Hàng',
           passwordHash: '', // No password
           isVerified: true,
@@ -261,6 +273,18 @@ export class AuthService {
     // Clear OTP
     await this.redisService.del(redisKey);
     await this.redisService.del(failKey);
+
+    // Merge guest activity logs if sessionId provided
+    if (sessionId) {
+      try {
+        await this.prisma.userActivityLog.updateMany({
+          where: { sessionId, userId: null },
+          data: { userId: user.id },
+        });
+      } catch (err) {
+        console.error('Failed to merge activity logs on verifyPhoneOtp:', err);
+      }
+    }
 
     // Generate JWT
     const payload = {

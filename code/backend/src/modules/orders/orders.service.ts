@@ -5,7 +5,13 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service';
 import { CreateOrderDto } from './dto/create-order.dto';
-import { PaymentMethod, OrderStatus, Product, Prisma } from '@prisma/client';
+import {
+  PaymentMethod,
+  OrderStatus,
+  Product,
+  Prisma,
+  ActivityType,
+} from '@prisma/client';
 import { RedisService } from '../redis/redis.service';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { ORDER_MESSAGES } from '../../common/constants/order-message.constant';
@@ -265,6 +271,22 @@ export class OrdersService {
 
       return newOrder;
     });
+
+    // Log PURCHASE activity for all items in order
+    if (cartItems.length > 0) {
+      try {
+        await this.prisma.userActivityLog.createMany({
+          data: cartItems.map((item) => ({
+            userId: userId || undefined,
+            sessionId: createOrderDto.sessionId || undefined,
+            productId: item.productId,
+            action: ActivityType.PURCHASE,
+          })),
+        });
+      } catch (err) {
+        console.error('Failed to log purchase activity:', err);
+      }
+    }
 
     if (order.paymentMethod === PaymentMethod.STRIPE) {
       // Logic for Stripe
