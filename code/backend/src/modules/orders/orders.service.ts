@@ -1,21 +1,25 @@
 import {
   BadRequestException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service';
 import { CreateOrderDto } from './dto/create-order.dto';
+import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
 import {
   PaymentMethod,
   OrderStatus,
   Product,
   Prisma,
   ActivityType,
+  UserRole,
 } from '@prisma/client';
 import { RedisService } from '../redis/redis.service';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { ORDER_MESSAGES } from '../../common/constants/order-message.constant';
 import { I18nService } from 'nestjs-i18n';
+import { JwtService } from '@nestjs/jwt';
 
 @Injectable()
 export class OrdersService {
@@ -24,6 +28,7 @@ export class OrdersService {
     private readonly redisService: RedisService,
     private readonly eventEmitter: EventEmitter2,
     private readonly i18n: I18nService,
+    private readonly jwtService: JwtService,
   ) {}
 
   async calculateShipping(
@@ -325,11 +330,92 @@ export class OrdersService {
       );
     }
 
-    return order;
+    // Generate short-lived GuestTrackingToken (1 hour)
+    const trackingToken = this.jwtService.sign(
+      { orderId: order.id, phone, role: 'GUEST' },
+      { expiresIn: '1h' },
+    );
+
+    return {
+      ...order,
+      trackingToken,
+    };
+  }
+
+  verifyGuestTrackingToken(orderId: string, token: string, lang?: string) {
+    if (!token) {
+      throw new BadRequestException(
+        this.i18n.t(ORDER_MESSAGES.INVALID_TRACKING_TOKEN, { lang }),
+      );
+    }
+
+    try {
+      const payload = this.jwtService.verify<{
+        orderId?: string;
+        phone?: string;
+        role?: string;
+      }>(token);
+      if (payload.orderId !== orderId || payload.role !== 'GUEST') {
+        throw new BadRequestException(
+          this.i18n.t(ORDER_MESSAGES.INVALID_TRACKING_TOKEN, { lang }),
+        );
+      }
+      return payload;
+    } catch {
+      throw new BadRequestException(
+        this.i18n.t(ORDER_MESSAGES.INVALID_TRACKING_TOKEN, { lang }),
+      );
+    }
   }
 
   getEventEmitter() {
     return this.eventEmitter;
+  }
+
+  async getOrderById(
+    orderId: string,
+    user: { id: string; role: string },
+    lang?: string,
+  ) {
+    const order = await this.prisma.order.findUnique({
+      where: { id: orderId },
+      include: {
+        items: {
+          include: {
+            product: true,
+          },
+        },
+        user: {
+          select: {
+            id: true,
+            fullName: true,
+            email: true,
+            phone: true,
+          },
+        },
+      },
+    });
+
+    if (!order) {
+      throw new NotFoundException(
+        this.i18n.t(ORDER_MESSAGES.NOT_FOUND, { lang }),
+      );
+    }
+
+    const staffRoles: UserRole[] = [
+      UserRole.ADMIN,
+      UserRole.SUPER_ADMIN,
+      UserRole.EMPLOYEE,
+    ];
+    const isStaff = staffRoles.includes(user.role as UserRole);
+
+    if (!isStaff && order.userId !== user.id) {
+      throw new ForbiddenException(
+        this.i18n.t(ORDER_MESSAGES.UNAUTHORIZED, { lang }),
+      );
+    }
+
+    return order;
   }
 
   async verifyOrderOwnership(orderId: string, userId: string, lang?: string) {
@@ -398,11 +484,85 @@ export class OrdersService {
     };
   }
 
-  async updateOrderStatus(orderId: string, status: string, lang?: string) {
-    if (!Object.values(OrderStatus).includes(status as OrderStatus)) {
+  async cancelOrder(
+    orderId: string,
+    userId?: string,
+    isStaff: boolean = false,
+    lang?: string,
+  ) {
+    const updated = await this.prisma.$transaction(async (tx) => {
+      // 1. Atomic Claim with status condition
+      const updateResult = await tx.order.updateMany({
+        where: {
+          id: orderId,
+          status: { in: [OrderStatus.PENDING, OrderStatus.PENDING_PAYMENT] },
+          ...(userId && !isStaff ? { userId } : {}),
+        },
+        data: {
+          status: OrderStatus.CANCELLED,
+        },
+      });
+
+      if (updateResult.count === 0) {
+        throw new BadRequestException(
+          this.i18n.t(ORDER_MESSAGES.CANNOT_CANCEL, { lang }),
+        );
+      }
+
+      // 2. Safe idempotent stock increment
+      const items = await tx.orderItem.findMany({ where: { orderId } });
+      for (const item of items) {
+        await tx.product.update({
+          where: { id: item.productId },
+          data: { stock: { increment: item.quantity } },
+        });
+      }
+
+      // 3. Read-after-claim: restore VIP points if used
+      const order = await tx.order.findUnique({ where: { id: orderId } });
+      if (order?.userId && order.usedVipPoints > 0) {
+        await tx.user.update({
+          where: { id: order.userId },
+          data: { vipPoints: { increment: order.usedVipPoints } },
+        });
+        await tx.order.update({
+          where: { id: orderId },
+          data: { usedVipPoints: 0 },
+        });
+      }
+
+      return tx.order.findUnique({
+        where: { id: orderId },
+        include: { items: { include: { product: true } } },
+      });
+    });
+
+    this.eventEmitter.emit(`order.updated.${orderId}`, {
+      status: OrderStatus.CANCELLED,
+    });
+    this.eventEmitter.emit(`order.status.changed`, {
+      orderId,
+      status: OrderStatus.CANCELLED,
+    });
+
+    return updated;
+  }
+
+  async updateOrderStatus(
+    orderId: string,
+    dto: UpdateOrderStatusDto,
+    lang?: string,
+  ) {
+    const { status, deliveryPartner, trackingId } = dto;
+
+    if (!Object.values(OrderStatus).includes(status)) {
       throw new BadRequestException(
         this.i18n.t(ORDER_MESSAGES.INVALID_STATUS, { lang }),
       );
+    }
+
+    if (status === OrderStatus.CANCELLED) {
+      return this.cancelOrder(orderId, undefined, true, lang);
     }
 
     const order = await this.prisma.order.findUnique({
@@ -416,7 +576,9 @@ export class OrdersService {
 
     const updated = await this.prisma.$transaction(async (tx) => {
       const updateData: Prisma.OrderUpdateInput = {
-        status: status as OrderStatus,
+        status,
+        ...(deliveryPartner ? { deliveryPartner } : {}),
+        ...(trackingId ? { trackingId } : {}),
       };
 
       if (status === OrderStatus.COMPLETED && !order.pointsCreditedAt) {
@@ -428,16 +590,6 @@ export class OrdersService {
         }
         updateData.pointsCreditedAt = new Date();
         updateData.completedAt = new Date();
-      }
-
-      if (status === OrderStatus.CANCELLED) {
-        if (order.userId && order.usedVipPoints > 0) {
-          await tx.user.update({
-            where: { id: order.userId },
-            data: { vipPoints: { increment: order.usedVipPoints } },
-          });
-          updateData.usedVipPoints = 0;
-        }
       }
 
       if (status === OrderStatus.RETURNED) {
@@ -475,8 +627,17 @@ export class OrdersService {
       });
     });
 
-    this.eventEmitter.emit(`order.updated.${orderId}`, { status });
-    this.eventEmitter.emit(`order.status.changed`, { orderId, status });
+    this.eventEmitter.emit(`order.updated.${orderId}`, {
+      status,
+      deliveryPartner,
+      trackingId,
+    });
+    this.eventEmitter.emit(`order.status.changed`, {
+      orderId,
+      status,
+      deliveryPartner,
+      trackingId,
+    });
 
     return updated;
   }

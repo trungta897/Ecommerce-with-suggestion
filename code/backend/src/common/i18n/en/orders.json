@@ -10,6 +10,8 @@
     "authMismatch": "Authentication information does not match",
     "invalidStatus": "Invalid order status",
     "invalidFileFormat": "Invalid file format",
-    "missingEvidence": "Please provide evidence files"
+    "missingEvidence": "Please provide evidence files",
+    "cannotCancel": "Order is not in a valid state to be cancelled",
+    "invalidTrackingToken": "Invalid or expired guest tracking token"
   }
 }

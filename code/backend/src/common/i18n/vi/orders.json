@@ -10,6 +10,8 @@
     "authMismatch": "Thông tin xác thực không khớp",
     "invalidStatus": "Trạng thái không hợp lệ",
     "invalidFileFormat": "Định dạng file không hợp lệ",
-    "missingEvidence": "Vui lòng cung cấp file chứng minh"
+    "missingEvidence": "Vui lòng cung cấp file chứng minh",
+    "cannotCancel": "Đơn hàng không ở trạng thái hợp lệ để hủy (có thể đã được xác nhận hoặc thanh toán)",
+    "invalidTrackingToken": "Mã xác thực theo dõi đơn hàng không hợp lệ hoặc đã hết hạn"
   }
 }

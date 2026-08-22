@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { JwtModule } from '@nestjs/jwt';
 import { OrdersController } from './orders.controller';
 import { OrdersService } from './orders.service';
 import { OrdersPaymentService } from './orders-payment.service';
@@ -11,7 +12,15 @@ import { PaymentModule } from '../payment/payment.module';
 import { OrdersEventsSubscriber } from './orders-events.subscriber';
 
 @Module({
-  imports: [RedisModule, MailModule, StorageModule, PaymentModule],
+  imports: [
+    RedisModule,
+    MailModule,
+    StorageModule,
+    PaymentModule,
+    JwtModule.register({
+      secret: process.env.JWT_SECRET || 'fallback_secret_key_change_me',
+    }),
+  ],
   controllers: [OrdersController],
   providers: [
     OrdersService,

@@ -132,4 +132,43 @@ export class MailService {
       );
     }
   }
+
+  async sendStaffInvitationEmail(
+    to: string,
+    fullName: string,
+    role: string,
+    inviteLink: string,
+  ): Promise<void> {
+    const roleLabel =
+      role === 'ADMIN' ? 'Quản trị viên (Admin)' : 'Nhân viên (Employee)';
+    const subject = `Lời mời tham gia hệ thống quản trị - ${fullName}`;
+    const text = `Xin chào ${fullName},\n\nBạn đã được mời tham gia hệ thống quản trị với vai trò ${roleLabel}.\nVui lòng truy cập liên kết sau để thiết lập mật khẩu tài khoản (liên kết có hiệu lực trong 24 giờ):\n${inviteLink}\n\nTrân trọng.`;
+    const html = `<div style="font-family: Arial, sans-serif; padding: 20px; line-height: 1.6;">
+        <h2 style="color: #4F46E5;">Lời mời tham gia quản trị hệ thống</h2>
+        <p>Xin chào <strong>${fullName}</strong>,</p>
+        <p>Bạn đã được mời tham gia hệ thống quản trị với vai trò <strong>${roleLabel}</strong>.</p>
+        <p>Vui lòng bấm vào nút bên dưới để thiết lập mật khẩu cho tài khoản của bạn (liên kết có hiệu lực trong 24 giờ):</p>
+        <div style="margin: 24px 0;">
+          <a href="${inviteLink}" style="background-color: #4F46E5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">Thiết lập mật khẩu</a>
+        </div>
+        <p style="color: #666; font-size: 13px;">Hoặc copy đường link sau vào trình duyệt: <br><a href="${inviteLink}">${inviteLink}</a></p>
+        <p style="color: #999; font-size: 12px; margin-top: 30px;">Nếu bạn không nhận ra lời mời này, vui lòng bỏ qua email.</p>
+      </div>`;
+
+    try {
+      await this.transporter.sendMail({
+        from: `"E-Commerce App" <${process.env.SMTP_USER}>`,
+        to,
+        subject,
+        text,
+        html,
+      });
+      this.logger.log(`Staff invitation email sent to ${to} for role ${role}`);
+    } catch (error) {
+      this.logger.error(
+        `Failed to send staff invitation email to ${to}:`,
+        error,
+      );
+    }
+  }
 }

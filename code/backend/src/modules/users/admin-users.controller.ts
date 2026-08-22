@@ -37,11 +37,13 @@ export class AdminUsersController {
   @Post('invite')
   @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN)
   async inviteStaff(
+    @Request() req: { user: { userId: string; role: string } },
     @Body('email') email: string,
     @Body('fullName') fullName: string,
     @Body('role') role: 'ADMIN' | 'EMPLOYEE',
   ) {
-    return this.usersService.inviteStaff(email, fullName, role);
+    const adminRole = req.user.role;
+    return this.usersService.inviteStaff(adminRole, email, fullName, role);
   }
 
   @Patch(':id/role')

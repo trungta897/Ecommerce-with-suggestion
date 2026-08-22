@@ -8,4 +8,6 @@ export const ORDER_MESSAGES = {
   INVALID_STATUS: 'orders.error.invalidStatus',
   INVALID_FILE_FORMAT: 'orders.error.invalidFileFormat',
   MISSING_EVIDENCE: 'orders.error.missingEvidence',
+  CANNOT_CANCEL: 'orders.error.cannotCancel',
+  INVALID_TRACKING_TOKEN: 'orders.error.invalidTrackingToken',
 };
