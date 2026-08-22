@@ -1,33 +1,34 @@
 import { Product } from './product';
 import { User } from './user';
 
-enum OrderStatus {
-  PENDING = 'pending',
-  PENDING_PAYMENT = 'pending_payment',
-  CONFIRMED = 'confirmed',
-  HANDED_OVER = 'handed_over',
-  DELIVERING = 'delivering',
-  COMPLETED = 'completed',
-  RETURN_REQUESTED = 'return_requested',
-  RETURNED = 'returned',
-  REFUNDED = 'refunded',
-  CANCELLED = 'cancelled',
+export enum OrderStatus {
+  PENDING = 'PENDING',
+  PENDING_PAYMENT = 'PENDING_PAYMENT',
+  CONFIRMED = 'CONFIRMED',
+  HANDED_OVER = 'HANDED_OVER',
+  DELIVERING = 'DELIVERING',
+  COMPLETED = 'COMPLETED',
+  RETURN_REQUESTED = 'RETURN_REQUESTED',
+  RETURN_REJECTED = 'RETURN_REJECTED',
+  RETURNED = 'RETURNED',
+  REFUNDED = 'REFUNDED',
+  CANCELLED = 'CANCELLED',
 }
 
-enum PaymentMethod {
-  VNPAY = 'vnpay',
-  COD = 'cod',
-  STRIPE = 'stripe',
+export enum PaymentMethod {
+  VNPAY = 'VNPAY',
+  COD = 'COD',
+  STRIPE = 'STRIPE',
 }
 
-enum PaymentStatus {
-  PENDING = 'pending',
-  COMPLETED = 'completed',
-  FAILED = 'failed',
-  REFUNDED = 'refunded',
+export enum PaymentStatus {
+  PENDING = 'PENDING',
+  COMPLETED = 'COMPLETED',
+  FAILED = 'FAILED',
+  REFUNDED = 'REFUNDED',
 }
 
-interface OrderItem {
+export interface OrderItem {
   id: string;
   orderId: string;
   productId: string;

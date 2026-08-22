@@ -30,6 +30,18 @@ export interface CreateOrderDto {
   sessionId?: string;
 }
 
+export interface GuestOrderLookupResponse extends Order {
+  trackingToken?: string;
+}
+
+export interface OrdersListResponse {
+  data: Order[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
 export const orderService = {
   async createOrder(dto: CreateOrderDto): Promise<Order> {
     const payload = {
@@ -64,15 +76,50 @@ export const orderService = {
     return ((data as { data?: Order })?.data || data) as Order;
   },
 
+  async getMyOrders(page = 1, limit = 10): Promise<OrdersListResponse> {
+    const { data } = await apiClient.get<OrdersListResponse>('/orders/my', {
+      params: { page, limit },
+    });
+    return data;
+  },
+
   async getOrderById(orderId: string): Promise<Order> {
     const { data } = await apiClient.get<Order | { data: Order }>(`/orders/${orderId}`);
     return ((data as { data?: Order })?.data || data) as Order;
   },
 
-  async getGuestOrderById(orderId: string, phone: string): Promise<Order> {
-    const { data } = await apiClient.get<Order | { data: Order }>(`/orders/guest/${orderId}`, {
+  async cancelOrder(orderId: string): Promise<Order> {
+    const { data } = await apiClient.post<Order | { data: Order }>(`/orders/${orderId}/cancel`);
+    return ((data as { data?: Order })?.data || data) as Order;
+  },
+
+  async getGuestOrderById(orderId: string, phone: string): Promise<GuestOrderLookupResponse> {
+    const { data } = await apiClient.get<GuestOrderLookupResponse>(`/orders/guest/${orderId}`, {
       params: { phone },
     });
+    return data;
+  },
+
+  async getAdminOrders(page = 1, limit = 10, status?: string): Promise<OrdersListResponse> {
+    const { data } = await apiClient.get<OrdersListResponse>('/orders/admin', {
+      params: { page, limit, status: status || undefined },
+    });
+    return data;
+  },
+
+  async updateOrderStatus(
+    orderId: string,
+    status: string,
+    trackingData?: { deliveryPartner?: string; trackingId?: string }
+  ): Promise<Order> {
+    const payload = {
+      status,
+      ...trackingData,
+    };
+    const { data } = await apiClient.patch<Order | { data: Order }>(
+      `/orders/${orderId}/status`,
+      payload
+    );
     return ((data as { data?: Order })?.data || data) as Order;
   },
 
