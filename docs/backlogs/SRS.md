@@ -171,6 +171,7 @@ flowchart TD
 | FR-13 | Tra cứu đơn hàng | Bắt buộc nhập **Mã đơn hàng + SĐT** (2 yếu tố) để tra cứu trạng thái đơn — không cho tra cứu chỉ bằng SĐT để tránh lộ thông tin đơn hàng của người khác. | Guest, User |
 | FR-14 | Quản lý Profile | Cập nhật thông tin cá nhân (Tên, Ảnh đại diện, Địa chỉ giao hàng mặc định). | User (Ver) |
 | FR-15 | Xem chi tiết sản phẩm | Hiển thị mô tả chi tiết, ảnh gallery, phân trang đánh giá và khu vực gợi ý sản phẩm. | All |
+| FR-16 | Khuyến mãi & Flash Sale | Xem danh sách SP Flash Sale đếm ngược theo thời gian thực (Countdown), xem badge giá sale gạch ngang, thu thập và áp dụng Voucher giảm giá khi Checkout. Hỗ trợ anti-stacking tự động giữa Voucher % và Flash Sale. | All, User (Ver) |
 
 ### 3.3. Chức năng Quản trị viên
 
@@ -182,7 +183,8 @@ flowchart TD
 | FR-A04 | Quản lý Trả hàng & Hoàn tiền | Duyệt/từ chối yêu cầu trả hàng (khi từ chối phải nhập `returnRejectReason`). Hoàn tiền VNPay tự động / COD thủ công -> Refunded (chỉ Admin — Nhân viên không có quyền hoàn tiền). | Admin, Nhân viên (duyệt trả); Admin (hoàn tiền) |
 | FR-A05 | Quản lý Đánh giá | Xem, ẩn đánh giá vi phạm tiêu chuẩn cộng đồng. | Admin, Nhân viên |
 | FR-A06 | Phân quyền Admin & Nhân viên | Super Admin được tạo/vô hiệu hóa (Soft Delete) tài khoản Admin. Admin và Super Admin được tạo/vô hiệu hóa tài khoản Nhân viên. | Super Admin (Admin), Admin & Super Admin (Nhân viên) |
-| FR-A07 | Quản lý Voucher | Tạo, sửa, thiết lập thời hạn và giới hạn lượt sử dụng các mã giảm giá (Nội bộ). | Admin |
+| FR-A07 | Quản lý Voucher | Tạo, sửa, thiết lập phạm vi áp dụng (CART/CATEGORY/PRODUCT), thời hạn, giới hạn lượt dùng hệ thống và giới hạn per-user cho mã giảm giá. Xem lịch sử sử dụng voucher (`VoucherUsageLog`). | Admin |
+| FR-A08 | Quản lý Flash Sale | Thiết lập chương trình giảm giá theo thời gian (Custom Start/End Date), tỷ lệ giảm giá, giới hạn số suất sale (`flashSaleQty`), áp dụng cơ chế Atomic Claim chống oversell suất sale. | Admin |
 
 ### 3.4. Chức năng Machine Learning (Recommender System)
 
