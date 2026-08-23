@@ -1,7 +1,7 @@
 'use client';
 
 import { useTranslations, useLocale } from 'next-intl';
-import { BaseInput, BaseButton, BaseModal } from '@/components/base';
+import { BaseInput } from '@/components/base';
 import {
   Search,
   Eye,
@@ -11,11 +11,13 @@ import {
   Truck,
   Package,
   Loader2,
-  AlertCircle,
 } from '@/components/base/icons';
 import { formatPrice } from '@/utils/format';
 import { useState, useEffect, useCallback } from 'react';
 import { ReturnRejectModal } from '@/components/features/orders/ReturnRejectModal';
+import { AdminOrderDetailModal } from '@/components/admin/orders/AdminOrderDetailModal';
+import { AdminOrderShippingModal } from '@/components/admin/orders/AdminOrderShippingModal';
+import { AdminOrderCancelModal } from '@/components/admin/orders/AdminOrderCancelModal';
 import { orderService } from '@/services/order-service';
 import { Order, OrderStatus } from '@/types/order';
 import { ORDER_STATUS_COLORS, DELIVERY_PARTNERS } from '@/constants/order';
@@ -200,112 +202,100 @@ export default function AdminOrdersPage() {
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
-
         <select
           value={selectedStatus}
           onChange={(e) => {
             setSelectedStatus(e.target.value);
             setPage(1);
           }}
-          className="px-3.5 py-2 rounded-lg border border-rule bg-white text-sm text-ink focus:outline-none focus:border-primary"
+          className="px-3.5 py-2 rounded-xl border border-rule text-sm bg-white focus:outline-none focus:border-primary text-ink"
         >
           <option value="">Tất cả trạng thái</option>
-          <option value="PENDING">Chờ xác nhận (Pending)</option>
-          <option value="PENDING_PAYMENT">Chờ thanh toán (Pending Payment)</option>
-          <option value="CONFIRMED">Đã xác nhận (Confirmed)</option>
-          <option value="HANDED_OVER">Đã giao cho ĐVVC (Handed Over)</option>
-          <option value="DELIVERING">Đang giao hàng (Delivering)</option>
-          <option value="COMPLETED">Hoàn thành (Completed)</option>
-          <option value="RETURN_REQUESTED">Yêu cầu trả hàng (Return Requested)</option>
-          <option value="RETURNED">Đã trả hàng (Returned)</option>
-          <option value="CANCELLED">Đã hủy (Cancelled)</option>
+          {Object.keys(ORDER_STATUS_COLORS).map((st) => (
+            <option key={st} value={st}>
+              {tOrder(`statusLabels.${st.toLowerCase()}` as Parameters<typeof tOrder>[0])}
+            </option>
+          ))}
         </select>
       </div>
 
       {/* Orders Table */}
-      <div className="bg-white rounded-xl border border-rule overflow-hidden shadow-sm">
+      <div className="bg-white rounded-2xl border border-rule overflow-hidden shadow-sm">
         {loading ? (
-          <div className="p-12 text-center text-ink-2">
-            <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto mb-2" />
+          <div className="py-20 flex flex-col items-center justify-center text-ink-2">
+            <Loader2 className="w-8 h-8 animate-spin text-primary mb-3" />
             <p className="text-sm">Đang tải danh sách đơn hàng...</p>
           </div>
         ) : filteredOrders.length === 0 ? (
-          <div className="p-12 text-center text-ink-2">
-            <Package className="w-10 h-10 mx-auto mb-2 text-ink-2" />
-            <p className="font-semibold text-ink">Không có đơn hàng nào phù hợp</p>
+          <div className="py-20 flex flex-col items-center justify-center text-ink-2">
+            <Package className="w-12 h-12 text-ink-3 mb-3" />
+            <p className="font-medium text-ink">Không tìm thấy đơn hàng</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="text-left text-ink-2 border-b border-rule bg-paper-2">
-                  <th className="px-5 py-3.5 font-medium">{t('orderId')}</th>
-                  <th className="px-5 py-3.5 font-medium">{t('customer')}</th>
-                  <th className="px-5 py-3.5 font-medium">{t('total')}</th>
-                  <th className="px-5 py-3.5 font-medium">{t('payment')}</th>
-                  <th className="px-5 py-3.5 font-medium">{t('status')}</th>
-                  <th className="px-5 py-3.5 font-medium">{t('date')}</th>
-                  <th className="px-5 py-3.5 font-medium">{t('actions')}</th>
+                <tr className="text-left text-ink-2 border-b border-rule bg-paper-2 font-medium">
+                  <th className="px-5 py-3.5">Mã đơn</th>
+                  <th className="px-5 py-3.5">Khách hàng</th>
+                  <th className="px-5 py-3.5">Ngày đặt</th>
+                  <th className="px-5 py-3.5">Tổng tiền</th>
+                  <th className="px-5 py-3.5">Trạng thái</th>
+                  <th className="px-5 py-3.5 text-right">Thao tác</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-rule">
                 {filteredOrders.map((order) => {
-                  const statusKey = order.status.toLowerCase();
-                  const dateStr = new Date(
-                    (order as unknown as { createdAt: string }).createdAt || Date.now()
-                  ).toLocaleDateString('vi-VN');
-
+                  const statusColor =
+                    ORDER_STATUS_COLORS[order.status] ||
+                    'bg-gray-100 text-gray-800 border-gray-200';
                   return (
-                    <tr key={order.id} className="hover:bg-paper-2/60 transition-colors">
-                      <td className="px-5 py-3.5 font-semibold text-ink">{order.id}</td>
-                      <td className="px-5 py-3.5">
-                        <div>
-                          <p className="font-medium text-ink">{order.shippingName}</p>
-                          <p className="text-xs text-ink-2">
-                            {order.shippingPhone} {order.user?.email ? `· ${order.user.email}` : ''}
-                          </p>
+                    <tr key={order.id} className="hover:bg-paper-2/50 transition-colors">
+                      <td className="px-5 py-4 font-mono font-bold text-ink">
+                        #{order.id.slice(-8).toUpperCase()}
+                      </td>
+                      <td className="px-5 py-4">
+                        <p className="font-semibold text-ink">{order.shippingName}</p>
+                        <p className="text-xs text-ink-2">{order.shippingPhone}</p>
+                      </td>
+                      <td className="px-5 py-4 text-ink-2 text-xs">
+                        <div className="flex items-center gap-1.5">
+                          <Clock className="w-3.5 h-3.5 text-ink-3" />
+                          {order.createdAt
+                            ? new Date(order.createdAt).toLocaleDateString('vi-VN')
+                            : '-'}
                         </div>
                       </td>
-                      <td className="px-5 py-3.5 font-semibold text-ink">
+                      <td className="px-5 py-4 font-bold text-ink">
                         {formatPrice(order.totalAmount, locale)}
                       </td>
-                      <td className="px-5 py-3.5 text-ink-2 uppercase text-xs font-semibold">
-                        {order.paymentMethod}
-                      </td>
-                      <td className="px-5 py-3.5">
+                      <td className="px-5 py-4">
                         <span
-                          className={`px-2.5 py-1 rounded-full text-xs font-semibold border ${
-                            ORDER_STATUS_COLORS[order.status] ||
-                            ORDER_STATUS_COLORS[statusKey] ||
-                            'bg-gray-100 text-gray-800 border-gray-200'
-                          }`}
+                          className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold border ${statusColor}`}
                         >
-                          {tOrder(`statusLabels.${statusKey}` as Parameters<typeof tOrder>[0])}
+                          {tOrder(
+                            `statusLabels.${order.status.toLowerCase()}` as Parameters<
+                              typeof tOrder
+                            >[0]
+                          )}
                         </span>
                       </td>
-                      <td className="px-5 py-3.5 text-ink-2 whitespace-nowrap">
-                        <div className="flex items-center gap-1.5 text-xs">
-                          <Clock className="w-3.5 h-3.5 text-ink-2" />
-                          {dateStr}
-                        </div>
-                      </td>
-                      <td className="px-5 py-3.5">
-                        <div className="flex items-center gap-1.5">
+                      <td className="px-5 py-4 text-right">
+                        <div className="flex items-center justify-end gap-1">
                           {/* View Detail */}
                           <button
                             onClick={() => {
                               setViewingOrder(order);
                               setDetailModalOpen(true);
                             }}
-                            className="p-1.5 rounded-lg hover:bg-paper-2 text-ink-2 hover:text-primary transition-colors"
-                            title={t('viewDetail')}
+                            className="p-1.5 rounded-lg hover:bg-paper-2 text-ink-2 hover:text-ink transition-colors"
+                            title="Xem chi tiết"
                           >
                             <Eye className="w-4 h-4" />
                           </button>
 
-                          {/* Approve (Pending -> Confirmed) */}
-                          {(order.status === OrderStatus.PENDING ||
-                            order.status === ('pending' as OrderStatus)) && (
+                          {/* Quick Approve */}
+                          {['PENDING', 'pending'].includes(order.status) && (
                             <button
                               onClick={() => handleApproveOrder(order.id)}
                               className="p-1.5 rounded-lg hover:bg-green-50 text-ink-2 hover:text-green-600 transition-colors"
@@ -315,10 +305,7 @@ export default function AdminOrdersPage() {
                             </button>
                           )}
 
-                          {/* Manual Shipping handover/delivering */}
-                          {['CONFIRMED', 'HANDED_OVER', 'confirmed', 'handed_over'].includes(
-                            order.status
-                          )}
+                          {/* Fallback Manual Shipping */}
                           <button
                             onClick={() => handleOpenShippingModal(order)}
                             className="p-1.5 rounded-lg hover:bg-indigo-50 text-ink-2 hover:text-indigo-600 transition-colors"
@@ -410,182 +397,35 @@ export default function AdminOrdersPage() {
         )}
       </div>
 
-      {/* Manual Shipping Modal */}
-      <BaseModal
+      {/* Sub-components Modals */}
+      <AdminOrderShippingModal
         isOpen={shippingModalOpen}
         onClose={() => setShippingModalOpen(false)}
-        title="Ghi nhận giao hàng thủ công (Fallback)"
-      >
-        <div className="space-y-4">
-          <div className="space-y-1">
-            <label className="text-sm font-medium text-ink">Đơn vị vận chuyển</label>
-            <select
-              value={selectedCarrier}
-              onChange={(e) => setSelectedCarrier(e.target.value)}
-              className="w-full px-3 py-2 rounded-lg border border-rule text-sm bg-white focus:outline-none focus:border-primary"
-            >
-              {DELIVERY_PARTNERS.map((partner) => (
-                <option key={partner.id} value={partner.name}>
-                  {partner.name}
-                </option>
-              ))}
-            </select>
-          </div>
+        selectedCarrier={selectedCarrier}
+        onCarrierChange={setSelectedCarrier}
+        trackingIdInput={trackingIdInput}
+        onTrackingIdChange={setTrackingIdInput}
+        shippingStatus={shippingStatus}
+        onShippingStatusChange={setShippingStatus}
+        onSubmit={handleUpdateShipping}
+        submitting={submittingAction}
+      />
 
-          <div className="space-y-1">
-            <label className="text-sm font-medium text-ink">Mã vận đơn (Tracking Code)</label>
-            <BaseInput
-              placeholder="VD: GHTK123456789"
-              value={trackingIdInput}
-              onChange={(e) => setTrackingIdInput(e.target.value)}
-            />
-          </div>
-
-          <div className="space-y-1">
-            <label className="text-sm font-medium text-ink">Chuyển sang trạng thái</label>
-            <select
-              value={shippingStatus}
-              onChange={(e) => setShippingStatus(e.target.value)}
-              className="w-full px-3 py-2 rounded-lg border border-rule text-sm bg-white focus:outline-none focus:border-primary"
-            >
-              <option value="HANDED_OVER">Đã giao cho ĐVVC (HANDED_OVER)</option>
-              <option value="DELIVERING">Đang giao hàng (DELIVERING)</option>
-            </select>
-          </div>
-
-          <div className="flex justify-end gap-3 pt-3">
-            <BaseButton
-              variant="outline"
-              onClick={() => setShippingModalOpen(false)}
-              disabled={submittingAction}
-            >
-              Đóng
-            </BaseButton>
-            <BaseButton onClick={handleUpdateShipping} disabled={submittingAction}>
-              {submittingAction ? 'Đang lưu...' : 'Xác nhận cập nhật'}
-            </BaseButton>
-          </div>
-        </div>
-      </BaseModal>
-
-      {/* Order Detail Modal */}
-      <BaseModal
+      <AdminOrderDetailModal
         isOpen={detailModalOpen}
         onClose={() => setDetailModalOpen(false)}
-        title={`Chi tiết đơn hàng ${viewingOrder?.id || ''}`}
-      >
-        {viewingOrder && (
-          <div className="space-y-5 max-h-[70vh] overflow-y-auto pr-1">
-            {/* Info Grid */}
-            <div className="grid grid-cols-2 gap-4 text-sm bg-paper-2 p-4 rounded-xl">
-              <div>
-                <p className="text-ink-2">Khách hàng:</p>
-                <p className="font-semibold text-ink">{viewingOrder.shippingName}</p>
-                <p className="text-xs text-ink-2">{viewingOrder.shippingPhone}</p>
-              </div>
-              <div>
-                <p className="text-ink-2">Trạng thái:</p>
-                <span
-                  className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold border mt-1 ${
-                    ORDER_STATUS_COLORS[viewingOrder.status] || 'bg-gray-100 text-gray-800'
-                  }`}
-                >
-                  {tOrder(
-                    `statusLabels.${viewingOrder.status.toLowerCase()}` as Parameters<
-                      typeof tOrder
-                    >[0]
-                  )}
-                </span>
-              </div>
-              <div className="col-span-2">
-                <p className="text-ink-2">Địa chỉ giao hàng:</p>
-                <p className="font-medium text-ink">{viewingOrder.shippingAddress}</p>
-              </div>
-              {(viewingOrder.deliveryPartner || viewingOrder.trackingId) && (
-                <div className="col-span-2 pt-2 border-t border-rule">
-                  <p className="text-xs text-ink-2">
-                    Vận chuyển: <strong>{viewingOrder.deliveryPartner || 'Chưa có'}</strong> · Mã
-                    vận đơn:{' '}
-                    <strong className="font-mono">{viewingOrder.trackingId || 'Chưa có'}</strong>
-                  </p>
-                </div>
-              )}
-            </div>
+        order={viewingOrder}
+        onApprove={handleApproveOrder}
+        approving={submittingAction}
+      />
 
-            {/* Items */}
-            <div>
-              <h4 className="font-bold text-ink mb-3">Danh sách sản phẩm</h4>
-              <div className="divide-y divide-rule border border-rule rounded-xl overflow-hidden">
-                {viewingOrder.items?.map((item) => (
-                  <div key={item.id} className="p-3 flex items-center justify-between bg-white">
-                    <div>
-                      <p className="font-medium text-ink">{item.product?.name || 'Sản phẩm'}</p>
-                      <p className="text-xs text-ink-2">
-                        {formatPrice(item.unitPrice, locale)} x {item.quantity}
-                      </p>
-                    </div>
-                    <span className="font-semibold text-ink">
-                      {formatPrice(item.unitPrice * item.quantity, locale)}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Totals */}
-            <div className="flex justify-between items-center pt-2 font-bold text-lg text-ink">
-              <span>Tổng tiền thanh toán:</span>
-              <span className="text-primary">{formatPrice(viewingOrder.totalAmount, locale)}</span>
-            </div>
-
-            <div className="flex justify-end gap-2 pt-4 border-t border-rule">
-              <BaseButton variant="outline" onClick={() => setDetailModalOpen(false)}>
-                Đóng
-              </BaseButton>
-              {['PENDING', 'pending'].includes(viewingOrder.status) && (
-                <BaseButton onClick={() => handleApproveOrder(viewingOrder.id)}>
-                  Duyệt đơn
-                </BaseButton>
-              )}
-            </div>
-          </div>
-        )}
-      </BaseModal>
-
-      {/* Cancel Order Modal */}
-      <BaseModal
+      <AdminOrderCancelModal
         isOpen={cancelModalOpen}
         onClose={() => setCancelModalOpen(false)}
-        title="Xác nhận hủy đơn hàng (Admin)"
-      >
-        <div className="space-y-4">
-          <div className="flex items-center gap-3 text-red-600 bg-red-50 p-3 rounded-lg border border-red-200">
-            <AlertCircle className="w-5 h-5 flex-shrink-0" />
-            <p className="text-xs">
-              Thao tác này sẽ hủy đơn hàng và hoàn trả lại số lượng tồn kho của các sản phẩm.
-            </p>
-          </div>
-          <p className="text-sm text-ink-2">
-            Bạn có chắc chắn muốn hủy đơn <strong>{cancellingOrderId}</strong> không?
-          </p>
-          <div className="flex justify-end gap-3 pt-2">
-            <BaseButton
-              variant="outline"
-              onClick={() => setCancelModalOpen(false)}
-              disabled={submittingAction}
-            >
-              Hủy bỏ
-            </BaseButton>
-            <BaseButton
-              variant="destructive"
-              onClick={handleCancelOrderAdmin}
-              disabled={submittingAction}
-            >
-              {submittingAction ? 'Đang hủy...' : 'Xác nhận hủy đơn'}
-            </BaseButton>
-          </div>
-        </div>
-      </BaseModal>
+        orderId={cancellingOrderId}
+        onConfirm={handleCancelOrderAdmin}
+        submitting={submittingAction}
+      />
 
       {/* Return Reject Modal */}
       {selectedOrderId && (

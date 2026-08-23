@@ -44,6 +44,7 @@ export {
   LogOut,
   FileText,
   RotateCcw,
+  RotateCw,
   MessageSquare,
   Home,
   Layers,

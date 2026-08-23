@@ -5,11 +5,11 @@ import { BaseInput } from '@/components/base';
 import { Search, Star, Eye, EyeOff } from '@/components/base/icons';
 import { useEffect, useState } from 'react';
 import { reviewService } from '@/services/review-service';
+import { AdminReviewItem } from '@/types/review';
 
 export default function AdminReviewsPage() {
   const t = useTranslations('admin.reviews');
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [reviews, setReviews] = useState<any[]>([]);
+  const [reviews, setReviews] = useState<AdminReviewItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -23,11 +23,10 @@ export default function AdminReviewsPage() {
     try {
       setLoading(true);
       const res = await reviewService.getAdminReviews(p, 10);
-      setReviews(res.data);
-      setTotalPages(res.meta.totalPages);
+      setReviews(res.data || []);
+      setTotalPages(res.meta?.totalPages || 1);
       setPage(p);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to load reviews', err);
       setError('Lỗi khi tải danh sách đánh giá');
     } finally {
@@ -39,7 +38,7 @@ export default function AdminReviewsPage() {
     try {
       await reviewService.toggleVisibility(id);
       fetchReviews(page);
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Failed to toggle visibility', err);
     }
   };
@@ -103,7 +102,11 @@ export default function AdminReviewsPage() {
                         {[1, 2, 3, 4, 5].map((s) => (
                           <Star
                             key={s}
-                            className={`w-3.5 h-3.5 ${s <= review.rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`}
+                            className={`w-3.5 h-3.5 ${
+                              s <= review.rating
+                                ? 'fill-yellow-400 text-yellow-400'
+                                : 'text-gray-300'
+                            }`}
                           />
                         ))}
                       </div>

@@ -58,6 +58,8 @@ export interface Order {
   vnpPayDate?: string | null;
   items?: OrderItem[];
   user?: User; // Depending on eager loading
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface CartItem {

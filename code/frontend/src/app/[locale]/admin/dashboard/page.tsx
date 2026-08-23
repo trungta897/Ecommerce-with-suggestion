@@ -1,138 +1,161 @@
 'use client';
 
 import { useLocale, useTranslations } from 'next-intl';
-import { TrendingUp, ShoppingBag, Package, Users, Clock } from '@/components/base/icons';
+import { TrendingUp, ShoppingBag, Package, Users, Clock, RotateCw } from '@/components/base/icons';
 import { formatPrice } from '@/utils/format';
 import Link from 'next/link';
+import { useEffect, useState, useCallback } from 'react';
+import { dashboardService } from '@/services/dashboard-service';
+import { DashboardStats } from '@/types/dashboard';
+
+const STATUS_COLORS: Record<string, string> = {
+  pending: 'bg-yellow-100 text-yellow-800 border-yellow-200',
+  pending_payment: 'bg-orange-100 text-orange-800 border-orange-200',
+  delivering: 'bg-cyan-100 text-cyan-800 border-cyan-200',
+  handed_over: 'bg-indigo-100 text-indigo-800 border-indigo-200',
+  completed: 'bg-green-100 text-green-800 border-green-200',
+  confirmed: 'bg-blue-100 text-blue-800 border-blue-200',
+  cancelled: 'bg-red-100 text-red-800 border-red-200',
+};
 
 export default function AdminDashboardPage() {
   const locale = useLocale();
   const t = useTranslations('admin.dashboard');
+  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
-  const stats = [
-    {
-      key: 'revenue',
-      value: formatPrice(245800000, locale),
-      change: '+12.5%',
-      icon: TrendingUp,
-      color: 'from-green-500 to-emerald-600',
-    },
+  const fetchStats = useCallback(async (isRefresh = false) => {
+    try {
+      if (isRefresh) setRefreshing(true);
+      else setLoading(true);
+      const data = await dashboardService.getStats(isRefresh);
+      setStats(data);
+    } catch (err: unknown) {
+      console.error('Failed to load dashboard stats', err);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchStats();
+  }, [fetchStats]);
+
+  const statCards = [
+    ...(stats?.revenue !== null && stats?.revenue !== undefined
+      ? [
+          {
+            key: 'revenue',
+            title: t('revenue'),
+            value: formatPrice(stats.revenue, locale),
+            icon: TrendingUp,
+            color: 'from-green-500 to-emerald-600',
+          },
+        ]
+      : []),
     {
       key: 'totalOrders',
-      value: '156',
-      change: '+8.2%',
+      title: t('totalOrders'),
+      value: stats ? stats.totalOrders.toLocaleString('vi-VN') : '0',
       icon: Package,
       color: 'from-blue-500 to-indigo-600',
     },
-    {
-      key: 'totalUsers',
-      value: '2,340',
-      change: '+15.3%',
-      icon: Users,
-      color: 'from-purple-500 to-violet-600',
-    },
+    ...(stats?.totalUsers !== null && stats?.totalUsers !== undefined
+      ? [
+          {
+            key: 'totalUsers',
+            title: t('totalUsers'),
+            value: stats.totalUsers.toLocaleString('vi-VN'),
+            icon: Users,
+            color: 'from-purple-500 to-violet-600',
+          },
+        ]
+      : []),
     {
       key: 'totalProducts',
-      value: '89',
-      change: '+2.1%',
+      title: t('totalProducts'),
+      value: stats ? stats.totalProducts.toLocaleString('vi-VN') : '0',
       icon: ShoppingBag,
       color: 'from-orange-500 to-red-500',
     },
   ];
 
-  const recentOrders = [
-    {
-      id: 'ORD-240720',
-      customer: 'Nguyễn Văn A',
-      total: 29590000,
-      status: 'pending',
-      date: '20/07',
-    },
-    {
-      id: 'ORD-240719',
-      customer: 'Trần Thị B',
-      total: 51980000,
-      status: 'delivering',
-      date: '19/07',
-    },
-    { id: 'ORD-240718', customer: 'Lê Văn C', total: 5990000, status: 'completed', date: '18/07' },
-    {
-      id: 'ORD-240717',
-      customer: 'Phạm Thị D',
-      total: 31990000,
-      status: 'confirmed',
-      date: '17/07',
-    },
-    {
-      id: 'ORD-240716',
-      customer: 'Hoàng Văn E',
-      total: 19990000,
-      status: 'completed',
-      date: '16/07',
-    },
-  ];
-
-  const statusColors: Record<string, string> = {
-    pending: 'bg-yellow-100 text-yellow-800',
-    delivering: 'bg-cyan-100 text-cyan-800',
-    completed: 'bg-green-100 text-green-800',
-    confirmed: 'bg-blue-100 text-blue-800',
-    cancelled: 'bg-red-100 text-red-800',
-  };
-
   return (
     <div className="p-6 lg:p-8">
       <div className="flex items-center justify-between mb-8">
-        <h1 className="text-2xl font-bold text-ink">{t('title')}</h1>
-        <span className="text-sm text-ink-2">{t('thisMonth')}</span>
+        <div>
+          <h1 className="text-2xl font-bold text-ink">{t('title')}</h1>
+          <p className="text-sm text-ink-2 mt-1">
+            Tổng quan chỉ số hoạt động kinh doanh và vận hành
+          </p>
+        </div>
+        <button
+          onClick={() => fetchStats(true)}
+          disabled={refreshing || loading}
+          className="flex items-center gap-2 px-4 py-2 rounded-xl border border-rule bg-white hover:bg-paper-2 text-sm font-medium text-ink transition-colors disabled:opacity-50 shadow-sm"
+        >
+          <RotateCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
+          Làm mới
+        </button>
       </div>
 
       {/* Stat Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        {stats.map((stat) => (
+        {statCards.map((card) => (
           <div
-            key={stat.key}
-            className="bg-white rounded-xl border border-rule p-5 hover:shadow-md transition-shadow"
+            key={card.key}
+            className="bg-white rounded-2xl border border-rule p-5 hover:shadow-md transition-shadow"
           >
             <div className="flex items-center justify-between mb-3">
-              <span className="text-sm font-medium text-ink-2">
-                {t(stat.key as Parameters<typeof t>[0])}
-              </span>
+              <span className="text-sm font-medium text-ink-2">{card.title}</span>
               <div
-                className={`w-9 h-9 rounded-lg bg-gradient-to-br ${stat.color} flex items-center justify-center`}
+                className={`w-10 h-10 rounded-xl bg-gradient-to-br ${card.color} flex items-center justify-center shadow-sm`}
               >
-                <stat.icon className="w-4 h-4 text-white" />
+                <card.icon className="w-5 h-5 text-white" />
               </div>
             </div>
-            <p className="text-2xl font-bold text-ink">{stat.value}</p>
-            <span className="text-xs font-semibold text-green-600">{stat.change}</span>
+            {loading ? (
+              <div className="h-8 bg-paper-2 animate-pulse rounded w-24 my-1" />
+            ) : (
+              <p className="text-2xl font-bold text-ink">{card.value}</p>
+            )}
           </div>
         ))}
       </div>
 
-      {/* AI Insights */}
-      <div className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl p-6 mb-8">
-        <h3 className="font-bold mb-2 text-lg">{t('insights')}</h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-          <div className="bg-white/10 rounded-lg p-4 backdrop-blur-sm">
-            <p className="text-sm text-white/80">Top Category</p>
-            <p className="text-xl font-bold">Điện thoại</p>
-          </div>
-          <div className="bg-white/10 rounded-lg p-4 backdrop-blur-sm">
-            <p className="text-sm text-white/80">Conversion Rate</p>
-            <p className="text-xl font-bold">4.8%</p>
-          </div>
-          <div className="bg-white/10 rounded-lg p-4 backdrop-blur-sm">
-            <p className="text-sm text-white/80">Avg. Order Value</p>
-            <p className="text-xl font-bold">{formatPrice(1575000, locale)}</p>
+      {/* Order Status Distribution */}
+      {stats?.orderStatusCounts && (
+        <div className="bg-white rounded-2xl border border-rule p-6 mb-8 shadow-sm">
+          <h3 className="font-bold text-ink mb-4">Thống kê đơn hàng theo trạng thái</h3>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+            {Object.entries(stats.orderStatusCounts).map(([status, count]) => {
+              const color =
+                STATUS_COLORS[status.toLowerCase()] || 'bg-gray-100 text-gray-800 border-gray-200';
+              return (
+                <div
+                  key={status}
+                  className={`p-3 rounded-xl border ${color} flex flex-col items-center justify-center text-center`}
+                >
+                  <span className="text-xs font-semibold uppercase tracking-wider mb-1">
+                    {status.replace('_', ' ')}
+                  </span>
+                  <span className="text-xl font-bold">{count}</span>
+                </div>
+              );
+            })}
           </div>
         </div>
-      </div>
+      )}
 
       {/* Recent Orders */}
-      <div className="bg-white rounded-xl border border-rule">
-        <div className="flex items-center justify-between p-5 border-b border-rule">
-          <h3 className="font-bold text-ink">{t('recentOrders')}</h3>
+      <div className="bg-white rounded-2xl border border-rule overflow-hidden shadow-sm">
+        <div className="flex items-center justify-between p-5 border-b border-rule bg-paper-2/50">
+          <div>
+            <h3 className="font-bold text-ink">{t('recentOrders')}</h3>
+            <p className="text-xs text-ink-2">5 đơn hàng gần nhất trong hệ thống</p>
+          </div>
           <Link href="/admin/orders" className="text-sm text-primary hover:underline font-medium">
             {t('viewAll')}
           </Link>
@@ -140,38 +163,59 @@ export default function AdminDashboardPage() {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="text-left text-ink-2 border-b border-rule">
-                <th className="px-5 py-3 font-medium">ID</th>
-                <th className="px-5 py-3 font-medium">Customer</th>
-                <th className="px-5 py-3 font-medium">Total</th>
-                <th className="px-5 py-3 font-medium">Status</th>
-                <th className="px-5 py-3 font-medium">Date</th>
+              <tr className="text-left text-ink-2 border-b border-rule font-medium">
+                <th className="px-5 py-3.5">Mã đơn</th>
+                <th className="px-5 py-3.5">Khách hàng</th>
+                <th className="px-5 py-3.5">Tổng tiền</th>
+                <th className="px-5 py-3.5">Trạng thái</th>
+                <th className="px-5 py-3.5">Ngày đặt</th>
               </tr>
             </thead>
-            <tbody>
-              {recentOrders.map((order) => (
-                <tr
-                  key={order.id}
-                  className="border-b border-rule last:border-0 hover:bg-paper-2 transition-colors"
-                >
-                  <td className="px-5 py-3 font-semibold text-ink">{order.id}</td>
-                  <td className="px-5 py-3 text-ink-2">{order.customer}</td>
-                  <td className="px-5 py-3 font-semibold text-ink">
-                    {formatPrice(order.total, locale)}
-                  </td>
-                  <td className="px-5 py-3">
-                    <span
-                      className={`px-2.5 py-1 rounded-full text-xs font-semibold ${statusColors[order.status]}`}
-                    >
-                      {order.status}
-                    </span>
-                  </td>
-                  <td className="px-5 py-3 text-ink-2 flex items-center gap-1">
-                    <Clock className="w-3 h-3" />
-                    {order.date}
+            <tbody className="divide-y divide-rule">
+              {loading ? (
+                <tr>
+                  <td colSpan={5} className="text-center py-8 text-ink-2">
+                    Đang tải dữ liệu...
                   </td>
                 </tr>
-              ))}
+              ) : !stats?.recentOrders || stats.recentOrders.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="text-center py-8 text-ink-2">
+                    Chưa có đơn hàng nào
+                  </td>
+                </tr>
+              ) : (
+                stats.recentOrders.map((order) => {
+                  const statusKey = order.status.toLowerCase();
+                  const statusColor =
+                    STATUS_COLORS[statusKey] || 'bg-gray-100 text-gray-800 border-gray-200';
+                  return (
+                    <tr key={order.id} className="hover:bg-paper-2/50 transition-colors">
+                      <td className="px-5 py-3.5 font-mono font-bold text-ink">
+                        #{order.id.slice(-8).toUpperCase()}
+                      </td>
+                      <td className="px-5 py-3.5 text-ink">
+                        <p className="font-medium">{order.user?.fullName || 'Khách vãng lai'}</p>
+                        <p className="text-xs text-ink-2">{order.user?.email || '-'}</p>
+                      </td>
+                      <td className="px-5 py-3.5 font-bold text-ink">
+                        {formatPrice(order.totalAmount, locale)}
+                      </td>
+                      <td className="px-5 py-3.5">
+                        <span
+                          className={`px-2.5 py-0.5 rounded-full text-xs font-semibold border ${statusColor}`}
+                        >
+                          {order.status}
+                        </span>
+                      </td>
+                      <td className="px-5 py-3.5 text-ink-2 text-xs flex items-center gap-1 mt-1">
+                        <Clock className="w-3.5 h-3.5 text-ink-3" />
+                        {new Date(order.createdAt).toLocaleDateString('vi-VN')}
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
             </tbody>
           </table>
         </div>

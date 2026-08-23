@@ -1,34 +1,20 @@
 'use client';
 
-import { useTranslations } from 'next-intl';
 import { BaseInput, BaseButton } from '@/components/base';
 import { Search, Plus, Edit, Eye, EyeOff } from '@/components/base/icons';
 import { useEffect, useState } from 'react';
 import { voucherService } from '@/services/voucher-service';
+import { VoucherItem, VoucherType } from '@/types/voucher';
+import { VoucherFormModal } from '@/components/admin/vouchers/VoucherFormModal';
 
 export default function AdminVouchersPage() {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const t = useTranslations('admin');
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [vouchers, setVouchers] = useState<any[]>([]);
+  const [vouchers, setVouchers] = useState<VoucherItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [error, setError] = useState('');
   const [showModal, setShowModal] = useState(false);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [editingVoucher, setEditingVoucher] = useState<any>(null);
-
-  // Form state
-  const [code, setCode] = useState('');
-  const [type, setType] = useState('PERCENTAGE');
-  const [value, setValue] = useState(0);
-  const [maxDiscount, setMaxDiscount] = useState<number | ''>('');
-  const [minOrderValue, setMinOrderValue] = useState(0);
-  const [usageLimit, setUsageLimit] = useState<number | ''>('');
-  const [usageLimitPerUser, setUsageLimitPerUser] = useState<number | ''>('');
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
+  const [editingVoucher, setEditingVoucher] = useState<VoucherItem | null>(null);
 
   useEffect(() => {
     fetchVouchers(1);
@@ -38,11 +24,10 @@ export default function AdminVouchersPage() {
     try {
       setLoading(true);
       const res = await voucherService.getAdminVouchers(p, 10);
-      setVouchers(res.data);
-      setTotalPages(res.meta.totalPages);
+      setVouchers(res.data || []);
+      setTotalPages(res.meta?.totalPages || 1);
       setPage(p);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to load vouchers', err);
       setError('Lỗi khi tải danh sách Voucher');
     } finally {
@@ -54,66 +39,44 @@ export default function AdminVouchersPage() {
     try {
       await voucherService.toggleVoucherStatus(id);
       fetchVouchers(page);
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Failed to toggle voucher status', err);
     }
   };
 
   const openCreateModal = () => {
     setEditingVoucher(null);
-    setCode('');
-    setType('PERCENTAGE');
-    setValue(0);
-    setMaxDiscount('');
-    setMinOrderValue(0);
-    setUsageLimit('');
-    setUsageLimitPerUser('');
-    setStartDate('');
-    setEndDate('');
     setShowModal(true);
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const openEditModal = (voucher: any) => {
+  const openEditModal = (voucher: VoucherItem) => {
     setEditingVoucher(voucher);
-    setCode(voucher.code);
-    setType(voucher.type);
-    setValue(voucher.value);
-    setMaxDiscount(voucher.maxDiscount || '');
-    setMinOrderValue(voucher.minOrderValue || 0);
-    setUsageLimit(voucher.usageLimit || '');
-    setUsageLimitPerUser(voucher.usageLimitPerUser || '');
-    setStartDate(voucher.startDate ? new Date(voucher.startDate).toISOString().slice(0, 16) : '');
-    setEndDate(voucher.endDate ? new Date(voucher.endDate).toISOString().slice(0, 16) : '');
     setShowModal(true);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSaveVoucher = async (data: {
+    code: string;
+    type: VoucherType;
+    value: number;
+    maxDiscount: number | null;
+    minOrderValue: number;
+    usageLimit: number | null;
+    startDate: string | null;
+    endDate: string | null;
+  }) => {
     try {
-      const data = {
-        code,
-        type,
-        value: Number(value),
-        maxDiscount: maxDiscount ? Number(maxDiscount) : null,
-        minOrderValue: Number(minOrderValue),
-        usageLimit: usageLimit ? Number(usageLimit) : null,
-        usageLimitPerUser: usageLimitPerUser ? Number(usageLimitPerUser) : null,
-        startDate: startDate ? new Date(startDate).toISOString() : null,
-        endDate: endDate ? new Date(endDate).toISOString() : null,
-      };
-
       if (editingVoucher) {
         await voucherService.updateVoucher(editingVoucher.id, data);
       } else {
         await voucherService.createVoucher(data);
       }
-      setShowModal(false);
       fetchVouchers(page);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to save voucher', err);
-      alert(err.response?.data?.message || 'Lỗi khi lưu voucher');
+      const msg =
+        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+        'Lỗi khi lưu voucher';
+      alert(msg);
     }
   };
 
@@ -177,7 +140,7 @@ export default function AdminVouchersPage() {
                     <td className="px-5 py-3">
                       {voucher.type === 'PERCENTAGE'
                         ? `${voucher.value}%`
-                        : `${voucher.value.toLocaleString('vi-VN')}đ`}
+                        : `${Number(voucher.value).toLocaleString('vi-VN')}đ`}
                     </td>
                     <td className="px-5 py-3">
                       {voucher.endDate
@@ -189,7 +152,11 @@ export default function AdminVouchersPage() {
                     </td>
                     <td className="px-5 py-3">
                       <span
-                        className={`px-2.5 py-1 rounded-full text-xs font-semibold ${voucher.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}
+                        className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
+                          voucher.isActive
+                            ? 'bg-green-100 text-green-800'
+                            : 'bg-red-100 text-red-800'
+                        }`}
                       >
                         {voucher.isActive ? 'Hoạt động' : 'Đã khóa'}
                       </span>
@@ -198,12 +165,14 @@ export default function AdminVouchersPage() {
                       <button
                         onClick={() => openEditModal(voucher)}
                         className="p-1.5 hover:bg-gray-200 rounded"
+                        title="Chỉnh sửa"
                       >
                         <Edit className="w-4 h-4 text-blue-600" />
                       </button>
                       <button
                         onClick={() => handleToggle(voucher.id)}
                         className="p-1.5 hover:bg-gray-200 rounded"
+                        title={voucher.isActive ? 'Khóa voucher' : 'Mở khóa'}
                       >
                         {voucher.isActive ? (
                           <EyeOff className="w-4 h-4 text-orange-500" />
@@ -242,107 +211,12 @@ export default function AdminVouchersPage() {
         </div>
       )}
 
-      {showModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <h2 className="text-xl font-bold mb-4">
-              {editingVoucher ? 'Sửa Voucher' : 'Thêm Voucher Mới'}
-            </h2>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-1">Mã Voucher</label>
-                  <BaseInput value={code} onChange={(e) => setCode(e.target.value)} required />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">Loại</label>
-                  <select
-                    value={type}
-                    onChange={(e) => setType(e.target.value)}
-                    className="w-full border rounded-lg px-3 py-2"
-                  >
-                    <option value="PERCENTAGE">Phần trăm</option>
-                    <option value="FIXED_AMOUNT">Số tiền</option>
-                    <option value="FREE_SHIPPING">Miễn phí VC</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">Giá trị</label>
-                  <BaseInput
-                    type="number"
-                    value={value}
-                    onChange={(e) => setValue(Number(e.target.value))}
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">Giảm tối đa (VNĐ)</label>
-                  <BaseInput
-                    type="number"
-                    value={maxDiscount}
-                    onChange={(e) => setMaxDiscount(e.target.value ? Number(e.target.value) : '')}
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">Đơn tối thiểu (VNĐ)</label>
-                  <BaseInput
-                    type="number"
-                    value={minOrderValue}
-                    onChange={(e) => setMinOrderValue(Number(e.target.value))}
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">
-                    Giới hạn số lần dùng chung
-                  </label>
-                  <BaseInput
-                    type="number"
-                    value={usageLimit}
-                    onChange={(e) => setUsageLimit(e.target.value ? Number(e.target.value) : '')}
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">
-                    Giới hạn số lần dùng/User (Phone)
-                  </label>
-                  <BaseInput
-                    type="number"
-                    value={usageLimitPerUser}
-                    onChange={(e) =>
-                      setUsageLimitPerUser(e.target.value ? Number(e.target.value) : '')
-                    }
-                  />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-1">Ngày bắt đầu</label>
-                  <BaseInput
-                    type="datetime-local"
-                    value={startDate}
-                    onChange={(e) => setStartDate(e.target.value)}
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">Ngày kết thúc</label>
-                  <BaseInput
-                    type="datetime-local"
-                    value={endDate}
-                    onChange={(e) => setEndDate(e.target.value)}
-                  />
-                </div>
-              </div>
-              <div className="flex justify-end gap-3 mt-6">
-                <BaseButton type="button" variant="outline" onClick={() => setShowModal(false)}>
-                  Hủy
-                </BaseButton>
-                <BaseButton type="submit">Lưu</BaseButton>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      <VoucherFormModal
+        isOpen={showModal}
+        onClose={() => setShowModal(false)}
+        onSubmit={handleSaveVoucher}
+        editingVoucher={editingVoucher}
+      />
     </div>
   );
 }
