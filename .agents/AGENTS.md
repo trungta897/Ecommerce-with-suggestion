@@ -90,3 +90,18 @@
 ## Safe Execution Mandate
 
 **Rule**: KHÔNG THỰC HIỆN BẤT KỲ HÀNH ĐỘNG DESTRUCTIVE NÀO BAO GỒM XÓA FILE, XÓA DỮ LIỆU, GHI ĐÈ KHÔNG CÓ BACKUP, HOẶC THAY ĐỔI KHÔNG THỂ HOÀN TÁC. KHÔNG NÂNG CẤP, HẠ CẤP HOẶC THAY ĐỔI PHIÊN BẢN FRAMEWORK, THƯ VIỆN, HỆ ĐIỀU HÀNH KHI CHƯA CÓ CHỈ ĐỊNH RÕ RÀNG. LUÔN HỎI LẠI TRƯỚC KHI THỰC HIỆN HÀNH ĐỘNG ẢNH HƯỞNG HỆ THỐNG. ƯU TIÊN GIẢI PHÁP KHÔNG PHÁ VỠ, CÓ THỂ HOÀN TÁC. TẠO BẢN SAO LƯU TRƯỚC KHI CHỈNH SỬA QUAN TRỌNG. KHÔNG TỰ ĐỘNG CHẠY SCRIPT NGUY HIỂM. BẢO TOÀN TÍNH TOÀN VẸN DỮ LIỆU VÀ MÔI TRƯỜNG PHÁT TRIỂN. LUÔN MINH BẠCH VỀ RỦI RO TRƯỚC KHI HÀNH ĐỘNG.
+
+## Progress Audit & Code Review Report Format Mandate
+
+**Rule**: Khi User yêu cầu kiểm tra tiến độ dự án hoặc chạy code review tổng thể (ví dụ: `kiểm tra tiến độ`, `audit`, `/ce-code-review`), Agent **BẮT BUỘC** phải:
+- Lưu báo cáo thành một **Artifact File** chuyên biệt tại `<appDataDir>\brain\<conversation-id>/progress_audit.md` (tương tự như `implementation_plan.md` và `walkthrough.md`).
+- **TUYỆT ĐỐI KHÔNG** tạo các file `.md` thừa bên trong workspace source code (như trong thư mục `docs/` hoặc root).
+- Trình bày kết quả theo đúng cấu trúc chuẩn hóa 5 phần sau:
+  1. **Tổng quan nhanh (Quick Overview Table)**: Bảng tóm tắt tất cả các Sprint (Sprint, Tên, Tổng task/epics, Hoàn thành, Trạng thái `DONE` / `IN PROGRESS` / `NOT STARTED`).
+  2. **Chi tiết từng Sprint (Sprint-by-Sprint Breakdown)**:
+     - Các Sprint đã hoàn thành: Liệt kê các module backend và frontend routes đã xác thực tồn tại trong code.
+     - Các Sprint đang thực hiện / chưa bắt đầu: Bảng đối soát chi tiết từng Task ↔ Code tồn tại ↔ Trạng thái, kèm các callout alert (`[!TIP]`, `[!IMPORTANT]`, `[!WARNING]`) nêu rõ các gap kỹ thuật.
+  3. **Phát hiện Code Quality (Phân cấp P1, P2, P3)**: Bảng liệt kê mã vấn đề, tên lỗi, link file và dòng cụ thể, chi tiết vi phạm.
+  4. **Docs ↔ Code Gaps (Bảng Đối soát Sai lệch Tài liệu)**: Bảng phân tích sự khác biệt giữa tài liệu trong `docs/` và code thực tế kèm hành động cần thiết.
+  5. **Đánh giá tổng thể**: Tóm tắt các điểm tích cực và danh sách các hạng mục hành động ưu tiên (`Cần hành động`).
+
