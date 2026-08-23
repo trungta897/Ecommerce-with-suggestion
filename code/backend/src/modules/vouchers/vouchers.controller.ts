@@ -14,6 +14,7 @@ import { AuthGuard } from '@nestjs/passport';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { UserRole, Prisma } from '@prisma/client';
+import { I18nLang } from 'nestjs-i18n';
 
 @Controller('vouchers')
 export class VouchersController {
@@ -24,6 +25,7 @@ export class VouchersController {
     @Query('code') code: string,
     @Query('subtotal') subtotalStr: string,
     @Query('phone') phone: string,
+    @I18nLang() lang: string,
   ) {
     if (!code || !subtotalStr || !phone) {
       throw new BadRequestException(
@@ -36,7 +38,7 @@ export class VouchersController {
       throw new BadRequestException('Invalid subtotal');
     }
 
-    return this.vouchersService.validateVoucher(code, subtotal, phone);
+    return this.vouchersService.validateVoucher(code, subtotal, phone, lang);
   }
 
   @Get('admin')
@@ -69,7 +71,7 @@ export class VouchersController {
   @Patch(':id/toggle')
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
-  async toggleStatus(@Param('id') id: string) {
-    return this.vouchersService.toggleStatus(id);
+  async toggleStatus(@Param('id') id: string, @I18nLang() lang: string) {
+    return this.vouchersService.toggleStatus(id, lang);
   }
 }

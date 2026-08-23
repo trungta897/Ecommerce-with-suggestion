@@ -16,6 +16,7 @@ import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { CreateReviewDto } from './dto/create-review.dto';
 import { UserRole } from '@prisma/client';
+import { I18nLang } from 'nestjs-i18n';
 
 @Controller('reviews')
 export class ReviewsController {
@@ -27,8 +28,14 @@ export class ReviewsController {
     @Param('productId') productId: string,
     @Body() createReviewDto: CreateReviewDto,
     @Req() req: Request & { user: { id: string } },
+    @I18nLang() lang: string,
   ) {
-    return this.reviewsService.create(productId, createReviewDto, req.user.id);
+    return this.reviewsService.create(
+      productId,
+      createReviewDto,
+      req.user.id,
+      lang,
+    );
   }
 
   @Get('product/:productId')
@@ -59,7 +66,7 @@ export class ReviewsController {
   @Patch(':id/toggle-visibility')
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles(UserRole.ADMIN, UserRole.EMPLOYEE, UserRole.SUPER_ADMIN)
-  toggleVisibility(@Param('id') id: string) {
-    return this.reviewsService.toggleVisibility(id);
+  toggleVisibility(@Param('id') id: string, @I18nLang() lang: string) {
+    return this.reviewsService.toggleVisibility(id, lang);
   }
 }

@@ -5,12 +5,22 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service';
 import { CreateReviewDto } from './dto/create-review.dto';
+import { I18nService } from 'nestjs-i18n';
+import { REVIEW_MESSAGES } from '../../common/constants/review-message.constant';
 
 @Injectable()
 export class ReviewsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly i18n: I18nService,
+  ) {}
 
-  async create(productId: string, dto: CreateReviewDto, userId: string) {
+  async create(
+    productId: string,
+    dto: CreateReviewDto,
+    userId: string,
+    lang?: string,
+  ) {
     // Check if review already exists
     const existing = await this.prisma.review.findUnique({
       where: {
@@ -19,7 +29,9 @@ export class ReviewsService {
     });
 
     if (existing) {
-      throw new BadRequestException('Bạn đã đánh giá sản phẩm này rồi');
+      throw new BadRequestException(
+        this.i18n.t(REVIEW_MESSAGES.ALREADY_REVIEWED, { lang }),
+      );
     }
 
     // Check if user has bought this product and order is COMPLETED
@@ -43,7 +55,7 @@ export class ReviewsService {
 
     if (!orderItem) {
       throw new BadRequestException(
-        'Bạn chỉ có thể đánh giá sản phẩm đã mua và nhận hàng thành công',
+        this.i18n.t(REVIEW_MESSAGES.MUST_BE_COMPLETED, { lang }),
       );
     }
 
@@ -139,9 +151,13 @@ export class ReviewsService {
     });
   }
 
-  async toggleVisibility(id: string) {
+  async toggleVisibility(id: string, lang?: string) {
     const review = await this.prisma.review.findUnique({ where: { id } });
-    if (!review) throw new NotFoundException('Đánh giá không tồn tại');
+    if (!review) {
+      throw new NotFoundException(
+        this.i18n.t(REVIEW_MESSAGES.NOT_FOUND, { lang }),
+      );
+    }
 
     const newStatus = review.status === 'VISIBLE' ? 'HIDDEN' : 'VISIBLE';
 

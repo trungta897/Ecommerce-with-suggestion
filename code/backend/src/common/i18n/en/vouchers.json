@@ -1,0 +1,9 @@
+{
+  "NOT_FOUND": "Voucher not found",
+  "DISABLED": "Voucher has been disabled",
+  "NOT_STARTED": "Voucher is not started yet",
+  "EXPIRED": "Voucher has expired",
+  "SYSTEM_LIMIT_REACHED": "Voucher system-wide limit reached",
+  "USER_LIMIT_REACHED": "You have already used this voucher",
+  "MIN_ORDER_NOT_MET": "Order does not meet minimum value of {min}đ"
+}

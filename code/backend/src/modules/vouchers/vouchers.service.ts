@@ -1,37 +1,55 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service';
 import { Prisma } from '@prisma/client';
+import { I18nService } from 'nestjs-i18n';
+import { VOUCHER_MESSAGES } from '../../common/constants/voucher-message.constant';
 
 @Injectable()
 export class VouchersService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly i18n: I18nService,
+  ) {}
 
-  async validateVoucher(code: string, subtotal: number, phone: string) {
+  async validateVoucher(
+    code: string,
+    subtotal: number,
+    phone: string,
+    lang?: string,
+  ) {
     const voucher = await this.prisma.voucher.findUnique({
       where: { code },
     });
 
     if (!voucher) {
-      throw new BadRequestException('Mã giảm giá không tồn tại');
+      throw new BadRequestException(
+        this.i18n.t(VOUCHER_MESSAGES.NOT_FOUND, { lang }),
+      );
     }
 
     if (!voucher.isActive) {
-      throw new BadRequestException('Mã giảm giá đã bị khóa');
+      throw new BadRequestException(
+        this.i18n.t(VOUCHER_MESSAGES.DISABLED, { lang }),
+      );
     }
 
     const now = new Date();
     if (voucher.startDate && now < voucher.startDate) {
-      throw new BadRequestException('Mã giảm giá chưa bắt đầu');
+      throw new BadRequestException(
+        this.i18n.t(VOUCHER_MESSAGES.NOT_STARTED, { lang }),
+      );
     }
     if (voucher.endDate && now > voucher.endDate) {
-      throw new BadRequestException('Mã giảm giá đã hết hạn');
+      throw new BadRequestException(
+        this.i18n.t(VOUCHER_MESSAGES.EXPIRED, { lang }),
+      );
     }
 
     if (voucher.usageLimit !== null && voucher.usageLimit > 0) {
       // Check global usage
       if (voucher.usedCount >= voucher.usageLimit) {
         throw new BadRequestException(
-          'Mã giảm giá đã hết lượt sử dụng trên toàn hệ thống',
+          this.i18n.t(VOUCHER_MESSAGES.SYSTEM_LIMIT_REACHED, { lang }),
         );
       }
 
@@ -47,13 +65,18 @@ export class VouchersService {
       });
 
       if (usedByPhone >= 1) {
-        throw new BadRequestException('Bạn đã sử dụng mã giảm giá này rồi');
+        throw new BadRequestException(
+          this.i18n.t(VOUCHER_MESSAGES.USER_LIMIT_REACHED, { lang }),
+        );
       }
     }
 
     if (voucher.minOrderValue && subtotal < Number(voucher.minOrderValue)) {
       throw new BadRequestException(
-        `Đơn hàng chưa đạt giá trị tối thiểu ${voucher.minOrderValue.toString()}đ`,
+        this.i18n.t(VOUCHER_MESSAGES.MIN_ORDER_NOT_MET, {
+          lang,
+          args: { min: voucher.minOrderValue.toString() },
+        }),
       );
     }
 
@@ -102,9 +125,13 @@ export class VouchersService {
     return this.prisma.voucher.update({ where: { id }, data });
   }
 
-  async toggleStatus(id: string) {
+  async toggleStatus(id: string, lang?: string) {
     const voucher = await this.prisma.voucher.findUnique({ where: { id } });
-    if (!voucher) throw new BadRequestException('Voucher not found');
+    if (!voucher) {
+      throw new BadRequestException(
+        this.i18n.t(VOUCHER_MESSAGES.NOT_FOUND, { lang }),
+      );
+    }
     return this.prisma.voucher.update({
       where: { id },
       data: { isActive: !voucher.isActive },

@@ -23,6 +23,7 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
 import { VouchersModule } from './modules/vouchers/vouchers.module';
 import { ReviewsModule } from './modules/reviews/reviews.module';
 import { ActivitiesModule } from './modules/activities/activities.module';
+import { DashboardModule } from './modules/dashboard/dashboard.module';
 
 @Module({
   imports: [
@@ -63,6 +64,7 @@ import { ActivitiesModule } from './modules/activities/activities.module';
     VouchersModule,
     ReviewsModule,
     ActivitiesModule,
+    DashboardModule,
   ],
   controllers: [AppController],
   providers: [
