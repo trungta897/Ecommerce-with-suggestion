@@ -78,14 +78,15 @@ async def get_hybrid_recommendation(user_id: str, limit: int = Query(10, ge=1, l
         
         # 2. Cache miss -> Predict
         recommendations = await recommender_system.predict_hybrid(user_id=user_id, limit=limit)
+        algorithm_name = "trained_hybrid" if recommender_system.is_loaded else "mock_hybrid"
         
         # 3. Set Cache
-        cache_payload = {"items": recommendations, "algorithm": "mock_hybrid"}
+        cache_payload = {"items": recommendations, "algorithm": algorithm_name}
         await redis_client.set_cache(cache_key, cache_payload, settings.CACHE_TTL)
         
         return RecommendationResponse(
             items=recommendations, 
-            algorithm="mock_hybrid", 
+            algorithm=algorithm_name, 
             cached=False
         )
         
