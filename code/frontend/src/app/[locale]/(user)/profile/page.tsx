@@ -1,7 +1,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { User, Package, Heart, Settings, LogOut, Sparkles } from '@/components/base/icons';
+import { User, Package, Heart, Settings, LogOut, Sparkles, Ticket } from '@/components/base/icons';
 import { BaseButton, BaseInput } from '@/components/base';
 import { useAuthStore } from '@/store';
 import Link from 'next/link';
@@ -163,6 +163,13 @@ export default function UserProfilePage() {
                   {item.label}
                 </button>
               ))}
+              <Link
+                href="/profile/vouchers"
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-ink-2 hover:bg-paper-2 hover:text-primary transition-colors"
+              >
+                <Ticket className="w-4 h-4" />
+                Kho Voucher
+              </Link>
               <button
                 type="button"
                 onClick={() => logout()}

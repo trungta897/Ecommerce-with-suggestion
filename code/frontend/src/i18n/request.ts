@@ -23,6 +23,7 @@ export default getRequestConfig(async ({ locale }) => {
     address,
     errorMsg,
     category,
+    voucher,
   ] = await Promise.all([
     import(`../messages/${currentLocale}/common.json`),
     import(`../messages/${currentLocale}/auth.json`),
@@ -36,6 +37,7 @@ export default getRequestConfig(async ({ locale }) => {
     import(`../messages/${currentLocale}/address.json`),
     import(`../messages/${currentLocale}/error.json`),
     import(`../messages/${currentLocale}/category.json`),
+    import(`../messages/${currentLocale}/voucher.json`),
   ]);
 
   return {
@@ -53,6 +55,7 @@ export default getRequestConfig(async ({ locale }) => {
       address: address.default,
       error: errorMsg.default,
       category: category.default,
+      voucher: voucher.default,
     },
   };
 });

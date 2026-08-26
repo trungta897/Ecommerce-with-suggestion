@@ -72,9 +72,13 @@ export {
   Router,
   Usb,
   Zap,
-  Timer,
   Watch,
   Tv,
+  Timer,
+  Ticket,
+  Copy,
+  History,
+  Percent,
 } from 'lucide-react';
 
 // Export custom icons

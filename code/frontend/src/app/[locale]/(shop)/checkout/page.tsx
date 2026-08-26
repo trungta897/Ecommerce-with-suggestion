@@ -316,6 +316,12 @@ export default function CheckoutPage() {
               appliedVoucher={appliedVoucher}
               subtotal={subtotal}
               phone={shippingData.phone || ''}
+              cartItems={cartProducts.map((i) => ({
+                productId: i.productId,
+                quantity: i.quantity,
+                price: getProductPrice(i.product),
+                categoryId: i.product?.categoryId,
+              }))}
               onPaymentMethodChange={setPaymentMethod}
               onVoucherCodeChange={setVoucherCode}
               onDiscountChange={setDiscount}

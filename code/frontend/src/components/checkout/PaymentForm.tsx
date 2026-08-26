@@ -1,12 +1,15 @@
 'use client';
 
+import { useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import { BaseButton, BaseInput } from '@/components/base';
-import { CreditCard } from '@/components/base/icons';
+import { CreditCard, Ticket, Check, X } from '@/components/base/icons';
 import { useToast } from '@/providers/toast-provider';
 import { voucherService } from '@/services/voucher-service';
 import { formatPrice } from '@/utils/format';
 import { useAuthStore } from '@/store';
+import { ValidateVoucherCartItem } from '@/types/voucher';
+import { CheckoutVoucherModal } from './CheckoutVoucherModal';
 
 interface AppliedVoucher {
   id: string;
@@ -21,6 +24,7 @@ interface PaymentFormProps {
   appliedVoucher: AppliedVoucher | null;
   subtotal: number;
   phone: string;
+  cartItems?: ValidateVoucherCartItem[];
   onPaymentMethodChange: (method: 'vnpay' | 'cod') => void;
   onVoucherCodeChange: (code: string) => void;
   onDiscountChange: (discount: number) => void;
@@ -36,6 +40,7 @@ export function PaymentForm({
   appliedVoucher,
   subtotal,
   phone,
+  cartItems = [],
   onPaymentMethodChange,
   onVoucherCodeChange,
   onDiscountChange,
@@ -45,19 +50,31 @@ export function PaymentForm({
 }: PaymentFormProps) {
   const locale = useLocale();
   const t = useTranslations('checkout');
+  const tVoucher = useTranslations('voucher');
   const toast = useToast();
   const { user } = useAuthStore();
 
-  const handleApplyVoucher = async () => {
-    if (!voucherCode.trim()) {
+  const [isVoucherModalOpen, setIsVoucherModalOpen] = useState(false);
+  const [validating, setValidating] = useState(false);
+
+  const handleValidateAndApply = async (codeToApply: string) => {
+    if (!codeToApply.trim()) {
       toast.error(t('toast.voucherErrorMessage'), t('toast.voucherErrorTitle'));
       return;
     }
-    const code = voucherCode.trim().toUpperCase();
+    const code = codeToApply.trim().toUpperCase();
 
     try {
-      const response = await voucherService.validateVoucher(code, subtotal, phone);
+      setValidating(true);
+      const response = await voucherService.validateVoucher({
+        code,
+        subtotal,
+        phone,
+        items: cartItems,
+      });
+
       if (response.valid) {
+        onVoucherCodeChange(response.code);
         onDiscountChange(response.discountAmount);
         onAppliedVoucherChange({
           id: response.voucherId,
@@ -72,6 +89,8 @@ export function PaymentForm({
       const error = err as { response?: { data?: { message?: string } } };
       const errorMsg = error.response?.data?.message || t('toast.voucherErrorMessage');
       toast.error(errorMsg, t('toast.voucherErrorTitle'));
+    } finally {
+      setValidating(false);
     }
   };
 
@@ -112,7 +131,20 @@ export function PaymentForm({
 
       {/* Voucher */}
       <div className="pt-4 border-t border-rule space-y-3">
-        <label className="text-sm font-bold text-ink block">{t('voucher')}</label>
+        <div className="flex items-center justify-between">
+          <label className="text-sm font-bold text-ink flex items-center gap-2">
+            <Ticket className="w-4 h-4 text-primary" />
+            {t('voucher')}
+          </label>
+          <button
+            type="button"
+            onClick={() => setIsVoucherModalOpen(true)}
+            className="text-xs font-semibold text-primary hover:underline flex items-center gap-1"
+          >
+            {tVoucher('selectVoucher')}
+          </button>
+        </div>
+
         <div className="flex gap-2.5">
           <BaseInput
             placeholder={t('voucherPlaceholder')}
@@ -122,16 +154,34 @@ export function PaymentForm({
             }
             className="flex-1 uppercase font-mono"
           />
-          <BaseButton type="button" variant="outline" onClick={handleApplyVoucher}>
-            {t('applyVoucher')}
+          <BaseButton
+            type="button"
+            variant="outline"
+            disabled={validating || !voucherCode.trim()}
+            onClick={() => handleValidateAndApply(voucherCode)}
+          >
+            {validating ? 'Kiểm tra...' : t('applyVoucher')}
           </BaseButton>
         </div>
+
         {appliedVoucher && (
-          <div className="flex justify-between items-center bg-green-50 text-green-700 p-3 rounded-xl border border-green-200">
-            <span className="text-sm font-medium">
-              ✓ {t('appliedDiscount', { amount: formatPrice(discount, locale) })}
-            </span>
-            <button onClick={handleRemoveVoucher} className="text-xs font-bold underline">
+          <div className="flex justify-between items-center bg-emerald-50 text-emerald-800 p-3.5 rounded-xl border border-emerald-200 shadow-sm animate-in fade-in duration-200">
+            <div className="flex items-center gap-2">
+              <span className="p-1 bg-emerald-200/60 rounded-full text-emerald-800">
+                <Check className="w-3.5 h-3.5" />
+              </span>
+              <div>
+                <span className="text-xs font-mono font-bold text-emerald-900 mr-2">
+                  {appliedVoucher.code}
+                </span>
+                <span className="text-sm font-medium">- {formatPrice(discount, locale)}</span>
+              </div>
+            </div>
+            <button
+              onClick={handleRemoveVoucher}
+              className="text-xs font-bold text-red-600 hover:text-red-700 underline flex items-center gap-1"
+            >
+              <X className="w-3.5 h-3.5" />
               {t('remove')}
             </button>
           </div>
@@ -145,12 +195,13 @@ export function PaymentForm({
             <div className="flex flex-col">
               <span className="text-sm font-bold text-ink">Sử dụng điểm VIP</span>
               <span className="text-xs text-ink-2">
-                Bạn có <span className="font-bold text-primary">{user.vipPoints}</span> điểm (tương đương {formatPrice(user.vipPoints * 10, locale)})
+                Bạn có <span className="font-bold text-primary">{user.vipPoints}</span> điểm (tương
+                đương {formatPrice(user.vipPoints * 10, locale)})
               </span>
             </div>
             <label className="relative inline-flex items-center cursor-pointer">
-              <input 
-                type="checkbox" 
+              <input
+                type="checkbox"
                 className="sr-only peer"
                 checked={useVipPoints || false}
                 onChange={(e) => onUseVipPointsChange(e.target.checked)}
@@ -160,6 +211,16 @@ export function PaymentForm({
           </div>
         </div>
       )}
+
+      {/* Checkout Voucher Modal */}
+      <CheckoutVoucherModal
+        isOpen={isVoucherModalOpen}
+        onClose={() => setIsVoucherModalOpen(false)}
+        onSelectVoucher={handleValidateAndApply}
+        selectedCode={appliedVoucher?.code}
+        subtotal={subtotal}
+        cartItems={cartItems}
+      />
     </div>
   );
 }
