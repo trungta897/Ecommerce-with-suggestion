@@ -80,5 +80,14 @@
     "desc": "Đăng ký để nhận thông tin về sản phẩm và mã giảm giá",
     "placeholder": "Nhập email của bạn",
     "subscribe": "Đăng ký"
+  },
+  "flash_sale": {
+    "title": "Giờ Vàng Giá Sốc",
+    "ends_in": "Kết thúc sau:",
+    "ongoing": "Đang diễn ra",
+    "upcoming": "Sắp diễn ra",
+    "sold": "Đã bán {count} suất",
+    "left": "Còn {left}/{total} suất",
+    "sold_out": "Đã hết suất"
   }
 }

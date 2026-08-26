@@ -6,6 +6,7 @@
     "users": "Người dùng",
     "reviews": "Đánh giá",
     "returns": "Trả hàng",
+    "promotions": "Flash Sale",
     "settings": "Cài đặt"
   },
   "dashboard": {
@@ -122,5 +123,31 @@
     "saving": "Đang lưu...",
     "saveCategory": "Lưu Danh Mục",
     "noData": "Không có dữ liệu"
+  },
+  "promotions": {
+    "title": "Quản lý Flash Sale & Giảm giá",
+    "add_new": "Thêm đợt Flash Sale",
+    "product": "Sản phẩm",
+    "discount_price": "Giá Flash Sale",
+    "original_price": "Giá gốc",
+    "quota": "Số suất mở bán",
+    "sold": "Đã bán / giữ",
+    "start_date": "Thời gian bắt đầu",
+    "end_date": "Thời gian kết thúc",
+    "status": "Trạng thái",
+    "active": "Đang hoạt động",
+    "inactive": "Đã tắt",
+    "actions": "Thao tác",
+    "edit": "Sửa",
+    "delete": "Xóa",
+    "save": "Lưu thiết lập",
+    "saving": "Đang lưu...",
+    "cancel": "Hủy",
+    "confirm_delete": "Bạn có chắc chắn muốn xóa đợt Flash Sale này?",
+    "select_product": "Chọn sản phẩm...",
+    "create_success": "Tạo đợt Flash Sale thành công!",
+    "update_success": "Cập nhật đợt Flash Sale thành công!",
+    "delete_success": "Xóa đợt Flash Sale thành công!",
+    "no_data": "Chưa có chương trình Flash Sale nào được tạo"
   }
 }
