@@ -24,6 +24,7 @@ import { VouchersModule } from './modules/vouchers/vouchers.module';
 import { ReviewsModule } from './modules/reviews/reviews.module';
 import { ActivitiesModule } from './modules/activities/activities.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
+import { PromotionsModule } from './modules/promotions/promotions.module';
 
 @Module({
   imports: [
@@ -65,7 +66,9 @@ import { DashboardModule } from './modules/dashboard/dashboard.module';
     ReviewsModule,
     ActivitiesModule,
     DashboardModule,
+    PromotionsModule,
   ],
+
   controllers: [AppController],
   providers: [
     AppService,

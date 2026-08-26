@@ -91,6 +91,7 @@ model Product {
   activityLogs     UserActivityLog[]
   wishlists        Wishlist[]
   vouchers         Voucher[]
+  discounts        ProductDiscount[]
 
   @@index([categoryId])
   @@index([brand])
@@ -208,18 +209,39 @@ model UserVoucherUsage {
 }
 
 model OrderItem {
-  id        String  @id @default(uuid())
-  orderId   String
-  productId String
-  quantity  Int
-  unitPrice Decimal @db.Decimal(12, 2)
-  subtotal  Decimal @db.Decimal(12, 2)
-  order     Order   @relation(fields: [orderId], references: [id])
-  product   Product @relation(fields: [productId], references: [id])
+  id                String           @id @default(uuid())
+  orderId           String
+  productId         String
+  productDiscountId String?
+  quantity          Int
+  unitPrice         Decimal          @db.Decimal(12, 2)
+  subtotal          Decimal          @db.Decimal(12, 2)
+  order             Order            @relation(fields: [orderId], references: [id])
+  product           Product          @relation(fields: [productId], references: [id])
+  productDiscount   ProductDiscount? @relation(fields: [productDiscountId], references: [id])
 
   @@index([orderId], map: "order_items_orderId_fkey")
   @@index([productId], map: "order_items_productId_fkey")
+  @@index([productDiscountId], map: "order_items_productDiscountId_fkey")
   @@map("order_items")
+}
+
+model ProductDiscount {
+  id            String      @id @default(uuid())
+  productId     String      // Không @unique: cho phép lên lịch nhiều đợt tương lai
+  discountPrice Decimal     @db.Decimal(12, 2)
+  flashSaleQty  Int         // Tổng số suất flash sale mở bán
+  flashSaleSold Int         @default(0) // Số suất đã được giữ/bán
+  startDate     DateTime
+  endDate       DateTime
+  isActive      Boolean     @default(true)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  product       Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
+  orderItems    OrderItem[]
+
+  @@index([productId, isActive]) // Partial index: hỗ trợ query tìm đợt active theo sản phẩm
+  @@map("product_discounts")
 }
 
 model Review {

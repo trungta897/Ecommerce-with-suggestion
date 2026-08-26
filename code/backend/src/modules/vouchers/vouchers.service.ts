@@ -147,6 +147,25 @@ export class VouchersService {
         (sum, item) => sum + Number(item.price) * item.quantity,
         0,
       );
+
+      // Anti-Stacking Rule: Chặn voucher PERCENTAGE trên sản phẩm đang Flash Sale
+      if (voucher.type === 'PERCENTAGE') {
+        const activeFlashSale = await this.prisma.productDiscount.findFirst({
+          where: {
+            productId: { in: eligibleItems.map((i) => i.productId) },
+            isActive: true,
+            startDate: { lte: now },
+            endDate: { gte: now },
+          },
+          orderBy: { startDate: 'asc' },
+        });
+
+        if (activeFlashSale) {
+          throw new BadRequestException(
+            this.i18n.t(VOUCHER_MESSAGES.FLASH_SALE_CONFLICT, { lang }),
+          );
+        }
+      }
     } else if (voucher.scope === VoucherScope.PRODUCT && voucher.productId) {
       if (!items || items.length === 0) {
         throw new BadRequestException(
@@ -168,6 +187,25 @@ export class VouchersService {
         (sum, item) => sum + Number(item.price) * item.quantity,
         0,
       );
+
+      // Anti-Stacking Rule: Chặn voucher PERCENTAGE trên sản phẩm đang Flash Sale
+      if (voucher.type === 'PERCENTAGE') {
+        const activeFlashSale = await this.prisma.productDiscount.findFirst({
+          where: {
+            productId: voucher.productId,
+            isActive: true,
+            startDate: { lte: now },
+            endDate: { gte: now },
+          },
+          orderBy: { startDate: 'asc' },
+        });
+
+        if (activeFlashSale) {
+          throw new BadRequestException(
+            this.i18n.t(VOUCHER_MESSAGES.FLASH_SALE_CONFLICT, { lang }),
+          );
+        }
+      }
     }
 
     let discountAmount = 0;

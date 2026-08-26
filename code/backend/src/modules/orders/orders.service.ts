@@ -20,7 +20,9 @@ import { RedisService } from '../redis/redis.service';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { ORDER_MESSAGES } from '../../common/constants/order-message.constant';
 import { VOUCHER_MESSAGES } from '../../common/constants/voucher-message.constant';
+import { PROMOTION_MESSAGES } from '../../common/constants/promotion-message.constant';
 import { I18nService } from 'nestjs-i18n';
+
 import { JwtService } from '@nestjs/jwt';
 
 @Injectable()
@@ -105,18 +107,50 @@ export class OrdersService {
       );
     }
 
-    // 2. Calculate totals and check stock
+    // 2. Resolve active Flash Sale discounts & calculate totals and check stock
+    const now = new Date();
+    const itemsWithDiscount = await Promise.all(
+      cartItems.map(async (item) => {
+        if (item.product.stock < item.quantity) {
+          throw new BadRequestException(
+            `Sản phẩm ${item.product.name} không đủ tồn kho (Còn: ${item.product.stock})`,
+          );
+        }
+
+        const activeDiscount = await this.prisma.productDiscount.findFirst({
+          where: {
+            productId: item.productId,
+            isActive: true,
+            startDate: { lte: now },
+            endDate: { gte: now },
+          },
+          orderBy: { startDate: 'asc' },
+        });
+
+        let effectivePrice = item.product.discountPrice
+          ? Number(item.product.discountPrice)
+          : Number(item.product.price);
+        let productDiscountId: string | null = null;
+
+        if (activeDiscount) {
+          const discountPriceNum = Number(activeDiscount.discountPrice);
+          if (discountPriceNum < effectivePrice) {
+            effectivePrice = discountPriceNum;
+            productDiscountId = activeDiscount.id;
+          }
+        }
+
+        return {
+          ...item,
+          effectivePrice,
+          productDiscountId,
+        };
+      }),
+    );
+
     let subtotal = 0;
-    for (const item of cartItems) {
-      if (item.product.stock < item.quantity) {
-        throw new BadRequestException(
-          `Sản phẩm ${item.product.name} không đủ tồn kho (Còn: ${item.product.stock})`,
-        );
-      }
-      const price = item.product.discountPrice
-        ? Number(item.product.discountPrice)
-        : Number(item.product.price);
-      subtotal += price * item.quantity;
+    for (const item of itemsWithDiscount) {
+      subtotal += item.effectivePrice * item.quantity;
     }
 
     const shippingFee = await this.calculateShipping(
@@ -152,7 +186,6 @@ export class OrdersService {
         );
       }
 
-      const now = new Date();
       if (voucher.startDate && now < voucher.startDate) {
         throw new BadRequestException(
           this.i18n.t(VOUCHER_MESSAGES.NOT_STARTED, { lang }),
@@ -177,7 +210,7 @@ export class OrdersService {
 
       let eligibleSubtotal = subtotal;
       if (voucher.scope === VoucherScope.CATEGORY && voucher.categoryId) {
-        const eligibleItems = cartItems.filter(
+        const eligibleItems = itemsWithDiscount.filter(
           (item) => item.product.categoryId === voucher.categoryId,
         );
         if (eligibleItems.length === 0) {
@@ -185,14 +218,25 @@ export class OrdersService {
             this.i18n.t(VOUCHER_MESSAGES.CATEGORY_NOT_MATCHED, { lang }),
           );
         }
-        eligibleSubtotal = eligibleItems.reduce((sum, item) => {
-          const price = item.product.discountPrice
-            ? Number(item.product.discountPrice)
-            : Number(item.product.price);
-          return sum + price * item.quantity;
-        }, 0);
+
+        // Anti-Stacking Rule: Chặn voucher PERCENTAGE trên sản phẩm đang Flash Sale
+        if (voucher.type === 'PERCENTAGE') {
+          const hasFlashSale = eligibleItems.some(
+            (item) => item.productDiscountId !== null,
+          );
+          if (hasFlashSale) {
+            throw new BadRequestException(
+              this.i18n.t(VOUCHER_MESSAGES.FLASH_SALE_CONFLICT, { lang }),
+            );
+          }
+        }
+
+        eligibleSubtotal = eligibleItems.reduce(
+          (sum, item) => sum + item.effectivePrice * item.quantity,
+          0,
+        );
       } else if (voucher.scope === VoucherScope.PRODUCT && voucher.productId) {
-        const eligibleItems = cartItems.filter(
+        const eligibleItems = itemsWithDiscount.filter(
           (item) => item.productId === voucher.productId,
         );
         if (eligibleItems.length === 0) {
@@ -200,12 +244,23 @@ export class OrdersService {
             this.i18n.t(VOUCHER_MESSAGES.PRODUCT_NOT_MATCHED, { lang }),
           );
         }
-        eligibleSubtotal = eligibleItems.reduce((sum, item) => {
-          const price = item.product.discountPrice
-            ? Number(item.product.discountPrice)
-            : Number(item.product.price);
-          return sum + price * item.quantity;
-        }, 0);
+
+        // Anti-Stacking Rule: Chặn voucher PERCENTAGE trên sản phẩm đang Flash Sale
+        if (voucher.type === 'PERCENTAGE') {
+          const hasFlashSale = eligibleItems.some(
+            (item) => item.productDiscountId !== null,
+          );
+          if (hasFlashSale) {
+            throw new BadRequestException(
+              this.i18n.t(VOUCHER_MESSAGES.FLASH_SALE_CONFLICT, { lang }),
+            );
+          }
+        }
+
+        eligibleSubtotal = eligibleItems.reduce(
+          (sum, item) => sum + item.effectivePrice * item.quantity,
+          0,
+        );
       }
 
       if (voucher.type === 'FREE_SHIPPING') {
@@ -244,7 +299,6 @@ export class OrdersService {
       createOrderDto.pickupTime
     ) {
       const pickupTime = new Date(createOrderDto.pickupTime);
-      const now = new Date();
       if (pickupTime < now) {
         throw new BadRequestException(
           'Thời gian lấy hàng không hợp lệ (trong quá khứ)',
@@ -274,7 +328,7 @@ export class OrdersService {
 
     const order = await this.prisma.$transaction(async (tx) => {
       // 1. Stock claim
-      for (const item of cartItems) {
+      for (const item of itemsWithDiscount) {
         const updatedProduct = await tx.product.updateMany({
           where: {
             id: item.productId,
@@ -289,6 +343,25 @@ export class OrdersService {
           throw new BadRequestException(
             `Sản phẩm ${item.product.name} đã hết hàng trong quá trình thanh toán`,
           );
+        }
+
+        // 1b. Atomic Claim Flash Sale Quotas
+        if (item.productDiscountId) {
+          const claimedDiscount = await tx.$executeRaw`
+            UPDATE product_discounts
+            SET flashSaleSold = flashSaleSold + ${item.quantity}
+            WHERE id = ${item.productDiscountId}
+              AND isActive = true
+              AND startDate <= ${now}
+              AND endDate >= ${now}
+              AND flashSaleSold + ${item.quantity} <= flashSaleQty
+          `;
+
+          if (claimedDiscount === 0) {
+            throw new BadRequestException(
+              this.i18n.t(PROMOTION_MESSAGES.FLASH_SALE_INSUFFICIENT, { lang }),
+            );
+          }
         }
       }
 
@@ -390,13 +463,12 @@ export class OrdersService {
         usedVipPoints,
         vipDiscountAmount,
         items: {
-          create: cartItems.map((item) => ({
+          create: itemsWithDiscount.map((item) => ({
             productId: item.productId,
+            productDiscountId: item.productDiscountId || undefined,
             quantity: item.quantity,
-            unitPrice: item.product.discountPrice || item.product.price,
-            subtotal:
-              Number(item.product.discountPrice || item.product.price) *
-              item.quantity,
+            unitPrice: item.effectivePrice,
+            subtotal: item.effectivePrice * item.quantity,
           })),
         },
       };
@@ -656,13 +728,21 @@ export class OrdersService {
         );
       }
 
-      // 2. Safe idempotent stock increment
+      // 2. Safe idempotent stock increment and flash sale quota rollback
       const items = await tx.orderItem.findMany({ where: { orderId } });
       for (const item of items) {
         await tx.product.update({
           where: { id: item.productId },
           data: { stock: { increment: item.quantity } },
         });
+
+        if (item.productDiscountId) {
+          await tx.$executeRaw`
+            UPDATE product_discounts
+            SET flashSaleSold = GREATEST(0, flashSaleSold - ${item.quantity})
+            WHERE id = ${item.productDiscountId}
+          `;
+        }
       }
 
       // 3. Read-after-claim: restore VIP points if used

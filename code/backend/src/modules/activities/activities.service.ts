@@ -1,4 +1,5 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../database/prisma.service';
 import { RedisService } from '../redis/redis.service';
 import { LogActivityDto } from './dto/log-activity.dto';
@@ -9,12 +10,17 @@ type ProductWithCategory = Product & { category: Category | null };
 const DEBOUNCE_TTL_SECONDS = 300; // 5 minutes
 const DEFAULT_LIMIT = 10;
 const RECOMMENDATIONS_LIMIT = 8;
+const HYBRID_CACHE_TTL_SECONDS = 3600; // 1 hour for ML hybrid recommendations
+const FALLBACK_CACHE_TTL_SECONDS = 120; // 2 minutes for DB popular fallback
 
 @Injectable()
 export class ActivitiesService {
+  private readonly logger = new Logger(ActivitiesService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly redisService: RedisService,
+    private readonly configService: ConfigService,
   ) {}
 
   async logActivity(userId: string | null, dto: LogActivityDto) {
@@ -56,7 +62,7 @@ export class ActivitiesService {
         },
       });
     } catch (err) {
-      console.error('Failed to create user activity log:', err);
+      this.logger.error('Failed to create user activity log:', err);
     }
 
     return { success: true };
@@ -140,6 +146,111 @@ export class ActivitiesService {
     currentProductId?: string,
     limit: number = RECOMMENDATIONS_LIMIT,
   ) {
+    const actorIdentifier = userId || sessionId || 'GUEST';
+    const cacheKey = `REC:CACHE:${actorIdentifier}:${currentProductId || 'ALL'}:${limit}`;
+
+    // 1. Check Redis Cache
+    try {
+      const cached = await this.redisService.get(cacheKey);
+      if (cached) {
+        return JSON.parse(cached) as ProductWithCategory[];
+      }
+    } catch (err) {
+      this.logger.warn(`Redis get cache error: ${err}`);
+    }
+
+    // 2. Try calling FastAPI ML Service (Timeout: 500ms, Header: X-API-Key)
+    if (userId) {
+      try {
+        const mlUrl =
+          this.configService.get<string>('ML_SERVICE_URL') ||
+          'http://localhost:8001';
+        const mlApiKey =
+          this.configService.get<string>('ML_API_KEY') || 'test_api_key_123';
+
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 500); // 500ms timeout
+
+        const response = await fetch(
+          `${mlUrl}/recommend/hybrid/${userId}?limit=${limit}`,
+          {
+            method: 'GET',
+            headers: {
+              'X-API-Key': mlApiKey,
+              'Content-Type': 'application/json',
+            },
+            signal: controller.signal,
+          },
+        ).finally(() => clearTimeout(timeout));
+
+        if (response.ok) {
+          const mlData = (await response.json()) as {
+            items: Array<{ product_id: string; score: number }>;
+            algorithm?: string;
+          };
+
+          if (mlData.items && mlData.items.length > 0) {
+            const externalOrInternalIds = mlData.items.map((i) => i.product_id);
+            const dbProducts = await this.prisma.product.findMany({
+              where: {
+                isActive: true,
+                OR: [
+                  { id: { in: externalOrInternalIds } },
+                  { sourceExternalId: { in: externalOrInternalIds } },
+                ],
+              },
+              include: {
+                category: true,
+              },
+            });
+
+            if (dbProducts.length > 0) {
+              // Cache successful Hybrid results with TTL = 1 hour (3600s)
+              await this.redisService
+                .set(
+                  cacheKey,
+                  JSON.stringify(dbProducts.slice(0, limit)),
+                  HYBRID_CACHE_TTL_SECONDS,
+                )
+                .catch(() => {});
+
+              return dbProducts.slice(0, limit);
+            }
+          }
+        }
+      } catch (err) {
+        this.logger.warn(
+          `ML Service call failed or timed out (500ms). Falling back to DB recommendations. Reason: ${err}`,
+        );
+      }
+    }
+
+    // 3. Fallback to DB (Content/Collaborative seed / Popular products)
+    const fallbackResults = await this.getDbFallbackRecommendations(
+      userId,
+      sessionId,
+      currentProductId,
+      limit,
+    );
+
+    // Cache Fallback results with short TTL = 2 minutes (120s) to retry ML service sooner
+    await this.redisService
+      .set(
+        cacheKey,
+        JSON.stringify(fallbackResults),
+        FALLBACK_CACHE_TTL_SECONDS,
+      )
+      .catch(() => {});
+
+    return fallbackResults;
+  }
+
+  private async getDbFallbackRecommendations(
+    userId?: string,
+    sessionId?: string,
+    currentProductId?: string,
+    limit: number = RECOMMENDATIONS_LIMIT,
+  ): Promise<ProductWithCategory[]> {
     const seedProductIds: string[] = [];
     const seedCategoryIds: string[] = [];
 

@@ -8,5 +8,7 @@
   "MIN_ORDER_NOT_MET": "Order does not meet minimum value of {min}đ",
   "CATEGORY_NOT_MATCHED": "Voucher only applies to the designated category",
   "PRODUCT_NOT_MATCHED": "Voucher only applies to the designated product",
-  "NO_ELIGIBLE_ITEMS": "No eligible items in cart for this voucher"
+  "NO_ELIGIBLE_ITEMS": "No eligible items in cart for this voucher",
+  "FLASH_SALE_CONFLICT": "Flash sale items cannot be combined with percentage vouchers"
 }
+
