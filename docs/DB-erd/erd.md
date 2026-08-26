@@ -77,6 +77,7 @@ erDiagram
         int used_count "Default 0"
         timestamp start_date
         timestamp end_date
+        boolean is_public "Default TRUE"
         boolean is_active "Default TRUE"
     }
 

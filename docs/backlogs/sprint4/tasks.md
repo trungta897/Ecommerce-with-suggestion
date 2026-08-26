@@ -5,10 +5,10 @@
   - [x] Admin/Nhân viên Kiểm duyệt ẩn/hiện đánh giá
   - [x] Chuẩn hóa đa ngôn ngữ i18n & hằng số thông báo khóa lỗi
 
-- [ ] **2. Khuyến mãi - Voucher (US-VOU-01, US-VOU-02)**
-  - [ ] Mở rộng Backend: Scope (CART/CATEGORY/PRODUCT), perUserLimit, API public list & Usage Logs
-  - [ ] Frontend Admin: Bảng quản lý Voucher & Modal xem lịch sử sử dụng
-  - [ ] Frontend Client: Modal / Danh sách Voucher công khai tại trang Checkout & Profile
+- [x] **2. Khuyến mãi - Voucher (US-VOU-01, US-VOU-02)**
+  - [x] Mở rộng Backend: Scope (CART/CATEGORY/PRODUCT), perUserLimit, API public list & Usage Logs, Atomic Claim & rollback
+  - [x] Frontend Admin: Bảng quản lý Voucher & Modal xem lịch sử sử dụng, phân quyền RBAC
+  - [x] Frontend Client: Modal / Danh sách Voucher công khai tại trang Checkout & Profile (/profile/vouchers)
 
 - [x] **3. Admin Dashboard (US-ADM-01)**
   - [x] Backend Module Dashboard độc lập (`DashboardModule`, `GET /admin/dashboard/stats`)
