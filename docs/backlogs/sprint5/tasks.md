@@ -1,22 +1,24 @@
 # Sprint 5: Hệ thống Gợi ý & Cronjobs
 
-- [ ] **1. Tích hợp Mô hình Gợi ý (Machine Learning) (US-REC-01, TS-ML-01)**
-  - [ ] Đánh giá Offline Testing cho mô hình
-  - [ ] Khởi chạy FastAPI Server (ML Service)
-  - [x] Gọi API gợi ý từ Backend NestJS theo `userId` hoặc hành vi Guest
+- [x] **1. Tích hợp Mô hình Gợi ý (Machine Learning) (US-REC-01, TS-ML-01)**
+  - [x] Đánh giá Offline Testing cho mô hình (02_train_models.py, 03_evaluate_metrics.py, evaluation_report.json)
+  - [x] Khởi chạy FastAPI Server bảo mật X-API-Key (ML Service)
+  - [x] Gọi API gợi ý từ Backend NestJS theo `userId` hoặc hành vi Guest (timeout 500ms)
 
-- [ ] **2. Khuyến mãi - Flash Sale (US-SALE-01, US-SALE-02, US-SALE-03)**
-  - [ ] Prisma Migration: Thêm bảng `ProductDiscount`, liên kết `OrderItem.productDiscountId`
-  - [ ] Module Backend `promotions`: CRUD Flash Sale, getActiveDiscount, Atomic Claim `$executeRaw`
-  - [ ] Tích hợp vào `orders.service.ts`: Atomic Claim suất sale & nhả suất sale trong `cancelOrder`
-  - [ ] Frontend: Banner Flash Sale, `FlashSaleSection` trang chủ, `FlashSaleCountdown` timer
-  - [ ] Frontend Admin: Quản lý chương trình Flash Sale
+- [x] **2. Khuyến mãi - Flash Sale (US-SALE-01, US-SALE-02, US-SALE-03)**
+  - [x] Prisma Migration: Thêm bảng `ProductDiscount`, liên kết `OrderItem.productDiscountId`
+  - [x] Module Backend `promotions`: CRUD Flash Sale, getActiveDiscount, validate chống chồng lấn thời gian
+  - [x] Tích hợp vào `orders.service.ts`: Atomic Claim suất sale `$executeRaw` & nhả suất sale trong `cancelOrder`
+  - [x] Tích hợp vào `vouchers.service.ts`: Chống cộng dồn voucher PERCENTAGE trên sản phẩm Flash Sale
+  - [x] Frontend: Banner Flash Sale, `FlashSaleSection` trang chủ, `CountdownTimer`
+  - [x] Frontend Admin: Quản lý chương trình Flash Sale (`/admin/promotions/discounts`)
 
-- [ ] **3. Cache và Fallback (US-REC-02)**
-  - [ ] Tích hợp Redis cache kết quả gợi ý trong 1 giờ
-  - [x] Fallback về thuật toán Popular (bán chạy) khi API ML timeout
+- [x] **3. Cache và Fallback (US-REC-02)**
+  - [x] Tích hợp Redis cache kết quả gợi ý trong 1 giờ (Hybrid 3600s)
+  - [x] Fallback về thuật toán Popular (bán chạy) khi API ML timeout/down (Cache 120s)
 
-- [ ] **4. Cronjob Dọn dẹp Dữ liệu rác (TS-CRON-01)**
-  - [ ] Xóa tài khoản Guest và giỏ hàng rỗng sau 7 ngày
-  - [ ] Giải phóng tồn kho và suất Flash Sale bị kẹt từ các đơn `pending_payment` quá hạn 30 phút
+- [x] **4. Cronjob Dọn dẹp Dữ liệu rác (TS-CRON-01)**
+  - [x] Xóa tài khoản Guest và giỏ hàng rỗng sau 7 ngày
+  - [x] Giải phóng tồn kho và suất Flash Sale bị kẹt từ các đơn `pending_payment` quá hạn 30 phút
+
 
