@@ -4,6 +4,9 @@
   "NOT_STARTED": "Voucher is not started yet",
   "EXPIRED": "Voucher has expired",
   "SYSTEM_LIMIT_REACHED": "Voucher system-wide limit reached",
-  "USER_LIMIT_REACHED": "You have already used this voucher",
-  "MIN_ORDER_NOT_MET": "Order does not meet minimum value of {min}đ"
+  "USER_LIMIT_REACHED": "You have reached the usage limit for this voucher",
+  "MIN_ORDER_NOT_MET": "Order does not meet minimum value of {min}đ",
+  "CATEGORY_NOT_MATCHED": "Voucher only applies to the designated category",
+  "PRODUCT_NOT_MATCHED": "Voucher only applies to the designated product",
+  "NO_ELIGIBLE_ITEMS": "No eligible items in cart for this voucher"
 }

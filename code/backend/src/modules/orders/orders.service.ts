@@ -14,10 +14,12 @@ import {
   Prisma,
   ActivityType,
   UserRole,
+  VoucherScope,
 } from '@prisma/client';
 import { RedisService } from '../redis/redis.service';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { ORDER_MESSAGES } from '../../common/constants/order-message.constant';
+import { VOUCHER_MESSAGES } from '../../common/constants/voucher-message.constant';
 import { I18nService } from 'nestjs-i18n';
 import { JwtService } from '@nestjs/jwt';
 
@@ -137,20 +139,91 @@ export class OrdersService {
     }
 
     let discountAmount = 0;
-    // FREE_SHIPPING voucher logic mockup (we assume a 100% discount on shipping for now if voucherId is 'FREE_SHIP')
+    let appliedVoucherId: string | null = null;
+
     if (createOrderDto.voucherId) {
       const voucher = await this.prisma.voucher.findUnique({
         where: { id: createOrderDto.voucherId },
       });
-      if (voucher && voucher.isActive) {
-        if (voucher.type === 'FREE_SHIPPING') {
-          discountAmount = shippingFee;
-        } else if (voucher.type === 'FIXED_AMOUNT') {
-          discountAmount = Number(voucher.value);
-        } else if (voucher.type === 'PERCENTAGE') {
-          discountAmount = (subtotal * Number(voucher.value)) / 100;
+
+      if (!voucher || !voucher.isActive) {
+        throw new BadRequestException(
+          this.i18n.t(VOUCHER_MESSAGES.NOT_FOUND, { lang }),
+        );
+      }
+
+      const now = new Date();
+      if (voucher.startDate && now < voucher.startDate) {
+        throw new BadRequestException(
+          this.i18n.t(VOUCHER_MESSAGES.NOT_STARTED, { lang }),
+        );
+      }
+      if (voucher.endDate && now > voucher.endDate) {
+        throw new BadRequestException(
+          this.i18n.t(VOUCHER_MESSAGES.EXPIRED, { lang }),
+        );
+      }
+
+      if (voucher.minOrderValue && subtotal < Number(voucher.minOrderValue)) {
+        throw new BadRequestException(
+          this.i18n.t(VOUCHER_MESSAGES.MIN_ORDER_NOT_MET, {
+            lang,
+            args: {
+              min: Number(voucher.minOrderValue).toLocaleString('vi-VN'),
+            },
+          }),
+        );
+      }
+
+      let eligibleSubtotal = subtotal;
+      if (voucher.scope === VoucherScope.CATEGORY && voucher.categoryId) {
+        const eligibleItems = cartItems.filter(
+          (item) => item.product.categoryId === voucher.categoryId,
+        );
+        if (eligibleItems.length === 0) {
+          throw new BadRequestException(
+            this.i18n.t(VOUCHER_MESSAGES.CATEGORY_NOT_MATCHED, { lang }),
+          );
+        }
+        eligibleSubtotal = eligibleItems.reduce((sum, item) => {
+          const price = item.product.discountPrice
+            ? Number(item.product.discountPrice)
+            : Number(item.product.price);
+          return sum + price * item.quantity;
+        }, 0);
+      } else if (voucher.scope === VoucherScope.PRODUCT && voucher.productId) {
+        const eligibleItems = cartItems.filter(
+          (item) => item.productId === voucher.productId,
+        );
+        if (eligibleItems.length === 0) {
+          throw new BadRequestException(
+            this.i18n.t(VOUCHER_MESSAGES.PRODUCT_NOT_MATCHED, { lang }),
+          );
+        }
+        eligibleSubtotal = eligibleItems.reduce((sum, item) => {
+          const price = item.product.discountPrice
+            ? Number(item.product.discountPrice)
+            : Number(item.product.price);
+          return sum + price * item.quantity;
+        }, 0);
+      }
+
+      if (voucher.type === 'FREE_SHIPPING') {
+        discountAmount = shippingFee;
+      } else if (voucher.type === 'FIXED_AMOUNT') {
+        discountAmount = Math.min(Number(voucher.value), eligibleSubtotal);
+      } else if (voucher.type === 'PERCENTAGE') {
+        discountAmount = Math.floor(
+          (eligibleSubtotal * Number(voucher.value)) / 100,
+        );
+        if (
+          voucher.maxDiscount &&
+          discountAmount > Number(voucher.maxDiscount)
+        ) {
+          discountAmount = Number(voucher.maxDiscount);
         }
       }
+      appliedVoucherId = voucher.id;
     }
 
     const totalAmount = Math.max(
@@ -200,6 +273,7 @@ export class OrdersService {
     const earnedVipPoints = Math.floor(totalAmount / 1000);
 
     const order = await this.prisma.$transaction(async (tx) => {
+      // 1. Stock claim
       for (const item of cartItems) {
         const updatedProduct = await tx.product.updateMany({
           where: {
@@ -218,6 +292,7 @@ export class OrdersService {
         }
       }
 
+      // 2. VIP Points claim
       if (usedVipPoints > 0 && userId) {
         const updatedUser = await tx.user.updateMany({
           where: {
@@ -230,6 +305,67 @@ export class OrdersService {
         });
         if (updatedUser.count === 0) {
           throw new BadRequestException('Số điểm VIP không đủ để thanh toán');
+        }
+      }
+
+      // 3. Voucher claim (Atomic) & PerUserLimit check
+      if (appliedVoucherId) {
+        const claimed = await tx.$executeRaw`
+          UPDATE vouchers
+          SET usedCount = usedCount + 1
+          WHERE id = ${appliedVoucherId}
+            AND isActive = true
+            AND startDate <= NOW()
+            AND endDate >= NOW()
+            AND (usageLimit IS NULL OR usedCount + 1 <= usageLimit)
+        `;
+
+        if (claimed === 0) {
+          throw new BadRequestException(
+            this.i18n.t(VOUCHER_MESSAGES.SYSTEM_LIMIT_REACHED, { lang }),
+          );
+        }
+
+        const voucher = await tx.voucher.findUnique({
+          where: { id: appliedVoucherId },
+        });
+
+        if (voucher) {
+          const nonCancelledStatuses = {
+            notIn: [
+              OrderStatus.CANCELLED,
+              OrderStatus.RETURN_REJECTED,
+              OrderStatus.RETURNED,
+              OrderStatus.REFUNDED,
+            ],
+          };
+
+          let usedCountForUser = 0;
+          if (userId) {
+            usedCountForUser = await tx.userVoucherUsage.count({
+              where: {
+                voucherId: appliedVoucherId,
+                userId,
+                order: { status: nonCancelledStatuses },
+              },
+            });
+          } else if (createOrderDto.shippingPhone) {
+            usedCountForUser = await tx.userVoucherUsage.count({
+              where: {
+                voucherId: appliedVoucherId,
+                order: {
+                  shippingPhone: createOrderDto.shippingPhone,
+                  status: nonCancelledStatuses,
+                },
+              },
+            });
+          }
+
+          if (usedCountForUser >= voucher.perUserLimit) {
+            throw new BadRequestException(
+              this.i18n.t(VOUCHER_MESSAGES.USER_LIMIT_REACHED, { lang }),
+            );
+          }
         }
       }
 
@@ -246,6 +382,7 @@ export class OrdersService {
         shippingPhone: createOrderDto.shippingPhone,
         deliveryMethod: createOrderDto.deliveryMethod,
         userId: userId || undefined,
+        voucherId: appliedVoucherId || undefined,
         depositAmount,
         isDepositPayment,
         pickupTime: createOrderDto.pickupTime,
@@ -267,6 +404,16 @@ export class OrdersService {
       const newOrder = await tx.order.create({
         data: orderData,
       });
+
+      if (appliedVoucherId) {
+        await tx.userVoucherUsage.create({
+          data: {
+            voucherId: appliedVoucherId,
+            userId: userId || undefined,
+            orderId: newOrder.id,
+          },
+        });
+      }
 
       if (userId) {
         await tx.cartItem.deleteMany({
@@ -528,6 +675,18 @@ export class OrdersService {
         await tx.order.update({
           where: { id: orderId },
           data: { usedVipPoints: 0 },
+        });
+      }
+
+      // 4. Safe Voucher rollback
+      if (order?.voucherId) {
+        await tx.$executeRaw`
+          UPDATE vouchers
+          SET usedCount = GREATEST(0, usedCount - 1)
+          WHERE id = ${order.voucherId}
+        `;
+        await tx.userVoucherUsage.deleteMany({
+          where: { orderId, voucherId: order.voucherId },
         });
       }
 
