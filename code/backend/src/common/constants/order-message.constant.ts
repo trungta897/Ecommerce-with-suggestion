@@ -10,4 +10,13 @@ export const ORDER_MESSAGES = {
   MISSING_EVIDENCE: 'orders.error.missingEvidence',
   CANNOT_CANCEL: 'orders.error.cannotCancel',
   INVALID_TRACKING_TOKEN: 'orders.error.invalidTrackingToken',
+  SELECT_PROVINCE_REQUIRED: 'orders.error.selectProvinceRequired',
+  PROVINCE_NOT_FOUND: 'orders.error.provinceNotFound',
+  PRODUCT_NOT_FOUND_WITH_ID: 'orders.error.productNotFoundWithId',
+  INSUFFICIENT_STOCK: 'orders.error.insufficientStock',
+  INSUFFICIENT_VIP_POINTS: 'orders.error.insufficientVipPoints',
+  INVALID_PICKUP_TIME_PAST: 'orders.error.invalidPickupTimePast',
+  INVALID_PICKUP_TIME_MAX: 'orders.error.invalidPickupTimeMax',
+  INVALID_PICKUP_TIME_HOURS: 'orders.error.invalidPickupTimeHours',
+  FLASH_SALE_STOCK_RACE: 'orders.error.flashSaleStockRace',
 };

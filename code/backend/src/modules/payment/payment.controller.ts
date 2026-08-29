@@ -1,12 +1,5 @@
-import {
-  Body,
-  Controller,
-  Param,
-  Post,
-  Req,
-  Request,
-  Query,
-} from '@nestjs/common';
+import { Body, Controller, Param, Post, Req, Query } from '@nestjs/common';
+import type { Request as ExpressRequest } from 'express';
 import { PaymentService } from './payment.service';
 import { PrismaService } from '../../database/prisma.service';
 import { NotFoundException } from '@nestjs/common';
@@ -24,7 +17,7 @@ export class PaymentController {
 
   @Post('vnpay/create/:orderId')
   async createVnPayOrder(
-    @Req() req: Request,
+    @Req() req: ExpressRequest,
     @Param('orderId') orderId: string,
   ) {
     const order = await this.prisma.order.findUnique({
@@ -44,8 +37,14 @@ export class PaymentController {
       data: { paymentGatewayTxnId: appTransId },
     });
 
-    // We assume '127.0.0.1' or get ip from req
-    const ipAddr = '127.0.0.1'; // TODO: Get actual client IP
+    // Dynamic resolution of client IP from headers/socket
+    const forwarded = req.headers['x-forwarded-for'];
+    const ipAddr =
+      (typeof forwarded === 'string'
+        ? forwarded.split(',')[0].trim()
+        : Array.isArray(forwarded)
+          ? forwarded[0]?.trim()
+          : req.socket?.remoteAddress) || '127.0.0.1';
 
     // Total Amount / deposit Amount in USD converted to VND for VNPay
     const amountUsd = order.isDepositPayment

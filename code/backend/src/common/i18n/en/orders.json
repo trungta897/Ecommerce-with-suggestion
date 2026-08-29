@@ -12,6 +12,15 @@
     "invalidFileFormat": "Invalid file format",
     "missingEvidence": "Please provide evidence files",
     "cannotCancel": "Order is not in a valid state to be cancelled",
-    "invalidTrackingToken": "Invalid or expired guest tracking token"
+    "invalidTrackingToken": "Invalid or expired guest tracking token",
+    "selectProvinceRequired": "Please select a delivery province/city",
+    "provinceNotFound": "Province/city not found",
+    "productNotFoundWithId": "Product not found (ID: {id})",
+    "insufficientStock": "Product {name} does not have enough stock (Available: {stock})",
+    "insufficientVipPoints": "Insufficient VIP points for payment",
+    "invalidPickupTimePast": "Pickup time is invalid (in the past)",
+    "invalidPickupTimeMax": "Store pickup reservation is supported up to 5 days only",
+    "invalidPickupTimeHours": "Pickup time must be within working hours (08:00 - 22:00)",
+    "flashSaleStockRace": "Product {name} went out of stock during checkout"
   }
 }
