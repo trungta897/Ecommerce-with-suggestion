@@ -2,7 +2,8 @@
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useTranslations } from 'next-intl';
-import { locationService, LocationItem, WardItem } from '@/services/location-service';
+import { LocationItem, WardItem } from '@/services/location-service';
+import { useVietnameseLocations } from '@/hooks/use-vietnamese-locations';
 import { Search, ChevronDown, ChevronUp, Check, Loader2, MapPin } from '@/components/base/icons';
 
 export interface AddressSelectorProps {
@@ -32,58 +33,21 @@ export const AddressSelector: React.FC<AddressSelectorProps> = ({
 }) => {
   const t = useTranslations('address');
 
-  // Data State
-  const [provinces, setProvinces] = useState<LocationItem[]>([]);
-  const [wards, setWards] = useState<WardItem[]>([]);
+  const {
+    provinces,
+    wards,
+    selectedProvince,
+    selectedWard,
+    selectProvince,
+    selectWard,
+    loadingProvinces,
+    loadingWards,
+  } = useVietnameseLocations();
 
-  // Selection State
-  const [selectedProvince, setSelectedProvince] = useState<LocationItem | null>(null);
-  const [selectedWard, setSelectedWard] = useState<WardItem | null>(null);
   const [street, setStreet] = useState<string>('');
-
-  // Active step & panel state
   const [activeStep, setActiveStep] = useState<Step>('province');
   const [isListOpen, setIsListOpen] = useState(true);
-
-  // Loading State
-  const [loadingProvinces, setLoadingProvinces] = useState(false);
-  const [loadingWards, setLoadingWards] = useState(false);
-
-  // Search Filter State
   const [searchQuery, setSearchQuery] = useState('');
-
-  // Fetch Provinces on Mount
-  useEffect(() => {
-    const fetchProvs = async () => {
-      setLoadingProvinces(true);
-      try {
-        const data = await locationService.getProvinces();
-        setProvinces(data);
-      } finally {
-        setLoadingProvinces(false);
-      }
-    };
-    void fetchProvs();
-  }, []);
-
-  // Fetch Wards when Province changes
-  useEffect(() => {
-    if (!selectedProvince) {
-      setWards([]);
-      setSelectedWard(null);
-      return;
-    }
-    const fetchWs = async () => {
-      setLoadingWards(true);
-      try {
-        const data = await locationService.getWards(selectedProvince.id);
-        setWards(data);
-      } finally {
-        setLoadingWards(false);
-      }
-    };
-    void fetchWs();
-  }, [selectedProvince]);
 
   // Filtered lists matching name or mergedFrom
   const filteredProvinces = useMemo(() => {
@@ -134,15 +98,14 @@ export const AddressSelector: React.FC<AddressSelectorProps> = ({
   }, [selectedProvince, selectedWard, street, initialAddress]);
 
   const handleSelectProvince = (p: LocationItem) => {
-    setSelectedProvince(p);
-    setSelectedWard(null);
+    selectProvince(p);
     setActiveStep('ward');
     setSearchQuery('');
     setIsListOpen(true);
   };
 
   const handleSelectWard = (w: WardItem) => {
-    setSelectedWard(w);
+    selectWard(w);
     setSearchQuery('');
     setIsListOpen(false);
   };
