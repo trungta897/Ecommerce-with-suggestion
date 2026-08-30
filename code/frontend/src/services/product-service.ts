@@ -17,6 +17,11 @@ export interface ProductQueryParams {
   limit?: number;
   categorySlug?: string;
   all?: boolean;
+  q?: string;
+  minPrice?: number | string;
+  maxPrice?: number | string;
+  minRating?: number | string;
+  sort?: string;
 }
 
 const getDescendantSlugs = (slug: string): string[] => {
@@ -75,6 +80,14 @@ export const productService = {
     if (params?.limit) searchParams.append('limit', params.limit.toString());
     if (params?.all) searchParams.append('all', 'true');
     if (params?.categorySlug) searchParams.append('categorySlug', params.categorySlug);
+    if (params?.q) searchParams.append('q', params.q);
+    if (params?.minPrice !== undefined && params.minPrice !== '')
+      searchParams.append('minPrice', params.minPrice.toString());
+    if (params?.maxPrice !== undefined && params.maxPrice !== '')
+      searchParams.append('maxPrice', params.maxPrice.toString());
+    if (params?.minRating !== undefined && params.minRating !== '')
+      searchParams.append('minRating', params.minRating.toString());
+    if (params?.sort) searchParams.append('sort', params.sort);
 
     const url = `/products?${searchParams.toString()}`;
     const { data } = await apiClient.get(url);

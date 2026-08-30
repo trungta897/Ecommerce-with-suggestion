@@ -50,7 +50,7 @@ export default function ProductCard({ product, isFlashSale, flashSaleData }: Pro
       });
       toast.success(t('addedToCartSuccess'), undefined, undefined, {
         label: tCommon('viewCart'),
-        onClick: () => router.push('/cart')
+        onClick: () => router.push('/cart'),
       });
     } catch {
       toast.error(t('addedToCartFailed'));

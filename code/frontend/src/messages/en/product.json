@@ -34,5 +34,22 @@
   "recentlyViewed": "Recently Viewed",
   "clearHistory": "Clear History",
   "recommendedForYou": "Recommended For You",
-  "emptyRecentlyViewed": "No recently viewed items"
+  "emptyRecentlyViewed": "No recently viewed items",
+  "searchResults": "Search results for \"{query}\"",
+  "searchAllProducts": "All products",
+  "filters": "Search Filters",
+  "filterPrice": "Price Range (VND)",
+  "filterRating": "Rating",
+  "starsAndAbove": "{rating} stars & up",
+  "allRatings": "All ratings",
+  "sortBy": "Sort by",
+  "sortNewest": "Newest",
+  "sortPriceAsc": "Price: Low to High",
+  "sortPriceDesc": "Price: High to Low",
+  "sortPopular": "Best Sellers",
+  "minPrice": "Min (₫)",
+  "maxPrice": "Max (₫)",
+  "applyFilter": "Apply",
+  "clearFilter": "Reset Filters",
+  "noSearchResults": "No products found matching your criteria. Please try different keywords or filters."
 }

@@ -68,8 +68,16 @@ export default function CheckoutPage() {
         phone: prev.phone || user.phone || '',
         address: prev.address || user.address || '',
       }));
+      // [PARTIAL] Chỉ điền field street. Province/Ward cần chọn lại tay.
+      // Known Limitation: Profile chưa lưu provinceId/wardId có cấu trúc.
+      if (user.address && !addressDetails.street) {
+        setAddressDetails((prev) => ({
+          ...prev,
+          street: user.address || '',
+        }));
+      }
     }
-  }, [isAuthenticated, user]);
+  }, [isAuthenticated, user, addressDetails.street]);
 
   // Voucher State
   const [voucherCode, setVoucherCode] = useState('');
