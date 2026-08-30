@@ -28,4 +28,13 @@
   - [x] Tab Yêu thích và Gợi ý AI trang Profile (`/profile`) render danh sách sản phẩm thật kèm fallback DB
   - [x] Form Newsletter client-side validation và chuẩn hóa đa ngôn ngữ i18n toàn diện
 
+- [x] **6. Home Sections API, Database Indexing, ProductCard Redesign & Data Sanitization**
+  - [x] Database Indexing: Thêm B-Tree index cho `soldCount`, `viewCount`, compound index `[categoryId, isActive, soldCount]`
+  - [x] Backend `GET /products/home-sections`: Tải song song 8 sản phẩm bán chạy cho từng danh mục kèm Redis cache 120s
+  - [x] Non-blocking Redis Invalidation: Sử dụng `scanStream` xóa an toàn các key `products:home-sections:*`
+  - [x] Redesign UX/UI `ProductCard`: Khung ảnh nền trắng seamless `object-contain`, Brand subtitle, sao đánh giá, lượt bán
+  - [x] Phân trang `/category/[slug]`: Nâng lên 20 sản phẩm/trang kèm bộ điều khiển Pagination chuyển trang
+  - [x] Data Sanitization: Rà soát 1,000 sản phẩm và sửa 10 sản phẩm bị gán nhầm danh mục gốc
+
+
 
