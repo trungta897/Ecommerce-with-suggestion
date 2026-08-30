@@ -52,6 +52,18 @@ export class ProductsController {
     );
   }
 
+  @Get('home-sections')
+  getHomeSections(
+    @Query('slugs') slugs?: string,
+    @Query('limit') limit?: string,
+  ) {
+    const slugList = slugs
+      ? slugs.split(',').map((s) => s.trim())
+      : ['laptop', 'man-hinh', 'may-tinh-de-ban', 'o-cung', 'vga', 'ram'];
+    const limitNum = limit ? parseInt(limit, 10) : 8;
+    return this.productsService.getHomeSections(slugList, limitNum);
+  }
+
   @Get('slug/:slug')
   findBySlug(
     @Param('slug') slug: string,

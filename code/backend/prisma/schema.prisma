@@ -95,6 +95,9 @@ model Product {
 
   @@index([categoryId])
   @@index([brand])
+  @@index([soldCount])
+  @@index([viewCount])
+  @@index([categoryId, isActive, soldCount])
   @@map("products")
 }
 

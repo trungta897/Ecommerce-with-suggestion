@@ -189,6 +189,80 @@ export class ProductsService {
     return result;
   }
 
+  async getHomeSections(
+    slugs: string[] = [
+      'laptop',
+      'man-hinh',
+      'may-tinh-de-ban',
+      'o-cung',
+      'vga',
+      'ram',
+    ],
+    limitPerCategory: number = 8,
+  ) {
+    const cacheKey = `products:home-sections:${slugs.join(',')}:${limitPerCategory}`;
+    const cached = await this.redis.get(cacheKey);
+    if (cached) {
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+        return JSON.parse(cached);
+      } catch {
+        // invalid json, proceed
+      }
+    }
+
+    const sections = await Promise.all(
+      slugs.map(async (slug) => {
+        const category = await this.prisma.category.findUnique({
+          where: { slug },
+          include: {
+            children: {
+              select: { id: true, slug: true },
+            },
+          },
+        });
+
+        if (!category) {
+          return {
+            slug,
+            name: slug,
+            products: [],
+          };
+        }
+
+        const categoryIds = [
+          category.id,
+          ...category.children.map((c) => c.id),
+        ];
+
+        const products = await this.prisma.product.findMany({
+          where: {
+            categoryId: { in: categoryIds },
+            isActive: true,
+          },
+          include: {
+            category: true,
+          },
+          orderBy: {
+            soldCount: 'desc',
+          },
+          take: Number(limitPerCategory),
+        });
+
+        return {
+          slug: category.slug,
+          name: category.name,
+          products,
+        };
+      }),
+    );
+
+    // Cache home sections for 120 seconds
+    await this.redis.set(cacheKey, JSON.stringify(sections), 120);
+
+    return sections;
+  }
+
   async uploadImage(file: Express.Multer.File): Promise<string> {
     return this.storage.uploadFile(
       'products',
@@ -198,6 +272,9 @@ export class ProductsService {
   }
 
   private async clearProductCache() {
-    await this.redis.deletePattern('products:*');
+    await Promise.all([
+      this.redis.deletePattern('products:home-sections:*'),
+      this.redis.deletePattern('products:page=*'),
+    ]);
   }
 }
