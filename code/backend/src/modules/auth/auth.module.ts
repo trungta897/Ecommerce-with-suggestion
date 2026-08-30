@@ -10,7 +10,10 @@ import { JwtStrategy } from './strategies/jwt.strategy';
     JwtModule.register({
       secret: process.env.JWT_SECRET || 'fallback_secret_key_change_me',
       signOptions: {
-        expiresIn: '7d', // 7 days
+        // [KNOWN LIMITATION] NFR Q-04: AT=15m + RT=7d.
+        // Phạm vi đồ án dùng long-lived AT=7d để đơn giản hóa.
+        // Production: AT='15m' + implement POST /auth/refresh endpoint.
+        expiresIn: '7d',
       },
     }),
   ],

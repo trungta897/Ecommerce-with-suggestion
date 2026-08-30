@@ -26,6 +26,11 @@ export class ProductsService {
     limit: number = 10,
     categorySlug?: string,
     includeInactive = false,
+    q?: string,
+    minPrice?: string,
+    maxPrice?: string,
+    minRating?: string,
+    sort?: string,
   ) {
     const skip = (page - 1) * limit;
     const where: Prisma.ProductWhereInput = includeInactive
@@ -37,11 +42,40 @@ export class ProductsService {
       where.category = { slug: { in: slugs } };
     }
 
+    if (q) {
+      where.OR = [{ name: { contains: q } }, { description: { contains: q } }];
+    }
+
+    if (minPrice || maxPrice) {
+      where.price = {};
+      if (minPrice)
+        (where.price as Prisma.DecimalFilter).gte = parseFloat(minPrice);
+      if (maxPrice)
+        (where.price as Prisma.DecimalFilter).lte = parseFloat(maxPrice);
+    }
+
+    if (minRating) {
+      where.avgRating = { gte: parseFloat(minRating) };
+    }
+
+    const orderBy: Prisma.ProductOrderByWithRelationInput =
+      sort === 'price_asc'
+        ? { price: 'asc' }
+        : sort === 'price_desc'
+          ? { price: 'desc' }
+          : sort === 'popular'
+            ? { soldCount: 'desc' }
+            : { createdAt: 'desc' };
+
+    const skipCache = !!(q || minPrice || maxPrice || minRating || sort);
     const cacheKey = `products:page=${page}:limit=${limit}:cat=${categorySlug || 'all'}:inactive=${includeInactive}`;
-    const cachedData = await this.redis.get(cacheKey);
-    if (cachedData) {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-return
-      return JSON.parse(cachedData);
+
+    if (!skipCache) {
+      const cachedData = await this.redis.get(cacheKey);
+      if (cachedData) {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+        return JSON.parse(cachedData);
+      }
     }
 
     const [data, total] = await Promise.all([
@@ -52,7 +86,7 @@ export class ProductsService {
         include: {
           category: true,
         },
-        orderBy: { createdAt: 'desc' },
+        orderBy,
         skip,
         take: Number(limit),
       }),
@@ -69,7 +103,9 @@ export class ProductsService {
       },
     };
 
-    await this.redis.set(cacheKey, JSON.stringify(result), 300); // cache for 5 minutes
+    if (!skipCache) {
+      await this.redis.set(cacheKey, JSON.stringify(result), 300); // cache for 5 minutes
+    }
 
     return result;
   }

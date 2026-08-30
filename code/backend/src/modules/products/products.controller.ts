@@ -30,6 +30,11 @@ export class ProductsController {
     @Query('limit') limit?: string,
     @Query('categorySlug') categorySlug?: string,
     @Query('all') all?: string,
+    @Query('q') q?: string,
+    @Query('minPrice') minPrice?: string,
+    @Query('maxPrice') maxPrice?: string,
+    @Query('minRating') minRating?: string,
+    @Query('sort') sort?: string,
   ) {
     const pageNum = page ? parseInt(page, 10) : 1;
     const limitNum = limit ? parseInt(limit, 10) : 10;
@@ -39,6 +44,11 @@ export class ProductsController {
       limitNum,
       categorySlug,
       includeInactive,
+      q,
+      minPrice,
+      maxPrice,
+      minRating,
+      sort,
     );
   }
 

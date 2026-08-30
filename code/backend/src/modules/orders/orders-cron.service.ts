@@ -74,4 +74,29 @@ export class OrdersCronService {
       this.logger.warn(`Reset stuck refund status for order ${order.id}`);
     }
   }
+
+  @Cron('0 2 * * *') // 2:00 AM every day
+  async cleanupStalePhoneAccounts() {
+    this.logger.debug('Running cleanupStalePhoneAccounts cronjob');
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+
+    // [CASCADE NOTE] UserActivityLog.userId không có onDelete:Cascade
+    // -> khi xóa user, userId của logs sẽ SetNull, dữ liệu RecSys không mất.
+    const staleAccounts = await this.prisma.user.findMany({
+      where: {
+        email: { endsWith: '@placeholder.local' },
+        createdAt: { lt: thirtyDaysAgo },
+        orders: { none: {} },
+      },
+      select: { id: true, phone: true },
+    });
+
+    if (staleAccounts.length === 0) return;
+
+    const ids = staleAccounts.map((u) => u.id);
+    await this.prisma.user.deleteMany({ where: { id: { in: ids } } });
+    this.logger.log(
+      `Deleted ${ids.length} stale phone-only accounts (no orders, >30 days)`,
+    );
+  }
 }

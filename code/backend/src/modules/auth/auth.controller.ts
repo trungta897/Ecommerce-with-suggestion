@@ -9,6 +9,7 @@ import {
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import type { Response } from 'express';
+import { I18nContext, I18nService } from 'nestjs-i18n';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
@@ -18,7 +19,10 @@ import { ResetPasswordDto } from './dto/reset-password.dto';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly i18n: I18nService,
+  ) {}
 
   @Throttle({ default: { limit: 5, ttl: 60000 } })
   @Post('register')
@@ -74,8 +78,11 @@ export class AuthController {
 
   @Post('phone/login')
   async requestPhoneOtp(@Body('phone') phone: string) {
+    const lang = I18nContext.current()?.lang || 'vi';
     if (!phone) {
-      throw new BadRequestException('Số điện thoại là bắt buộc');
+      throw new BadRequestException(
+        this.i18n.t('auth.PHONE_REQUIRED', { lang }),
+      );
     }
     return this.authService.requestPhoneOtp(phone);
   }
@@ -87,8 +94,11 @@ export class AuthController {
     @Body('sessionId') sessionId: string,
     @Res({ passthrough: true }) res: Response,
   ) {
+    const lang = I18nContext.current()?.lang || 'vi';
     if (!phone || !otp) {
-      throw new BadRequestException('Số điện thoại và mã OTP là bắt buộc');
+      throw new BadRequestException(
+        this.i18n.t('auth.PHONE_AND_OTP_REQUIRED', { lang }),
+      );
     }
     const result = await this.authService.verifyPhoneOtp(phone, otp, sessionId);
     if (result?.accessToken) {
