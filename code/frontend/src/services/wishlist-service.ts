@@ -1,5 +1,6 @@
 import { apiClient } from './api-client';
 import { WishlistItem } from '@/types/product';
+import { mapProduct, RawProductResponse } from './product-service';
 
 export interface WishlistToggleResult {
   isWishlisted: boolean;
@@ -11,10 +12,19 @@ export interface WishlistActionResponse {
   message: string;
 }
 
+interface RawWishlistItemResponse extends Omit<WishlistItem, 'product'> {
+  product: RawProductResponse;
+}
+
 export const wishlistService = {
   getWishlist: async (): Promise<WishlistItem[]> => {
-    const { data } = await apiClient.get<WishlistItem[]>('/wishlist');
-    return data;
+    const { data } = await apiClient.get<RawWishlistItemResponse[]>('/wishlist');
+    return Array.isArray(data)
+      ? data.map((item) => ({
+          ...item,
+          product: mapProduct(item.product),
+        }))
+      : [];
   },
 
   getWishlistIds: async (): Promise<string[]> => {

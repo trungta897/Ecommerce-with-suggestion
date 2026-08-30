@@ -53,22 +53,32 @@ const getDescendantSlugs = (slug: string): string[] => {
   return Array.from(slugs);
 };
 
-// Instead of any, we use a structural type that captures what we need from the API response
-interface RawProductResponse extends Omit<Partial<Product>, 'price' | 'discountPrice' | 'images'> {
+export interface RawProductResponse extends Omit<
+  Partial<Product>,
+  'price' | 'discountPrice' | 'images'
+> {
   price?: string | number;
   discountPrice?: string | number;
   images?: unknown;
 }
 
-const mapProduct = (p: RawProductResponse): Product => {
-  const images: ProductImage[] = Array.isArray(p.images) ? (p.images as ProductImage[]) : [];
+export const mapProduct = (p: RawProductResponse): Product => {
+  let images: ProductImage[] = [];
+  if (Array.isArray(p.images)) {
+    images = p.images.map((img) => {
+      if (typeof img === 'string') {
+        return { url: img, variant: 'MAIN', isPrimary: true };
+      }
+      return img as ProductImage;
+    });
+  }
   const mainImage = images.find((img) => img.isPrimary || img.variant === 'MAIN') || images[0];
 
   return {
     ...(p as unknown as Product),
-    price: Number(p.price),
+    price: Number(p.price || 0),
     discountPrice: p.discountPrice ? Number(p.discountPrice) : undefined,
-    thumbnailUrl: mainImage?.url || '/placeholder.png',
+    thumbnailUrl: mainImage?.url || p.thumbnailUrl || '/placeholder.svg',
     images,
   };
 };
@@ -129,4 +139,36 @@ export const productService = {
     const { data } = await apiClient.get('/categories');
     return data;
   },
+
+  getHomeSections: async (slugs?: string[], limit: number = 8): Promise<HomeSection[]> => {
+    const params = new URLSearchParams();
+    if (slugs && slugs.length > 0) {
+      params.append('slugs', slugs.join(','));
+    }
+    params.append('limit', limit.toString());
+
+    const { data } = await apiClient.get<RawHomeSection[]>(
+      `/products/home-sections?${params.toString()}`
+    );
+
+    return Array.isArray(data)
+      ? data.map((section) => ({
+          slug: section.slug,
+          name: section.name,
+          products: Array.isArray(section.products) ? section.products.map(mapProduct) : [],
+        }))
+      : [];
+  },
 };
+
+export interface HomeSection {
+  slug: string;
+  name: string;
+  products: Product[];
+}
+
+interface RawHomeSection {
+  slug: string;
+  name: string;
+  products: RawProductResponse[];
+}

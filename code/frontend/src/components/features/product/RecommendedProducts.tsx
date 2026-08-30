@@ -7,6 +7,8 @@ import { getOrCreateSessionId } from '@/utils/session';
 import ProductCard from '@/components/features/product/ProductCard';
 import { Sparkles } from '@/components/base/icons';
 
+import { activityService } from '@/services/activity-service';
+
 interface RecommendedProductsProps {
   currentProductId?: string;
   limit?: number;
@@ -28,24 +30,17 @@ export const RecommendedProducts: React.FC<RecommendedProductsProps> = ({
     async function fetchRecs() {
       if (typeof window === 'undefined') return;
       const sessionId = getOrCreateSessionId();
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
       setIsLoading(true);
       try {
-        const queryParams = new URLSearchParams();
-        if (sessionId) queryParams.set('sessionId', sessionId);
-        if (currentProductId) queryParams.set('productId', currentProductId);
-        if (limit) queryParams.set('limit', String(limit));
-
-        const res = await fetch(`${apiUrl}/activities/recommendations?${queryParams.toString()}`, {
-          credentials: 'include',
+        const data = await activityService.getRecommendations({
+          sessionId: sessionId || undefined,
+          productId: currentProductId,
+          limit,
         });
 
-        if (res.ok) {
-          const data = await res.json();
-          if (isMounted && Array.isArray(data)) {
-            setProducts(data);
-          }
+        if (isMounted) {
+          setProducts(data);
         }
       } catch (err) {
         console.error('Failed to fetch recommended products:', err);

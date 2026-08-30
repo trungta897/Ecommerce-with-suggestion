@@ -1,5 +1,6 @@
 import { apiClient } from './api-client';
 import { Product } from '@/types/product';
+import { mapProduct, RawProductResponse } from './product-service';
 
 export interface RecommendationParams {
   sessionId?: string;
@@ -9,14 +10,14 @@ export interface RecommendationParams {
 
 export const activityService = {
   getRecommendations: async (params?: RecommendationParams): Promise<Product[]> => {
-    const { data } = await apiClient.get<Product[]>('/activities/recommendations', {
+    const { data } = await apiClient.get<RawProductResponse[]>('/activities/recommendations', {
       params: {
         sessionId: params?.sessionId,
         productId: params?.productId,
         limit: params?.limit || 4,
       },
     });
-    return data;
+    return Array.isArray(data) ? data.map(mapProduct) : [];
   },
 
   logActivity: async (payload: {
@@ -29,10 +30,10 @@ export const activityService = {
   },
 
   getRecentlyViewed: async (sessionId?: string, limit: number = 15): Promise<Product[]> => {
-    const { data } = await apiClient.get<Product[]>('/activities/recently-viewed', {
+    const { data } = await apiClient.get<RawProductResponse[]>('/activities/recently-viewed', {
       params: { sessionId, limit },
     });
-    return data;
+    return Array.isArray(data) ? data.map(mapProduct) : [];
   },
 
   clearRecentlyViewed: async (sessionId?: string): Promise<void> => {

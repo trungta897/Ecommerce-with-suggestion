@@ -56,5 +56,6 @@
   "removeFromWishlist": "Remove from wishlist",
   "wishlistAdded": "Product added to wishlist",
   "wishlistRemoved": "Product removed from wishlist",
-  "requireLoginWishlist": "Please sign in to save your favorite products"
+  "requireLoginWishlist": "Please sign in to save your favorite products",
+  "sold": "Sold {count}"
 }

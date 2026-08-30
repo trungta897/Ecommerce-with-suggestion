@@ -1,5 +1,7 @@
 'use client';
 
+import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import Hero from '@/components/home/Hero';
 import FlashSaleSection from '@/components/home/FlashSaleSection';
 import { Features } from '@/components/home/Features';
@@ -7,93 +9,37 @@ import { Newsletter } from '@/components/home/Newsletter';
 import CategorySection from '@/components/features/product/CategorySection';
 import { RecentlyViewedSlider } from '@/components/features/product/RecentlyViewedSlider';
 import { RecommendedProducts } from '@/components/features/product/RecommendedProducts';
-import { useProducts } from '@/hooks/use-products';
-import { useTranslations } from 'next-intl';
-import { classifyAllProducts } from '@/utils/classify-product';
-import {
-  Laptop,
-  CircuitBoard,
-  Layers,
-  HardDrive,
-  Monitor,
-  TrendingUp,
-} from '@/components/base/icons';
+import { useHomeSections, useProducts } from '@/hooks/use-products';
+import { Laptop, CircuitBoard, Layers, HardDrive, Monitor } from '@/components/base/icons';
 
-import Link from 'next/link';
+const ICON_MAP: Record<string, React.ReactNode> = {
+  laptop: <Laptop className="w-6 h-6" />,
+  'man-hinh': <Monitor className="w-6 h-6" />,
+  'may-tinh-de-ban': <Monitor className="w-6 h-6" />,
+  'o-cung': <HardDrive className="w-6 h-6" />,
+  vga: <CircuitBoard className="w-6 h-6" />,
+  ram: <Layers className="w-6 h-6" />,
+};
+
+const HOME_CATEGORY_SLUGS = ['laptop', 'man-hinh', 'may-tinh-de-ban', 'o-cung', 'vga', 'ram'];
 
 export default function Home() {
   const tCat = useTranslations('home.categories');
-  const tSec = useTranslations('home.sections');
-  const { data: productsResponse, isLoading } = useProducts();
-  const products = productsResponse?.data || [];
 
-  const categoriesMap = classifyAllProducts(products);
+  // Dedicated query to fetch 8 products for each category in parallel with caching
+  const { data: homeSections, isLoading: isSectionsLoading } = useHomeSections(
+    HOME_CATEGORY_SLUGS,
+    8
+  );
 
-  const bestSellers = [...products]
-    .sort((a, b) => (b.reviewCount || 0) - (a.reviewCount || 0))
-    .slice(0, 10);
-
-  const onSale = [...products].filter((p) => p.price > 50 && p.price < 300).slice(0, 10);
-
-  const topSections = [
-    {
-      id: 'best-sellers-section',
-      title: tSec('best_sellers_title'),
-      slug: '',
-      icon: <TrendingUp className="w-6 h-6 text-primary-500" />,
-      products: bestSellers,
-    },
-  ];
-
-  const prominentCategories = [
-    {
-      id: 'laptops-section',
-      title: tCat('laptop'),
-      slug: 'laptop',
-      icon: <Laptop className="w-6 h-6" />,
-      products: categoriesMap['laptop'] || [],
-    },
-    {
-      id: 'monitors-section',
-      title: tCat('man-hinh'),
-      slug: 'man-hinh',
-      icon: <Monitor className="w-6 h-6" />,
-      products: categoriesMap['man-hinh'] || [],
-    },
-    {
-      id: 'desktop-section',
-      title: tCat('may-tinh-de-ban'),
-      slug: 'may-tinh-de-ban',
-      icon: <Monitor className="w-6 h-6" />,
-      products: categoriesMap['may-tinh-de-ban'] || [],
-    },
-    {
-      id: 'storage-section',
-      title: tCat('o-cung'),
-      slug: 'o-cung',
-      icon: <HardDrive className="w-6 h-6" />,
-      products: categoriesMap['o-cung'] || [],
-    },
-    {
-      id: 'cpu-gpu-section',
-      title: tCat('vga'),
-      slug: 'vga',
-      icon: <CircuitBoard className="w-6 h-6" />,
-      products: categoriesMap['vga'] || [],
-    },
-    {
-      id: 'ram-section',
-      title: tCat('ram'),
-      slug: 'ram',
-      icon: <Layers className="w-6 h-6" />,
-      products: categoriesMap['ram'] || [],
-    },
-  ];
-
-  const allSections = [...topSections, ...prominentCategories];
+  // Flash sale products (optional)
+  const { data: productsResponse } = useProducts({ limit: 12 });
+  const onSale = (productsResponse?.data || [])
+    .filter((p) => p.price > 50 && p.price < 300)
+    .slice(0, 6);
 
   return (
-    <div className="flex flex-col gap-6 pb-0 pt-6 bg-[#f4f6f8] min-h-screen">
+    <div className="flex flex-col gap-8 pb-0 pt-6 bg-[#f4f6f8] min-h-screen">
       <Hero />
 
       {/* FLASH SALE SECTION */}
@@ -104,30 +50,34 @@ export default function Home() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <Link
             href="/category/laptop"
-            className="relative h-48 md:h-64 rounded-3xl overflow-hidden group cursor-pointer block"
+            className="relative h-48 md:h-64 rounded-3xl overflow-hidden group cursor-pointer block shadow-sm hover:shadow-md transition-all"
           >
             <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-indigo-900 opacity-90 group-hover:scale-105 transition-transform duration-500"></div>
             <div className="absolute inset-0 p-8 flex flex-col justify-center">
-              <h3 className="text-2xl md:text-3xl font-bold text-white mb-2">Tuần Lễ Laptop</h3>
-              <p className="text-blue-100 mb-4 max-w-xs">
+              <h3 className="text-2xl md:text-3xl font-bold text-white mb-2 font-display">
+                Tuần Lễ Laptop
+              </h3>
+              <p className="text-blue-100 mb-4 max-w-xs text-sm">
                 Giảm thêm 5% cho Học sinh - Sinh viên. Săn ngay deal hot!
               </p>
-              <span className="px-4 py-2 bg-white text-blue-900 rounded-full text-sm font-bold w-fit">
+              <span className="px-4 py-2 bg-white text-blue-900 rounded-full text-sm font-bold w-fit shadow-sm">
                 Mua ngay
               </span>
             </div>
           </Link>
           <Link
             href="/category/vga"
-            className="relative h-48 md:h-64 rounded-3xl overflow-hidden group cursor-pointer block"
+            className="relative h-48 md:h-64 rounded-3xl overflow-hidden group cursor-pointer block shadow-sm hover:shadow-md transition-all"
           >
             <div className="absolute inset-0 bg-gradient-to-r from-red-600 to-orange-500 opacity-90 group-hover:scale-105 transition-transform duration-500"></div>
             <div className="absolute inset-0 p-8 flex flex-col justify-center">
-              <h3 className="text-2xl md:text-3xl font-bold text-white mb-2">Xả Kho Linh Kiện</h3>
-              <p className="text-red-100 mb-4 max-w-xs">
+              <h3 className="text-2xl md:text-3xl font-bold text-white mb-2 font-display">
+                Xả Kho Linh Kiện
+              </h3>
+              <p className="text-red-100 mb-4 max-w-xs text-sm">
                 Build PC giá sốc, tặng ngay màn hình Gaming 144Hz.
               </p>
-              <span className="px-4 py-2 bg-white text-red-900 rounded-full text-sm font-bold w-fit">
+              <span className="px-4 py-2 bg-white text-red-900 rounded-full text-sm font-bold w-fit shadow-sm">
                 Khám phá
               </span>
             </div>
@@ -147,24 +97,36 @@ export default function Home() {
 
       <Features />
 
-      <section className="container mx-auto px-4 lg:px-8 max-w-7xl">
-        {isLoading && (
+      {/* DYNAMIC PARALLEL-FETCHED HOME SECTIONS */}
+      <section className="container mx-auto px-4 lg:px-8 max-w-7xl flex flex-col gap-8">
+        {isSectionsLoading && (
           <div className="flex flex-col gap-8 animate-pulse">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="h-80 bg-paper-2 rounded-2xl w-full" />
+              <div key={i} className="h-96 bg-white/70 rounded-3xl w-full border border-rule/50" />
             ))}
           </div>
         )}
-        {!isLoading &&
-          allSections.map((section) => {
+
+        {!isSectionsLoading &&
+          homeSections &&
+          homeSections.map((section) => {
             if (!section.products || section.products.length === 0) return null;
+
+            let localizedTitle = section.name;
+            try {
+              const tr = tCat(section.slug as Parameters<typeof tCat>[0]);
+              if (tr && !tr.includes('.')) localizedTitle = tr;
+            } catch {
+              localizedTitle = section.name;
+            }
+
             return (
               <CategorySection
-                key={section.id}
-                title={section.title}
+                key={section.slug}
+                title={localizedTitle}
                 categorySlug={section.slug}
                 products={section.products}
-                icon={section.icon}
+                icon={ICON_MAP[section.slug]}
               />
             );
           })}
