@@ -21,4 +21,11 @@
   - [x] Xóa tài khoản Guest và giỏ hàng rỗng sau 7 ngày
   - [x] Giải phóng tồn kho và suất Flash Sale bị kẹt từ các đơn `pending_payment` quá hạn 30 phút
 
+- [x] **5. Full-stack Wishlist, Profile AI Recommendations & UI Polish**
+  - [x] Backend Module Wishlist (`WishlistModule`, `GET /wishlist`, `GET /wishlist/ids`, `POST /wishlist/:productId`, `DELETE /wishlist/:productId`)
+  - [x] Frontend Wishlist Hook & State: `useWishlist`, `useWishlistIds`, `useToggleWishlist` tối ưu O(1) query cache
+  - [x] Nút Heart trên `ProductCard` tích hợp toggle Wishlist với optimistic update
+  - [x] Tab Yêu thích và Gợi ý AI trang Profile (`/profile`) render danh sách sản phẩm thật kèm fallback DB
+  - [x] Form Newsletter client-side validation và chuẩn hóa đa ngôn ngữ i18n toàn diện
+
 
