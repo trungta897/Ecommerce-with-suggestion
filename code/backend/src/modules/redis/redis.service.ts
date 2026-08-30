@@ -24,6 +24,21 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
+  async setNx(
+    key: string,
+    value: string,
+    ttlSeconds: number,
+  ): Promise<boolean> {
+    const result = await this.redisClient.set(
+      key,
+      value,
+      'EX',
+      ttlSeconds,
+      'NX',
+    );
+    return result === 'OK';
+  }
+
   async get(key: string): Promise<string | null> {
     return this.redisClient.get(key);
   }
@@ -33,9 +48,33 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
   }
 
   async deletePattern(pattern: string): Promise<void> {
-    const keys = await this.redisClient.keys(pattern);
-    if (keys.length > 0) {
-      await this.redisClient.del(...keys);
+    const stream = this.redisClient.scanStream({
+      match: pattern,
+      count: 100,
+    });
+
+    const keysToDelete: string[] = [];
+
+    stream.on('data', (resultKeys: string[]) => {
+      for (const k of resultKeys) {
+        keysToDelete.push(k);
+      }
+    });
+
+    await new Promise<void>((resolve, reject) => {
+      stream.on('end', () => {
+        resolve();
+      });
+      stream.on('error', (err: unknown) => {
+        reject(err instanceof Error ? err : new Error(String(err)));
+      });
+    });
+
+    if (keysToDelete.length > 0) {
+      for (let i = 0; i < keysToDelete.length; i += 50) {
+        const chunk = keysToDelete.slice(i, i + 50);
+        await this.redisClient.del(...chunk);
+      }
     }
   }
 

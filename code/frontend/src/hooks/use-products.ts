@@ -31,3 +31,11 @@ export function useCategories() {
     queryFn: productService.getCategories,
   });
 }
+
+export function useHomeSections(slugs?: string[], limit: number = 8) {
+  return useQuery({
+    queryKey: ['products', 'home-sections', slugs, limit],
+    queryFn: () => productService.getHomeSections(slugs, limit),
+    staleTime: 1000 * 60 * 2, // 2 minutes
+  });
+}

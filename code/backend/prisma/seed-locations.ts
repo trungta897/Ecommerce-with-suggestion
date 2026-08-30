@@ -1,133 +1,68 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call */
 import { PrismaClient } from '@prisma/client';
+import { PROVINCE_MERGED_FROM_MAP } from '../src/common/constants/province-merge.constant';
 
 const prisma = new PrismaClient() as any;
 
 interface RawWard {
-  code: string | number;
-  name: string;
-  name_with_type?: string;
-  parent_code?: string;
-}
-
-interface RawDistrict {
-  code: string | number;
-  name: string;
-  name_with_type?: string;
-  parent_code?: string;
-  wards?: RawWard[];
+  Code: string;
+  Name: string;
+  NameEn?: string;
+  FullName: string;
+  FullNameEn?: string;
+  CodeName?: string;
+  ProvinceCode: string;
 }
 
 interface RawProvince {
-  code: string | number;
-  name: string;
-  name_with_type?: string;
-  districts?: RawDistrict[];
+  Code: string;
+  Name: string;
+  NameEn?: string;
+  FullName: string;
+  FullNameEn?: string;
+  CodeName?: string;
+  Wards?: RawWard[];
 }
 
-const PRIMARY_URL = 'https://provinces.open-api.vn/api/?depth=3';
-const BACKUP_URL =
-  'https://raw.githubusercontent.com/madnh/vietnam-provinces/master/data.json';
+const PROVINCES_JSON_URL =
+  'https://raw.githubusercontent.com/ThangLeQuoc/vietnamese-provinces-database/master/json/simplified_json_generated_data_vn_units.json';
+const BANDO_SQL_URL =
+  'https://raw.githubusercontent.com/ThangLeQuoc/vietnamese-provinces-database/master/dataset-generation-scripts/bando_co_dvch.sql';
 
-function getRegion(provinceName: string): 'NORTH' | 'CENTRAL' | 'SOUTH' {
-  const northProvinces = [
-    'Hà Nội',
-    'Hà Giang',
-    'Cao Bằng',
-    'Bắc Kạn',
-    'Tuyên Quang',
-    'Lào Cai',
-    'Điện Biên',
-    'Lai Châu',
-    'Sơn La',
-    'Yên Bái',
-    'Hoà Bình',
-    'Thái Nguyên',
-    'Lạng Sơn',
-    'Quảng Ninh',
-    'Bắc Giang',
-    'Phú Thọ',
-    'Vĩnh Phúc',
-    'Bắc Ninh',
-    'Hải Dương',
-    'Hải Phòng',
-    'Hưng Yên',
-    'Thái Bình',
-    'Hà Nam',
-    'Nam Định',
-    'Ninh Bình',
+function getRegion(code: string): 'NORTH' | 'CENTRAL' | 'SOUTH' {
+  const northCodes = [
+    '01',
+    '04',
+    '08',
+    '11',
+    '12',
+    '14',
+    '15',
+    '19',
+    '20',
+    '22',
+    '24',
+    '25',
+    '31',
+    '33',
+    '37',
   ];
-  const centralProvinces = [
-    'Thanh Hóa',
-    'Nghệ An',
-    'Hà Tĩnh',
-    'Quảng Bình',
-    'Quảng Trị',
-    'Thừa Thiên Huế',
-    'Đà Nẵng',
-    'Quảng Nam',
-    'Quảng Ngãi',
-    'Bình Định',
-    'Phú Yên',
-    'Khánh Hòa',
-    'Ninh Thuận',
-    'Bình Thuận',
-    'Kon Tum',
-    'Gia Lai',
-    'Đắk Lắk',
-    'Đắk Nông',
-    'Lâm Đồng',
+  const centralCodes = [
+    '38',
+    '40',
+    '42',
+    '44',
+    '46',
+    '48',
+    '51',
+    '52',
+    '56',
+    '66',
+    '68',
   ];
-  const southProvinces = [
-    'Bình Phước',
-    'Tây Ninh',
-    'Bình Dương',
-    'Đồng Nai',
-    'Bà Rịa - Vũng Tàu',
-    'Hồ Chí Minh',
-    'Long An',
-    'Tiền Giang',
-    'Bến Tre',
-    'Trà Vinh',
-    'Vĩnh Long',
-    'Đồng Tháp',
-    'An Giang',
-    'Kiên Giang',
-    'Cần Thơ',
-    'Hậu Giang',
-    'Sóc Trăng',
-    'Bạc Liêu',
-    'Cà Mau',
-  ];
-
-  const normalized = provinceName.replace(/Tỉnh |Thành phố /g, '');
-  if (northProvinces.some((p) => normalized.includes(p))) return 'NORTH';
-  if (centralProvinces.some((p) => normalized.includes(p))) return 'CENTRAL';
-  if (southProvinces.some((p) => normalized.includes(p))) return 'SOUTH';
-  return 'NORTH';
-}
-
-async function fetchProvincesData(): Promise<RawProvince[]> {
-  console.log('📡 Đang tải bộ dữ liệu Hành chính Việt Nam từ internet...');
-  try {
-    const res = await fetch(PRIMARY_URL);
-    if (!res.ok) throw new Error(`HTTP Error ${res.status} tại Primary URL`);
-    const data = (await res.json()) as RawProvince[];
-    console.log('✅ Đã tải thành công từ nguồn chính (GitHub Raw).');
-    return data;
-  } catch (error: unknown) {
-    const errMsg = error instanceof Error ? error.message : String(error);
-    console.warn(`⚠️ Lỗi nguồn chính (${errMsg}). Thử nguồn CDN dự phòng...`);
-    const backupRes = await fetch(BACKUP_URL);
-    if (!backupRes.ok) {
-      throw new Error(
-        `Lỗi tải cả 2 nguồn (HTTP ${backupRes.status}). Vui lòng kiểm tra lại mạng.`,
-      );
-    }
-    const backupData = (await backupRes.json()) as RawProvince[];
-    console.log('✅ Đã tải thành công từ nguồn CDN Dự phòng (JsDelivr).');
-    return backupData;
-  }
+  if (northCodes.includes(code)) return 'NORTH';
+  if (centralCodes.includes(code)) return 'CENTRAL';
+  return 'SOUTH';
 }
 
 function chunkArray<T>(array: T[], size: number): T[][] {
@@ -138,47 +73,97 @@ function chunkArray<T>(array: T[], size: number): T[][] {
   return result;
 }
 
+async function fetchWardMergedMap(): Promise<Map<string, string>> {
+  const map = new Map<string, string>();
+  try {
+    console.log(
+      '📡 Đang tải thông tin sáp nhập cấp xã/phường (bando_co_dvch.sql)...',
+    );
+    const res = await fetch(BANDO_SQL_URL);
+    if (!res.ok) throw new Error(`HTTP Error ${res.status}`);
+    const text = await res.text();
+    const lines = text.split('\n');
+    for (const line of lines) {
+      const match = line.match(
+        /\('([^']+)',\s*'([^']+)',\s*(NULL|'[^']+'),\s*'([^']+)',\s*'([^']+)'\)/,
+      );
+      if (match) {
+        const [, ma, ten, , , truocsapnhap] = match;
+        if (
+          ma.startsWith('xa') &&
+          truocsapnhap &&
+          truocsapnhap !== 'giữ nguyên'
+        ) {
+          map.set(ten.toLowerCase().trim(), truocsapnhap.trim());
+        }
+      }
+    }
+    console.log(`✅ Đã nạp ${map.size} thông tin sáp nhập phường/xã.`);
+  } catch (err) {
+    console.warn(
+      '⚠️ Không thể tải bando_co_dvch.sql, tiếp tục không có thông tin sáp nhập chi tiết cho xã/phường:',
+      err,
+    );
+  }
+  return map;
+}
+
 async function main() {
-  console.log('🚀 Bắt đầu quá trình seed đơn vị hành chính Việt Nam...');
+  console.log(
+    '🚀 Bắt đầu quá trình seed đơn vị hành chính Việt Nam (Mốc 2026 - 34 Tỉnh/Thành)...',
+  );
   const startTime = Date.now();
 
-  const rawData = await fetchProvincesData();
+  console.log(
+    '📡 Đang tải bộ dữ liệu 34 Tỉnh thành từ vietnamese-provinces-database...',
+  );
+  const res = await fetch(PROVINCES_JSON_URL);
+  if (!res.ok) {
+    throw new Error(`Lỗi tải dữ liệu JSON (HTTP ${res.status})`);
+  }
+  const rawProvinces = (await res.json()) as RawProvince[];
+  const wardMergedMap = await fetchWardMergedMap();
 
   const provincesData: {
     id: string;
     name: string;
     fullName: string;
     region: 'NORTH' | 'CENTRAL' | 'SOUTH';
+    mergedFrom: string | null;
   }[] = [];
+
   const wardsData: {
     id: string;
     provinceId: string;
     name: string;
     fullName: string;
-    mergedFrom: string;
+    mergedFrom: string | null;
   }[] = [];
 
-  for (const p of rawData) {
+  for (const p of rawProvinces) {
+    const provinceMerged = PROVINCE_MERGED_FROM_MAP[p.Code] || null;
     provincesData.push({
-      id: String(p.code),
-      name: p.name,
-      fullName: p.name_with_type || p.name,
-      region: getRegion(p.name),
+      id: p.Code,
+      name: p.Name,
+      fullName: p.FullName,
+      region: getRegion(p.Code),
+      mergedFrom: provinceMerged || null,
     });
 
-    if (p.districts && Array.isArray(p.districts)) {
-      for (const d of p.districts) {
-        if (d.wards && Array.isArray(d.wards)) {
-          for (const w of d.wards) {
-            wardsData.push({
-              id: String(w.code),
-              provinceId: String(p.code),
-              name: w.name,
-              fullName: w.name_with_type || w.name,
-              mergedFrom: d.name_with_type || d.name,
-            });
-          }
-        }
+    if (p.Wards && Array.isArray(p.Wards)) {
+      for (const w of p.Wards) {
+        const keyFullName = w.FullName.toLowerCase().trim();
+        const keyName = w.Name.toLowerCase().trim();
+        const wardMerged =
+          wardMergedMap.get(keyFullName) || wardMergedMap.get(keyName) || null;
+
+        wardsData.push({
+          id: w.Code,
+          provinceId: p.Code,
+          name: w.Name,
+          fullName: w.FullName,
+          mergedFrom: wardMerged,
+        });
       }
     }
   }
@@ -193,7 +178,7 @@ async function main() {
   await prisma.$executeRawUnsafe('TRUNCATE TABLE provinces;');
   await prisma.$executeRawUnsafe('SET FOREIGN_KEY_CHECKS=1;');
 
-  console.log('⏳ Đang nạp bảng Province (Tỉnh/Thành phố)...');
+  console.log('⏳ Đang nạp bảng Province (34 Tỉnh/Thành phố)...');
   await prisma.province.createMany({
     data: provincesData,
     skipDuplicates: true,
@@ -215,13 +200,13 @@ async function main() {
   console.log('\n✅ Đã nạp xong toàn bộ bảng Ward!');
 
   const duration = ((Date.now() - startTime) / 1000).toFixed(2);
-  const doneMsg = `🎉 Hoàn tất seed dữ liệu hành chính trong ${duration}s!`;
+  const doneMsg = `🎉 Hoàn tất seed dữ liệu hành chính 2026 trong ${duration}s!`;
   console.log(doneMsg);
 }
 
 main()
   .catch((e) => {
-    console.error('❌ Lỗi nghiệm trọng khi seed đơn vị hành chính:', e);
+    console.error('❌ Lỗi nghiêm trọng khi seed đơn vị hành chính:', e);
     process.exit(1);
   })
   .finally(async () => {

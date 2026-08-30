@@ -68,8 +68,16 @@ export default function CheckoutPage() {
         phone: prev.phone || user.phone || '',
         address: prev.address || user.address || '',
       }));
+      // [PARTIAL] Chỉ điền field street. Province/Ward cần chọn lại tay.
+      // Known Limitation: Profile chưa lưu provinceId/wardId có cấu trúc.
+      if (user.address && !addressDetails.street) {
+        setAddressDetails((prev) => ({
+          ...prev,
+          street: user.address || '',
+        }));
+      }
     }
-  }, [isAuthenticated, user]);
+  }, [isAuthenticated, user, addressDetails.street]);
 
   // Voucher State
   const [voucherCode, setVoucherCode] = useState('');
@@ -102,9 +110,7 @@ export default function CheckoutPage() {
     0
   );
 
-  const hasAddress = !!addressDetails.provinceName;
-  const shippingFee =
-    deliveryMethod === 'pickup' ? 0 : hasAddress ? (deliveryMethod === 'express' ? 2 : 0) : 0;
+  const shippingFee = deliveryMethod === 'express' ? 2 : 0;
 
   let vipDiscount = 0;
   if (useVipPoints && user && user.vipPoints) {
@@ -152,8 +158,8 @@ export default function CheckoutPage() {
         }
       } else if (deliveryMethod === 'pickup') {
         if (!shippingData.pickupTime) {
-          newErrors.pickupTime = 'Vui lòng chọn thời gian lấy hàng';
-          toast.error('Vui lòng chọn thời gian lấy hàng', t('toast.orderErrorTitle'));
+          newErrors.pickupTime = t('validation.pickupTimeRequired');
+          toast.error(t('validation.pickupTimeRequired'), t('toast.orderErrorTitle'));
           hasError = true;
         }
       }
@@ -204,12 +210,17 @@ export default function CheckoutPage() {
         order = await orderService.createGuestOrder(body);
       }
 
+      if (!order) {
+        throw new Error('Không thể tạo đơn hàng');
+      }
+
       if (order.paymentMethod === 'COD') {
         toast.success(t('toast.orderSuccessMessage'), t('toast.orderSuccessTitle'));
         setOrderPlaced(true);
         clearCart();
       } else if (order.paymentMethod === 'VNPAY') {
         const { orderUrl } = await paymentService.createVnPayOrder(order.id);
+        clearCart();
         window.location.href = orderUrl;
       }
     } catch (error) {
@@ -268,9 +279,18 @@ export default function CheckoutPage() {
 
       <CheckoutSteps currentStep={currentStep} />
 
-      <div className="flex flex-col lg:flex-row gap-8">
+      <div className="w-full">
+        {/* Order Summary on Top */}
+        <OrderSummarySidebar
+          subtotal={subtotal}
+          shippingFee={shippingFee}
+          discount={discount}
+          total={total}
+          isDepositRequired={deliveryMethod !== 'pickup' && subtotal < 8}
+        />
+
         {/* Form Area */}
-        <div className="flex-1">
+        <div>
           {currentStep === 0 && !isAuthenticated && (
             <div className="bg-primary/5 border border-primary/20 text-primary p-4 rounded-xl mb-6 flex justify-between items-center shadow-sm">
               <span className="text-sm font-medium">
@@ -287,7 +307,6 @@ export default function CheckoutPage() {
           {currentStep === 0 && (
             <ShippingForm
               shippingData={shippingData}
-              addressDetails={addressDetails}
               deliveryMethod={deliveryMethod}
               errors={errors}
               onShippingDataChange={setShippingData}
@@ -305,6 +324,12 @@ export default function CheckoutPage() {
               appliedVoucher={appliedVoucher}
               subtotal={subtotal}
               phone={shippingData.phone || ''}
+              cartItems={cartProducts.map((i) => ({
+                productId: i.productId,
+                quantity: i.quantity,
+                price: getProductPrice(i.product),
+                categoryId: i.product?.categoryId,
+              }))}
               onPaymentMethodChange={setPaymentMethod}
               onVoucherCodeChange={setVoucherCode}
               onDiscountChange={setDiscount}
@@ -340,15 +365,6 @@ export default function CheckoutPage() {
             )}
           </div>
         </div>
-
-        {/* Order Summary Sidebar */}
-        <OrderSummarySidebar
-          subtotal={subtotal}
-          shippingFee={shippingFee}
-          discount={discount}
-          total={total}
-          isDepositRequired={deliveryMethod !== 'pickup' && subtotal < 200000}
-        />
       </div>
     </div>
   );

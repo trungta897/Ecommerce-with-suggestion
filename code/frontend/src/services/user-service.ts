@@ -12,12 +12,14 @@ export const userService = {
   },
 
   // Admin Endpoints
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   getAllUsers: async (
     page = 1,
     limit = 10,
     role?: string
-  ): Promise<{ data: User[]; meta: any }> => {
+  ): Promise<{
+    data: User[];
+    meta: { totalPages: number; totalItems?: number; page?: number; limit?: number };
+  }> => {
     const { data } = await apiClient.get('/admin/users', { params: { page, limit, role } });
     return data;
   },

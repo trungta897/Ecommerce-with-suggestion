@@ -1,9 +1,12 @@
 'use client';
 
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { ShoppingCart, User, Menu, Sparkles } from '@/components/base/icons';
 import { useCart } from '@/hooks/use-cart';
+import { useAuthStore } from '@/store';
 import { HEADER_SUGGESTED_KEYWORDS } from '@/constants';
 
 export function Header() {
@@ -11,9 +14,17 @@ export function Header() {
   const tCommon = useTranslations('common');
   const { getTotalItems } = useCart();
   const totalItems = getTotalItems();
+  const { isAuthenticated } = useAuthStore();
+  const router = useRouter();
+  const [searchQuery, setSearchQuery] = useState('');
 
-  // Tạm thời mock trạng thái đăng nhập. Sau này sẽ thay bằng hook useAuth() hoặc Zustand store.
-  const isLoggedIn = false;
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    const trimmed = searchQuery.trim();
+    if (trimmed) {
+      router.push(`/search?q=${encodeURIComponent(trimmed)}`);
+    }
+  };
 
   return (
     <header className="w-full bg-white border-b border-rule">
@@ -24,9 +35,7 @@ export function Header() {
             <p className="text-sm font-medium text-primary-foreground">{t('promo_text')}</p>
           </div>
           <div className="flex items-center gap-4">
-            <span className="text-sm font-medium text-primary-foreground">
-              Hotline: 1900 6868
-            </span>
+            <span className="text-sm font-medium text-primary-foreground">Hotline: 1900 6868</span>
             <span className="text-sm font-medium text-primary-foreground hidden sm:inline">
               Email: support@datn.com
             </span>
@@ -47,23 +56,28 @@ export function Header() {
 
           {/* Search Bar (Desktop) */}
           <div className="hidden lg:flex flex-1 max-w-3xl mx-8 flex-col">
-            <div className="relative group w-full">
+            <form onSubmit={handleSearch} className="relative group w-full">
               <div className="absolute -inset-0.5 bg-gradient-ai rounded-full blur opacity-25 group-hover:opacity-40 transition duration-300"></div>
               <input
                 type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder={t('ai_search')}
                 className="relative w-full rounded-full border border-rule bg-paper-1 py-2.5 pl-5 pr-12 text-sm focus:border-primary focus:outline-none shadow-sm transition-all"
               />
-              <button className="absolute right-1.5 top-1/2 -translate-y-1/2 bg-primary text-white p-1.5 rounded-full hover:bg-primary/90 transition-colors flex items-center justify-center">
+              <button
+                type="submit"
+                className="absolute right-1.5 top-1/2 -translate-y-1/2 bg-primary text-white p-1.5 rounded-full hover:bg-primary/90 transition-colors flex items-center justify-center"
+              >
                 <Sparkles className="h-4 w-4" />
               </button>
-            </div>
+            </form>
             {/* Suggested Keywords */}
             <div className="flex items-center gap-4 px-3 mt-2">
               {HEADER_SUGGESTED_KEYWORDS.map((kw) => (
                 <Link
                   key={kw}
-                  href={`/search?q=${kw}`}
+                  href={`/search?q=${encodeURIComponent(kw)}`}
                   className="text-xs font-medium text-ink-2 hover:text-primary transition-colors whitespace-nowrap"
                 >
                   {kw}
@@ -75,11 +89,11 @@ export function Header() {
           {/* Action Icons */}
           <div className="flex items-center gap-3">
             <Link
-              href={isLoggedIn ? '/profile' : '/login'}
+              href={isAuthenticated ? '/profile' : '/login'}
               className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium text-ink-2 hover:bg-paper-2 hover:text-primary transition-colors hidden sm:flex"
             >
               <User className="h-5 w-5" />
-              <span>{isLoggedIn ? t('account') : t('sign_in')}</span>
+              <span>{isAuthenticated ? t('account') : t('sign_in')}</span>
             </Link>
 
             <Link

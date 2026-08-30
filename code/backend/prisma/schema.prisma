@@ -55,6 +55,7 @@ model Category {
   parent      Category?  @relation("CategoryToSub", fields: [parentId], references: [id])
   children    Category[] @relation("CategoryToSub")
   products    Product[]
+  vouchers    Voucher[]
 
   @@index([parentId], map: "categories_parentId_fkey")
   @@map("categories")
@@ -89,9 +90,14 @@ model Product {
   reviews          Review[]
   activityLogs     UserActivityLog[]
   wishlists        Wishlist[]
+  vouchers         Voucher[]
+  discounts        ProductDiscount[]
 
   @@index([categoryId])
   @@index([brand])
+  @@index([soldCount])
+  @@index([viewCount])
+  @@index([categoryId, isActive, soldCount])
   @@map("products")
 }
 
@@ -155,6 +161,7 @@ model Order {
   voucher            Voucher?           @relation(fields: [voucherId], references: [id])
   voucherUsage       UserVoucherUsage[]
 
+  @@index([shippingPhone])
   @@index([userId], map: "orders_userId_fkey")
   @@index([voucherId], map: "orders_voucherId_fkey")
   @@map("orders")
@@ -164,50 +171,80 @@ model Voucher {
   id            String             @id @default(uuid())
   code          String             @unique
   type          VoucherType
+  scope         VoucherScope       @default(CART)
   value         Decimal            @db.Decimal(12, 2)
   minOrderValue Decimal            @default(0.00) @db.Decimal(12, 2)
   maxDiscount   Decimal?           @db.Decimal(12, 2)
   usageLimit    Int?
   usedCount     Int                @default(0)
+  perUserLimit  Int                @default(1)
+  isPublic      Boolean            @default(true)
   startDate     DateTime
   endDate       DateTime
   isActive      Boolean            @default(true)
+  categoryId    String?
+  productId     String?
   createdAt     DateTime           @default(now())
+  category      Category?          @relation(fields: [categoryId], references: [id])
+  product       Product?           @relation(fields: [productId], references: [id])
   orders        Order[]
   usages        UserVoucherUsage[]
 
+  @@index([categoryId])
+  @@index([productId])
   @@map("vouchers")
 }
 
 model UserVoucherUsage {
   id        String   @id @default(uuid())
-  userId    String
+  userId    String?
   voucherId String
   orderId   String
   usedAt    DateTime @default(now())
-  order     Order    @relation(fields: [orderId], references: [id])
-  user      User     @relation(fields: [userId], references: [id])
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  user      User?    @relation(fields: [userId], references: [id])
   voucher   Voucher  @relation(fields: [voucherId], references: [id])
 
-  @@unique([userId, voucherId, orderId])
+  @@index([userId, voucherId])
   @@index([orderId], map: "user_voucher_usage_orderId_fkey")
   @@index([voucherId], map: "user_voucher_usage_voucherId_fkey")
   @@map("user_voucher_usage")
 }
 
 model OrderItem {
-  id        String  @id @default(uuid())
-  orderId   String
-  productId String
-  quantity  Int
-  unitPrice Decimal @db.Decimal(12, 2)
-  subtotal  Decimal @db.Decimal(12, 2)
-  order     Order   @relation(fields: [orderId], references: [id])
-  product   Product @relation(fields: [productId], references: [id])
+  id                String           @id @default(uuid())
+  orderId           String
+  productId         String
+  productDiscountId String?
+  quantity          Int
+  unitPrice         Decimal          @db.Decimal(12, 2)
+  subtotal          Decimal          @db.Decimal(12, 2)
+  order             Order            @relation(fields: [orderId], references: [id])
+  product           Product          @relation(fields: [productId], references: [id])
+  productDiscount   ProductDiscount? @relation(fields: [productDiscountId], references: [id])
 
   @@index([orderId], map: "order_items_orderId_fkey")
   @@index([productId], map: "order_items_productId_fkey")
+  @@index([productDiscountId], map: "order_items_productDiscountId_fkey")
   @@map("order_items")
+}
+
+model ProductDiscount {
+  id            String      @id @default(uuid())
+  productId     String      // Không @unique: cho phép lên lịch nhiều đợt tương lai
+  discountPrice Decimal     @db.Decimal(12, 2)
+  flashSaleQty  Int         // Tổng số suất flash sale mở bán
+  flashSaleSold Int         @default(0) // Số suất đã được giữ/bán
+  startDate     DateTime
+  endDate       DateTime
+  isActive      Boolean     @default(true)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  product       Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
+  orderItems    OrderItem[]
+
+  @@index([productId, isActive]) // Partial index: hỗ trợ query tìm đợt active theo sản phẩm
+  @@map("product_discounts")
 }
 
 model Review {
@@ -338,6 +375,12 @@ enum VoucherType {
   PERCENTAGE
   FIXED_AMOUNT
   FREE_SHIPPING
+}
+
+enum VoucherScope {
+  CART
+  CATEGORY
+  PRODUCT
 }
 
 enum EmailStatus {

@@ -18,21 +18,26 @@
 ## No Hardcode Text & i18n Mandate
 
 **Rule**: Tuyệt đối KHÔNG viết cứng (hardcode) text (Tiếng Việt/Tiếng Anh) trực tiếp vào trong các file source code (cả Frontend `.tsx` lẫn Backend `.ts`).
+
 - **Frontend (Next.js)**: Mọi text hiển thị trên UI bắt buộc phải khai báo trong `src/messages/` và gọi qua `useTranslations()`.
 - **Backend (NestJS)**: Mọi thông báo lỗi (Error messages, Validation) trả về qua API cũng bắt buộc phải sử dụng đa ngôn ngữ (ví dụ: `nestjs-i18n`) thay vì ném exception kèm chuỗi string cứng.
 
 ## i18n Synchronization & Lowercase Mandate
 
 **Rule**: BẮT BUỘC sử dụng chữ thường (lowercase) cho tất cả các namespace (ví dụ: `common`, `home`, `product`) trong thư mục `messages/` cũng như khi khai báo cấu hình.
+
 - Khi tạo mới một file JSON từ điển (ví dụ: `auth.json`), Agent **BẮT BUỘC** phải tự động đăng ký namespace đó vào file cấu hình (ví dụ: `src/i18n/request.ts` ở Frontend) bằng đúng khóa lowercase TRƯỚC KHI sử dụng nó trong các component để tránh lỗi "Could not resolve message".
+
 ## Modularization Mandate
 
 **Rule**: Bắt buộc phải chia nhỏ code và các file tài nguyên dịch thuật thành nhiều modules nhỏ độc lập theo từng tính năng (ví dụ: `common`, `auth`, `product`) áp dụng cho CẢ Frontend và Backend.
+
 - Không được nhồi nhét tất cả vào một file khổng lồ duy nhất, để đảm bảo hệ thống dễ dàng quản lý, mở rộng và bảo trì sau này.
 
 ## UI Assets & Icons Separation Mandate
 
 **Rule**: Bắt buộc phải quản lý các tài nguyên đồ họa (Icons, Images) một cách tách biệt và rành mạch.
+
 - Tuyệt đối không để file hình ảnh hoặc icon lộn xộn trong thư mục `components` hoặc các thư mục logic khác.
 - File tĩnh (như `.svg`, `.png`) bắt buộc đặt tại thư mục riêng biệt như `src/assets/icons/`.
 - Nếu chuyển đổi Icon thành React Component (`<IconName />`), hoặc trích xuất từ inline SVG, thì phải gom tập trung tất cả vào thư mục `src/components/base/icons/`.
@@ -41,30 +46,35 @@
 ## Eager Loading & Database Performance Mandate
 
 **Rule**: Bắt buộc phải áp dụng **Eager Loading** (thông qua thuộc tính `include` của Prisma) khi thực hiện truy vấn các thực thể (entities) có quan hệ với nhau (ví dụ: truy vấn Product phải lấy kèm Category, truy vấn Order phải lấy kèm OrderItems và User) nhằm triệt để ngăn chặn lỗi **N+1 Query** ảnh hưởng đến hiệu năng hệ thống.
+
 - Việc sử dụng `include` phải được khai báo rõ ràng, cụ thể tại từng hàm truy vấn trong tầng Service hoặc Repository.
 - Tránh lạm dụng Eager Loading đối với những dữ liệu quan hệ không cần thiết cho mục đích của API hiện tại (chẳng hạn không lấy kèm danh sách Review khi chỉ cần hiển thị danh sách Product ở trang chủ).
 
 ## Security & SQL Injection Prevention Mandate
 
 **Rule**: Tuyệt đối KHÔNG ĐƯỢC tự ý nối chuỗi (string concatenation) khi thực thi các câu truy vấn thô (Raw SQL) bằng Prisma (ví dụ: `prisma.$queryRaw`) để phòng chống lỗ hổng **SQL Injection**.
+
 - Mặc định phải ưu tiên sử dụng các method API an toàn có sẵn của Prisma (`findMany`, `findUnique`, `create`...).
 - Trong trường hợp bất khả kháng phải viết Raw SQL, **BẮT BUỘC** phải sử dụng Parameterized Queries (dùng Prepared Statements với biến số) thay vì chèn trực tiếp dữ liệu từ request của User vào câu lệnh.
 
 ## Pub/Sub & Decoupling Mandate
 
 **Rule**: Bắt buộc sử dụng mô hình **Pub/Sub** (ví dụ thông qua `@nestjs/event-emitter`) cho các tác vụ bất đồng bộ hoặc các logic phụ chạy ngầm (như gửi email, thông báo, ghi log thống kê) nhằm giảm độ kết dính (decoupling) giữa các module.
-- Tuyệt đối không gọi trực tiếp các service phụ từ service chính (ví dụ: cấm gọi `EmailService.send()` trực tiếp bên trong `OrderService.create()`). 
+
+- Tuyệt đối không gọi trực tiếp các service phụ từ service chính (ví dụ: cấm gọi `EmailService.send()` trực tiếp bên trong `OrderService.create()`).
 - Thay vào đó, service chính chỉ phát ra một sự kiện (ví dụ: `order.created`) để các Subscriber tương ứng tự động lắng nghe và xử lý độc lập.
 
 ## Sprint Backlogs Update Mandate
 
 **Rule**: Bắt buộc phải tự động cập nhật tiến độ vào các file backlog của sprint tương ứng (ví dụ: \docs/backlogs/sprintX/tasks.md\) mỗi khi hoàn thành xong một task.
+
 - Tìm kiếm đúng file backlog của sprint hiện tại và đánh dấu \[x]\ vào các công việc vừa được thực hiện xong.
 - Việc này phải diễn ra tự động mà không cần User phải nhắc nhở thêm.
 
 ## Constants Separation & No Magic Strings Mandate
 
 **Rule**: Tuyệt đối KHÔNG gộp các khai báo hằng số (constants), danh sách cố định (arrays, option lists), hay bản đồ cấu hình tĩnh (static maps/dictionaries/default strings) vào bên trong các thư mục hoặc file xử lý logic như `src/utils/`, `src/services/` hoặc `src/components/`.
+
 - **Frontend (Next.js)**: Tất cả hằng số dùng chung bắt buộc phải được định nghĩa tại thư mục `src/constants/` (phân lập theo từng module riêng, ví dụ: `src/constants/product.ts`) và được quản lý/re-export thông qua file index (`src/constants/index.ts`).
 - **Backend (NestJS)**: Mọi hằng số chung (Mã lỗi, giá trị cấu hình mặc định, regex...) bắt buộc lưu tại `src/common/constants/` hoặc các file `.constant.ts` thuộc từng module chuyên biệt.
 - **Single Source of Truth & Dynamic Logic**: Các hàm tiện ích và service xử lý logic (tại `utils/` hay `services/`) chỉ được phép import hằng số từ thư mục `constants` để tính toán động (ví dụ: dùng `.reduce()` hay `.map()` từ mảng hằng số), tuyệt đối không định nghĩa lại hay hardcode các giá trị chuỗi/số (magic string / magic number) ngay bên trong code logic.
@@ -76,6 +86,7 @@
 ## Pre-Commit Summary Mandate
 
 **Rule**: Bắt buộc tạo một bản tổng kết (summary) những thay đổi so với commit trước đó, TRƯỚC KHI thực hiện lệnh commit lên GitHub.
+
 - Bản tổng kết này phải được lưu vào một file nằm trong thư mục `summary/` của dự án.
 - Tên file tổng kết nên chứa timestamp hoặc thông tin commit (ví dụ: `summary_YYYYMMDD_HHMMSS.md`).
 - Nội dung tóm tắt rõ ràng các file đã sửa đổi, tính năng đã thêm hoặc lỗi đã sửa để tiện theo dõi.
@@ -84,9 +95,41 @@
 ## Code Formatting & Type Safety Mandate
 
 **Rule**: Tuyệt đối tránh các lỗi liên quan đến dư thừa khoảng trắng (trailing spaces) hoặc ép kiểu không cần thiết (unnecessary type assertions) trong file code (ví dụ dùng `as any` khi Type đã tương thích).
+
 - Agent **BẮT BUỘC** phải chạy script để format (ví dụ: `npm run format` hoặc `npx prettier --write <file>`) sau khi sửa đổi file code nếu phát sinh các lỗi liên quan tới định dạng (formatting).
 - Agent **BẮT BUỘC** sử dụng kiểu dữ liệu chặt chẽ và chỉ sử dụng ép kiểu (`as`) khi thực sự cần thiết, hạn chế tối đa việc sử dụng kiểu `any`.
 
 ## Safe Execution Mandate
 
 **Rule**: KHÔNG THỰC HIỆN BẤT KỲ HÀNH ĐỘNG DESTRUCTIVE NÀO BAO GỒM XÓA FILE, XÓA DỮ LIỆU, GHI ĐÈ KHÔNG CÓ BACKUP, HOẶC THAY ĐỔI KHÔNG THỂ HOÀN TÁC. KHÔNG NÂNG CẤP, HẠ CẤP HOẶC THAY ĐỔI PHIÊN BẢN FRAMEWORK, THƯ VIỆN, HỆ ĐIỀU HÀNH KHI CHƯA CÓ CHỈ ĐỊNH RÕ RÀNG. LUÔN HỎI LẠI TRƯỚC KHI THỰC HIỆN HÀNH ĐỘNG ẢNH HƯỞNG HỆ THỐNG. ƯU TIÊN GIẢI PHÁP KHÔNG PHÁ VỠ, CÓ THỂ HOÀN TÁC. TẠO BẢN SAO LƯU TRƯỚC KHI CHỈNH SỬA QUAN TRỌNG. KHÔNG TỰ ĐỘNG CHẠY SCRIPT NGUY HIỂM. BẢO TOÀN TÍNH TOÀN VẸN DỮ LIỆU VÀ MÔI TRƯỜNG PHÁT TRIỂN. LUÔN MINH BẠCH VỀ RỦI RO TRƯỚC KHI HÀNH ĐỘNG.
+
+## Progress Audit & Code Review Report Format Mandate
+
+**Rule**: Khi User yêu cầu kiểm tra tiến độ dự án hoặc chạy code review tổng thể (ví dụ: `kiểm tra tiến độ`, `audit`, `/ce-code-review`), Agent **BẮT BUỘC** phải:
+
+- Lưu báo cáo thành một **Artifact File** chuyên biệt tại `<appDataDir>\brain\<conversation-id>/progress_audit.md` (tương tự như `implementation_plan.md` và `walkthrough.md`).
+- **TUYỆT ĐỐI KHÔNG** tạo các file `.md` thừa bên trong workspace source code (như trong thư mục `docs/` hoặc root).
+- Trình bày kết quả theo đúng cấu trúc chuẩn hóa 5 phần sau:
+  1. **Tổng quan nhanh (Quick Overview Table)**: Bảng tóm tắt tất cả các Sprint (Sprint, Tên, Tổng task/epics, Hoàn thành, Trạng thái `DONE` / `IN PROGRESS` / `NOT STARTED`).
+  2. **Chi tiết từng Sprint (Sprint-by-Sprint Breakdown)**:
+     - Các Sprint đã hoàn thành: Liệt kê các module backend và frontend routes đã xác thực tồn tại trong code.
+     - Các Sprint đang thực hiện / chưa bắt đầu: Bảng đối soát chi tiết từng Task ↔ Code tồn tại ↔ Trạng thái, kèm các callout alert (`[!TIP]`, `[!IMPORTANT]`, `[!WARNING]`) nêu rõ các gap kỹ thuật.
+  3. **Phát hiện Code Quality (Phân cấp P1, P2, P3)**: Bảng liệt kê mã vấn đề, tên lỗi, link file và dòng cụ thể, chi tiết vi phạm.
+  4. **Docs ↔ Code Gaps (Bảng Đối soát Sai lệch Tài liệu)**: Bảng phân tích sự khác biệt giữa tài liệu trong `docs/` và code thực tế kèm hành động cần thiết.
+  5. **Đánh giá tổng thể**: Tóm tắt các điểm tích cực và danh sách các hạng mục hành động ưu tiên (`Cần hành động`).
+
+## Code Length & File Quality Audit Mandate
+
+**Rule**: Bắt buộc phải kiểm soát kích thước, độ phức tạp và chất lượng của tất cả các file mã nguồn (áp dụng cho cả Backend NestJS và Frontend Next.js) nhằm đảm bảo nguyên lý Single Responsibility Principle (SRP) và khả năng bảo trì lâu dài của dự án:
+
+- **Ngưỡng độ dài file (File Length Thresholds)**:
+  - Các file xử lý logic (Service, Controller, Component `.tsx`, Helper): Khuyến nghị tối ưu dưới **300 dòng**. Ngưỡng cảnh báo đỏ (Hard limit) là **500 dòng**.
+  - **Ngoại lệ hợp lệ**: Các file từ điển hằng số thuần túy (thuộc `src/constants/` theo đúng _Constants Separation Mandate_) hoặc file Schema tập trung (`schema.prisma`, `types/`) được phép vượt ngưỡng nếu chỉ chứa khai báo kiểu/dữ liệu tĩnh có tổ chức.
+- **Quy tắc Trích xuất & Chia nhỏ (Decomposition Rule)**:
+  - Khi một Service, Controller hoặc Component vượt quá 300 dòng hoặc đảm nhiệm từ 2-3 nhóm trách nhiệm nghiệp vụ khác nhau, Agent **BẮT BUỘC** phải chủ động đề xuất hoặc thực hiện chia nhỏ thành các sub-services chuyên biệt (ví dụ: chia `orders.service.ts` thành `orders-shipping.service.ts`, `orders-checkout.service.ts`...) hoặc custom hooks (ví dụ: `useVietnameseLocations`).
+- **Checklist Đánh giá Chất lượng Code (Mandatory Quality Audit Checklist)**:
+  - Mỗi khi thực hiện audit, code review hoặc trước mỗi đợt tổng hợp commit, Agent **BẮT BUỘC** phải rà soát:
+    1. **Độ dài & Trách nhiệm file**: Liệt kê các file vượt ngưỡng 300 dòng để đề xuất phương án tách.
+    2. **Kiểm tra Chuỗi Text & Thông báo**: Tuyệt đối không còn hardcoded error messages hay UI text ném ra chuỗi cứng (phải qua `nestjs-i18n` và `useTranslations`).
+    3. **Kiểu dữ liệu (Type Safety)**: Không dùng `any`, không ép kiểu `as` tùy tiện, định nghĩa rõ ràng interface/type cho API inputs/outputs.
+    4. **Hiệu năng & Truy vấn**: Kiểm tra `include` của Prisma tránh N+1 Query, kiểm tra câu lệnh Atomic transactions `$executeRaw` parameterized chống SQL Injection.

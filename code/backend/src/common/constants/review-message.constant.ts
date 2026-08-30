@@ -1,0 +1,5 @@
+export const REVIEW_MESSAGES = {
+  ALREADY_REVIEWED: 'reviews.ALREADY_REVIEWED',
+  MUST_BE_COMPLETED: 'reviews.MUST_BE_COMPLETED',
+  NOT_FOUND: 'reviews.NOT_FOUND',
+};

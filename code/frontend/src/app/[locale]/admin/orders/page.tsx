@@ -2,221 +2,439 @@
 
 import { useTranslations, useLocale } from 'next-intl';
 import { BaseInput } from '@/components/base';
-import { Search, Eye, CheckCircle2, Clock, XCircle } from '@/components/base/icons';
+import {
+  Search,
+  Eye,
+  CheckCircle2,
+  Clock,
+  XCircle,
+  Truck,
+  Package,
+  Loader2,
+} from '@/components/base/icons';
 import { formatPrice } from '@/utils/format';
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { ReturnRejectModal } from '@/components/features/orders/ReturnRejectModal';
+import { AdminOrderDetailModal } from '@/components/admin/orders/AdminOrderDetailModal';
+import { AdminOrderShippingModal } from '@/components/admin/orders/AdminOrderShippingModal';
+import { AdminOrderCancelModal } from '@/components/admin/orders/AdminOrderCancelModal';
 import { orderService } from '@/services/order-service';
-import { useToast } from '@/providers/toast-provider';
+import { Order, OrderStatus } from '@/types/order';
+import { ORDER_STATUS_COLORS, DELIVERY_PARTNERS } from '@/constants/order';
+import toast from 'react-hot-toast';
 
 export default function AdminOrdersPage() {
   const t = useTranslations('admin.orders');
   const tOrder = useTranslations('order');
   const locale = useLocale();
-  const toast = useToast();
 
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedStatus, setSelectedStatus] = useState<string>('');
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+
+  // Modals state
   const [rejectModalOpen, setRejectModalOpen] = useState(false);
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
+
+  const [detailModalOpen, setDetailModalOpen] = useState(false);
+  const [viewingOrder, setViewingOrder] = useState<Order | null>(null);
+
+  const [shippingModalOpen, setShippingModalOpen] = useState(false);
+  const [shippingOrderId, setShippingOrderId] = useState<string | null>(null);
+  const [selectedCarrier, setSelectedCarrier] = useState(DELIVERY_PARTNERS[0].name);
+  const [trackingIdInput, setTrackingIdInput] = useState('');
+  const [shippingStatus, setShippingStatus] = useState<string>('HANDED_OVER');
+  const [submittingAction, setSubmittingAction] = useState(false);
+
+  const [cancelModalOpen, setCancelModalOpen] = useState(false);
+  const [cancellingOrderId, setCancellingOrderId] = useState<string | null>(null);
+
+  const fetchOrders = useCallback(async () => {
+    try {
+      setLoading(true);
+      const res = await orderService.getAdminOrders(page, 15, selectedStatus);
+      setOrders(res.data || []);
+      setTotalPages(res.totalPages || 1);
+    } catch (err: unknown) {
+      console.error(err);
+      toast.error('Lỗi khi tải danh sách đơn hàng');
+    } finally {
+      setLoading(false);
+    }
+  }, [page, selectedStatus]);
+
+  useEffect(() => {
+    fetchOrders();
+  }, [fetchOrders]);
+
+  const handleApproveOrder = async (orderId: string) => {
+    try {
+      setSubmittingAction(true);
+      await orderService.updateOrderStatus(orderId, OrderStatus.CONFIRMED);
+      toast.success('Duyệt đơn hàng thành công');
+      fetchOrders();
+      if (viewingOrder?.id === orderId) {
+        setViewingOrder((prev) => (prev ? { ...prev, status: OrderStatus.CONFIRMED } : null));
+      }
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      toast.error(msg || 'Lỗi khi duyệt đơn hàng');
+    } finally {
+      setSubmittingAction(false);
+    }
+  };
+
+  const handleOpenShippingModal = (order: Order) => {
+    setShippingOrderId(order.id);
+    setSelectedCarrier(order.deliveryPartner || DELIVERY_PARTNERS[0].name);
+    setTrackingIdInput(order.trackingId || '');
+    setShippingStatus('HANDED_OVER');
+    setShippingModalOpen(true);
+  };
+
+  const handleUpdateShipping = async () => {
+    if (!shippingOrderId) return;
+    try {
+      setSubmittingAction(true);
+      await orderService.updateOrderStatus(shippingOrderId, shippingStatus, {
+        deliveryPartner: selectedCarrier,
+        trackingId: trackingIdInput.trim() || undefined,
+      });
+      toast.success('Cập nhật vận chuyển thành công');
+      setShippingModalOpen(false);
+      fetchOrders();
+      if (viewingOrder?.id === shippingOrderId) {
+        setViewingOrder((prev) =>
+          prev
+            ? {
+                ...prev,
+                status: shippingStatus as OrderStatus,
+                deliveryPartner: selectedCarrier,
+                trackingId: trackingIdInput.trim(),
+              }
+            : null
+        );
+      }
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      toast.error(msg || 'Lỗi khi cập nhật vận chuyển');
+    } finally {
+      setSubmittingAction(false);
+    }
+  };
+
+  const handleCompleteOrder = async (orderId: string) => {
+    try {
+      setSubmittingAction(true);
+      await orderService.updateOrderStatus(orderId, OrderStatus.COMPLETED);
+      toast.success('Đã xác nhận hoàn thành đơn hàng');
+      fetchOrders();
+      if (viewingOrder?.id === orderId) {
+        setViewingOrder((prev) => (prev ? { ...prev, status: OrderStatus.COMPLETED } : null));
+      }
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      toast.error(msg || 'Lỗi khi hoàn thành đơn');
+    } finally {
+      setSubmittingAction(false);
+    }
+  };
+
+  const handleCancelOrderAdmin = async () => {
+    if (!cancellingOrderId) return;
+    try {
+      setSubmittingAction(true);
+      await orderService.cancelOrder(cancellingOrderId);
+      toast.success('Hủy đơn hàng và hoàn tồn kho thành công');
+      setCancelModalOpen(false);
+      fetchOrders();
+      if (viewingOrder?.id === cancellingOrderId) {
+        setViewingOrder((prev) => (prev ? { ...prev, status: OrderStatus.CANCELLED } : null));
+      }
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      toast.error(msg || 'Lỗi khi hủy đơn hàng');
+    } finally {
+      setSubmittingAction(false);
+    }
+  };
 
   const handleApproveReturn = async (orderId: string) => {
     try {
       await orderService.approveReturn(orderId);
       toast.success('Đã duyệt yêu cầu trả hàng');
-      // refetch orders
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Lỗi khi duyệt trả hàng');
+      fetchOrders();
+    } catch (error: unknown) {
+      const msg = (error as { response?: { data?: { message?: string } } })?.response?.data
+        ?.message;
+      toast.error(msg || 'Lỗi khi duyệt trả hàng');
     }
   };
 
-  const mockOrders = [
-    {
-      id: 'ORD-240720',
-      customer: 'Nguyễn Văn A',
-      email: 'a@gmail.com',
-      total: 29590000,
-      status: 'pending',
-      payment: 'cod',
-      date: '20/07/2026',
-    },
-    {
-      id: 'ORD-240719',
-      customer: 'Trần Thị B',
-      email: 'b@gmail.com',
-      total: 51980000,
-      status: 'delivering',
-      payment: 'vnpay',
-      date: '19/07/2026',
-    },
-    {
-      id: 'ORD-240718',
-      customer: 'Lê Văn C',
-      email: 'c@gmail.com',
-      total: 5990000,
-      status: 'completed',
-      payment: 'cod',
-      date: '18/07/2026',
-    },
-    {
-      id: 'ORD-240717',
-      customer: 'Phạm Thị D',
-      email: 'd@gmail.com',
-      total: 31990000,
-      status: 'confirmed',
-      payment: 'vnpay',
-      date: '17/07/2026',
-    },
-    {
-      id: 'ORD-240716',
-      customer: 'Hoàng Văn E',
-      email: 'e@gmail.com',
-      total: 19990000,
-      status: 'pending_payment',
-      payment: 'vnpay',
-      date: '16/07/2026',
-    },
-    {
-      id: 'ORD-240715',
-      customer: 'Đỗ Thị F',
-      email: 'f@gmail.com',
-      total: 27990000,
-      status: 'cancelled',
-      payment: 'cod',
-      date: '15/07/2026',
-    },
-    {
-      id: 'ORD-240714',
-      customer: 'Võ Thị G',
-      email: 'g@gmail.com',
-      total: 12500000,
-      status: 'return_requested',
-      payment: 'vnpay',
-      date: '14/07/2026',
-    },
-  ];
-
-  const statusColors: Record<string, string> = {
-    pending: 'bg-yellow-100 text-yellow-800',
-    pending_payment: 'bg-orange-100 text-orange-800',
-    confirmed: 'bg-blue-100 text-blue-800',
-    delivering: 'bg-cyan-100 text-cyan-800',
-    completed: 'bg-green-100 text-green-800',
-    cancelled: 'bg-red-100 text-red-800',
-    return_requested: 'bg-purple-100 text-purple-800',
-  };
+  const filteredOrders = orders.filter((order) => {
+    if (!searchQuery.trim()) return true;
+    const q = searchQuery.toLowerCase();
+    return (
+      order.id.toLowerCase().includes(q) ||
+      order.shippingName.toLowerCase().includes(q) ||
+      order.shippingPhone.includes(q) ||
+      order.user?.email?.toLowerCase().includes(q)
+    );
+  });
 
   return (
     <div className="p-6 lg:p-8">
-      <h1 className="text-2xl font-bold text-ink mb-8">{t('title')}</h1>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+        <h1 className="text-2xl font-bold text-ink">{t('title')}</h1>
+      </div>
 
-      {/* Search */}
-      <div className="flex gap-3 mb-6">
+      {/* Filters & Search */}
+      <div className="flex flex-col sm:flex-row gap-3 mb-6">
         <div className="relative flex-1 max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-2" />
-          <BaseInput placeholder={t('searchPlaceholder')} className="pl-10" />
+          <BaseInput
+            placeholder={t('searchPlaceholder')}
+            className="pl-10"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
         </div>
+        <select
+          value={selectedStatus}
+          onChange={(e) => {
+            setSelectedStatus(e.target.value);
+            setPage(1);
+          }}
+          className="px-3.5 py-2 rounded-xl border border-rule text-sm bg-white focus:outline-none focus:border-primary text-ink"
+        >
+          <option value="">Tất cả trạng thái</option>
+          {Object.keys(ORDER_STATUS_COLORS).map((st) => (
+            <option key={st} value={st}>
+              {tOrder(`statusLabels.${st.toLowerCase()}` as Parameters<typeof tOrder>[0])}
+            </option>
+          ))}
+        </select>
       </div>
 
       {/* Orders Table */}
-      <div className="bg-white rounded-xl border border-rule overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-left text-ink-2 border-b border-rule bg-paper-2">
-                <th className="px-5 py-3 font-medium">{t('orderId')}</th>
-                <th className="px-5 py-3 font-medium">{t('customer')}</th>
-                <th className="px-5 py-3 font-medium">{t('total')}</th>
-                <th className="px-5 py-3 font-medium">{t('payment')}</th>
-                <th className="px-5 py-3 font-medium">{t('status')}</th>
-                <th className="px-5 py-3 font-medium">{t('date')}</th>
-                <th className="px-5 py-3 font-medium">{t('actions')}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {mockOrders.map((order) => (
-                <tr
-                  key={order.id}
-                  className="border-b border-rule last:border-0 hover:bg-paper-2 transition-colors"
-                >
-                  <td className="px-5 py-3 font-semibold text-ink">{order.id}</td>
-                  <td className="px-5 py-3">
-                    <div>
-                      <p className="font-medium text-ink">{order.customer}</p>
-                      <p className="text-xs text-ink-2">{order.email}</p>
-                    </div>
-                  </td>
-                  <td className="px-5 py-3 font-semibold text-ink">
-                    {formatPrice(order.total, locale)}
-                  </td>
-                  <td className="px-5 py-3 text-ink-2 uppercase text-xs font-semibold">
-                    {order.payment}
-                  </td>
-                  <td className="px-5 py-3">
-                    <span
-                      className={`px-2.5 py-1 rounded-full text-xs font-semibold ${statusColors[order.status] || 'bg-gray-100 text-gray-800'}`}
-                    >
-                      {tOrder(`statusLabels.${order.status}` as Parameters<typeof tOrder>[0])}
-                    </span>
-                  </td>
-                  <td className="px-5 py-3 text-ink-2 whitespace-nowrap">
-                    <div className="flex items-center gap-1">
-                      <Clock className="w-3 h-3" />
-                      {order.date}
-                    </div>
-                  </td>
-                  <td className="px-5 py-3">
-                    <div className="flex items-center gap-2">
-                      <button
-                        className="p-1.5 rounded-lg hover:bg-paper-2 text-ink-2 hover:text-primary transition-colors"
-                        title={t('viewDetail')}
-                      >
-                        <Eye className="w-4 h-4" />
-                      </button>
-                      {order.status === 'pending' && (
-                        <button
-                          className="p-1.5 rounded-lg hover:bg-green-50 text-ink-2 hover:text-green-600 transition-colors"
-                          title={t('approve')}
+      <div className="bg-white rounded-2xl border border-rule overflow-hidden shadow-sm">
+        {loading ? (
+          <div className="py-20 flex flex-col items-center justify-center text-ink-2">
+            <Loader2 className="w-8 h-8 animate-spin text-primary mb-3" />
+            <p className="text-sm">Đang tải danh sách đơn hàng...</p>
+          </div>
+        ) : filteredOrders.length === 0 ? (
+          <div className="py-20 flex flex-col items-center justify-center text-ink-2">
+            <Package className="w-12 h-12 text-ink-3 mb-3" />
+            <p className="font-medium text-ink">Không tìm thấy đơn hàng</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-left text-ink-2 border-b border-rule bg-paper-2 font-medium">
+                  <th className="px-5 py-3.5">Mã đơn</th>
+                  <th className="px-5 py-3.5">Khách hàng</th>
+                  <th className="px-5 py-3.5">Ngày đặt</th>
+                  <th className="px-5 py-3.5">Tổng tiền</th>
+                  <th className="px-5 py-3.5">Trạng thái</th>
+                  <th className="px-5 py-3.5 text-right">Thao tác</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-rule">
+                {filteredOrders.map((order) => {
+                  const statusColor =
+                    ORDER_STATUS_COLORS[order.status] ||
+                    'bg-gray-100 text-gray-800 border-gray-200';
+                  return (
+                    <tr key={order.id} className="hover:bg-paper-2/50 transition-colors">
+                      <td className="px-5 py-4 font-mono font-bold text-ink">
+                        #{order.id.slice(-8).toUpperCase()}
+                      </td>
+                      <td className="px-5 py-4">
+                        <p className="font-semibold text-ink">{order.shippingName}</p>
+                        <p className="text-xs text-ink-2">{order.shippingPhone}</p>
+                      </td>
+                      <td className="px-5 py-4 text-ink-2 text-xs">
+                        <div className="flex items-center gap-1.5">
+                          <Clock className="w-3.5 h-3.5 text-ink-3" />
+                          {order.createdAt
+                            ? new Date(order.createdAt).toLocaleDateString('vi-VN')
+                            : '-'}
+                        </div>
+                      </td>
+                      <td className="px-5 py-4 font-bold text-ink">
+                        {formatPrice(order.totalAmount, locale)}
+                      </td>
+                      <td className="px-5 py-4">
+                        <span
+                          className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold border ${statusColor}`}
                         >
-                          <CheckCircle2 className="w-4 h-4" />
-                        </button>
-                      )}
-                      {order.status === 'return_requested' && (
-                        <>
-                          <button
-                            onClick={() => handleApproveReturn(order.id)}
-                            className="p-1.5 rounded-lg hover:bg-green-50 text-ink-2 hover:text-green-600 transition-colors"
-                            title="Duyệt trả hàng"
-                          >
-                            <CheckCircle2 className="w-4 h-4" />
-                          </button>
+                          {tOrder(
+                            `statusLabels.${order.status.toLowerCase()}` as Parameters<
+                              typeof tOrder
+                            >[0]
+                          )}
+                        </span>
+                      </td>
+                      <td className="px-5 py-4 text-right">
+                        <div className="flex items-center justify-end gap-1">
+                          {/* View Detail */}
                           <button
                             onClick={() => {
-                              setSelectedOrderId(order.id);
-                              setRejectModalOpen(true);
+                              setViewingOrder(order);
+                              setDetailModalOpen(true);
                             }}
-                            className="p-1.5 rounded-lg hover:bg-red-50 text-ink-2 hover:text-red-600 transition-colors"
-                            title="Từ chối trả hàng"
+                            className="p-1.5 rounded-lg hover:bg-paper-2 text-ink-2 hover:text-ink transition-colors"
+                            title="Xem chi tiết"
                           >
-                            <XCircle className="w-4 h-4" />
+                            <Eye className="w-4 h-4" />
                           </button>
-                        </>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+
+                          {/* Quick Approve */}
+                          {['PENDING', 'pending'].includes(order.status) && (
+                            <button
+                              onClick={() => handleApproveOrder(order.id)}
+                              className="p-1.5 rounded-lg hover:bg-green-50 text-ink-2 hover:text-green-600 transition-colors"
+                              title="Duyệt đơn hàng"
+                            >
+                              <CheckCircle2 className="w-4 h-4" />
+                            </button>
+                          )}
+
+                          {/* Fallback Manual Shipping */}
+                          <button
+                            onClick={() => handleOpenShippingModal(order)}
+                            className="p-1.5 rounded-lg hover:bg-indigo-50 text-ink-2 hover:text-indigo-600 transition-colors"
+                            title="Ghi nhận giao hàng thủ công"
+                          >
+                            <Truck className="w-4 h-4" />
+                          </button>
+
+                          {/* Mark Completed */}
+                          {['DELIVERING', 'delivering'].includes(order.status) && (
+                            <button
+                              onClick={() => handleCompleteOrder(order.id)}
+                              className="p-1.5 rounded-lg hover:bg-green-50 text-ink-2 hover:text-green-600 transition-colors"
+                              title="Xác nhận đã giao hoàn thành"
+                            >
+                              <CheckCircle2 className="w-4 h-4" />
+                            </button>
+                          )}
+
+                          {/* Return Requested approval */}
+                          {['RETURN_REQUESTED', 'return_requested'].includes(order.status) && (
+                            <>
+                              <button
+                                onClick={() => handleApproveReturn(order.id)}
+                                className="p-1.5 rounded-lg hover:bg-green-50 text-ink-2 hover:text-green-600 transition-colors"
+                                title="Duyệt trả hàng"
+                              >
+                                <CheckCircle2 className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setSelectedOrderId(order.id);
+                                  setRejectModalOpen(true);
+                                }}
+                                className="p-1.5 rounded-lg hover:bg-red-50 text-ink-2 hover:text-red-600 transition-colors"
+                                title="Từ chối trả hàng"
+                              >
+                                <XCircle className="w-4 h-4" />
+                              </button>
+                            </>
+                          )}
+
+                          {/* Cancel Order */}
+                          {['PENDING', 'PENDING_PAYMENT', 'pending', 'pending_payment'].includes(
+                            order.status
+                          ) && (
+                            <button
+                              onClick={() => {
+                                setCancellingOrderId(order.id);
+                                setCancelModalOpen(true);
+                              }}
+                              className="p-1.5 rounded-lg hover:bg-red-50 text-ink-2 hover:text-red-600 transition-colors"
+                              title="Hủy đơn hàng"
+                            >
+                              <XCircle className="w-4 h-4" />
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between px-6 py-4 border-t border-rule bg-white">
+            <button
+              disabled={page <= 1}
+              onClick={() => setPage((p) => p - 1)}
+              className="px-3.5 py-1.5 text-sm font-medium rounded-lg bg-paper-2 text-ink-2 disabled:opacity-50 hover:bg-primary/10 hover:text-primary transition-colors"
+            >
+              Trước
+            </button>
+            <span className="text-xs text-ink-2">
+              Trang {page} / {totalPages}
+            </span>
+            <button
+              disabled={page >= totalPages}
+              onClick={() => setPage((p) => p + 1)}
+              className="px-3.5 py-1.5 text-sm font-medium rounded-lg bg-paper-2 text-ink-2 disabled:opacity-50 hover:bg-primary/10 hover:text-primary transition-colors"
+            >
+              Sau
+            </button>
+          </div>
+        )}
       </div>
 
+      {/* Sub-components Modals */}
+      <AdminOrderShippingModal
+        isOpen={shippingModalOpen}
+        onClose={() => setShippingModalOpen(false)}
+        selectedCarrier={selectedCarrier}
+        onCarrierChange={setSelectedCarrier}
+        trackingIdInput={trackingIdInput}
+        onTrackingIdChange={setTrackingIdInput}
+        shippingStatus={shippingStatus}
+        onShippingStatusChange={setShippingStatus}
+        onSubmit={handleUpdateShipping}
+        submitting={submittingAction}
+      />
+
+      <AdminOrderDetailModal
+        isOpen={detailModalOpen}
+        onClose={() => setDetailModalOpen(false)}
+        order={viewingOrder}
+        onApprove={handleApproveOrder}
+        approving={submittingAction}
+      />
+
+      <AdminOrderCancelModal
+        isOpen={cancelModalOpen}
+        onClose={() => setCancelModalOpen(false)}
+        orderId={cancellingOrderId}
+        onConfirm={handleCancelOrderAdmin}
+        submitting={submittingAction}
+      />
+
+      {/* Return Reject Modal */}
       {selectedOrderId && (
         <ReturnRejectModal
           isOpen={rejectModalOpen}
           onClose={() => setRejectModalOpen(false)}
           orderId={selectedOrderId}
           onSuccess={() => {
-            // refetch orders
+            fetchOrders();
           }}
         />
       )}

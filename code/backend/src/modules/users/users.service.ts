@@ -7,12 +7,16 @@ import { PrismaService } from '../../database/prisma.service';
 import { UserRole } from '@prisma/client';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { I18nService, I18nContext } from 'nestjs-i18n';
+import { JwtService } from '@nestjs/jwt';
+import { MailService } from '../mail/mail.service';
 
 @Injectable()
 export class UsersService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly i18n: I18nService,
+    private readonly jwtService: JwtService,
+    private readonly mailService: MailService,
   ) {}
 
   async getProfile(userId: string) {
@@ -109,10 +113,17 @@ export class UsersService {
   }
 
   async inviteStaff(
+    adminRole: string,
     email: string,
     fullName: string,
     role: 'ADMIN' | 'EMPLOYEE',
   ) {
+    if (adminRole === 'ADMIN' && role === 'ADMIN') {
+      throw new BadRequestException(
+        'Chỉ Super Admin mới có quyền mời hoặc phân quyền Quản trị viên (Admin)',
+      );
+    }
+
     // Check if email already exists
     const existingUser = await this.prisma.user.findUnique({
       where: { email },
@@ -121,25 +132,41 @@ export class UsersService {
       throw new BadRequestException('Email đã tồn tại trong hệ thống');
     }
 
-    // Instead of hardcoding password, we just set an empty passwordHash and send an invite link (mocked)
     const newUser = await this.prisma.user.create({
       data: {
         email,
         fullName,
-        role,
-        passwordHash: '', // They will set this via invite link
-        isVerified: true, // Internal staff can be pre-verified
+        role: role,
+        passwordHash: '', // Set via invite link
+        isVerified: true,
       },
     });
 
-    // TODO: Send Email with setup-password link using MailService
-    console.log(
-      `[MOCK EMAIL] Gửi link thiết lập mật khẩu cho staff ${email} (Role: ${role})`,
+    const inviteToken = this.jwtService.sign(
+      { email, role, sub: newUser.id, type: 'STAFF_INVITE' },
+      { expiresIn: '24h' },
+    );
+
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+    const inviteLink = `${frontendUrl}/auth/set-password?token=${inviteToken}`;
+
+    await this.mailService.sendStaffInvitationEmail(
+      email,
+      fullName,
+      role,
+      inviteLink,
     );
 
     return {
-      message: 'Đã gửi lời mời thành công',
-      user: newUser,
+      message: 'Đã gửi lời mời tham gia quản trị thành công',
+      user: {
+        id: newUser.id,
+        email: newUser.email,
+        fullName: newUser.fullName,
+        role: newUser.role,
+      },
+      inviteLink:
+        process.env.NODE_ENV !== 'production' ? inviteLink : undefined,
     };
   }
 

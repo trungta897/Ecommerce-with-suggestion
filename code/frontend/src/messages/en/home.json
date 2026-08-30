@@ -58,7 +58,12 @@
     "on_sale_subtitle": "Special offers just for you",
     "flash_sale_title": "Flash Sale",
     "flash_sale_subtitle": "Limited quantity, grab it now",
-    "top_categories": "Top Categories"
+    "top_categories": "Top Categories",
+    "recently_viewed_title": "Recently Viewed",
+    "recently_viewed_subtitle": "Products you recently browsed",
+    "clear_history": "Clear History",
+    "recommended_for_you_title": "Recommended For You",
+    "recommended_for_you_subtitle": "Personalized by AI based on your preferences"
   },
   "features": {
     "free_shipping": "Free Shipping",
@@ -74,6 +79,18 @@
     "title": "Don't Miss Latest Offers",
     "desc": "Subscribe to receive product info and discount codes",
     "placeholder": "Enter your email",
-    "subscribe": "Subscribe"
+    "subscribe": "Subscribe",
+    "subscribe_success": "Subscribed successfully!",
+    "subscribe_success_desc": "Thank you for subscribing. We will send the latest promotions to your inbox.",
+    "invalid_email": "Please enter a valid email address"
+  },
+  "flash_sale": {
+    "title": "Flash Sale",
+    "ends_in": "Ends in:",
+    "ongoing": "Ongoing",
+    "upcoming": "Upcoming",
+    "sold": "{count} sold",
+    "left": "{left}/{total} left",
+    "sold_out": "Sold Out"
   }
 }

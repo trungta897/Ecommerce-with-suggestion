@@ -1,0 +1,8 @@
+{
+  "NOT_FOUND": "Promotion/Discount not found",
+  "OVERLAP_ERROR": "This product already has a Flash Sale scheduled from {start} to {end}, please choose a different time range",
+  "INVALID_DATES": "End date must be after start date",
+  "PRODUCT_NOT_FOUND": "Product not found or is inactive",
+  "FLASH_SALE_INSUFFICIENT": "Flash sale item does not have enough remaining quota",
+  "FLASH_SALE_CONFLICT": "Flash sale items cannot be combined with percentage vouchers"
+}

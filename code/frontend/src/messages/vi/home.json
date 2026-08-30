@@ -58,7 +58,12 @@
     "on_sale_subtitle": "Ưu đãi đặc biệt dành cho bạn",
     "flash_sale_title": "Giờ Vàng Giá Sốc",
     "flash_sale_subtitle": "Số lượng có hạn, chớp ngay kẻo lỡ",
-    "top_categories": "Danh mục nổi bật"
+    "top_categories": "Danh mục nổi bật",
+    "recently_viewed_title": "Sản phẩm vừa xem",
+    "recently_viewed_subtitle": "Các sản phẩm bạn đã xem gần đây",
+    "clear_history": "Xóa lịch sử",
+    "recommended_for_you_title": "Gợi ý dành riêng cho bạn",
+    "recommended_for_you_subtitle": "Được AI cá nhân hóa theo sở thích của bạn"
   },
   "features": {
     "free_shipping": "Giao hàng miễn phí",
@@ -74,6 +79,18 @@
     "title": "Đừng Bỏ Lỡ Các Ưu Đãi Mới Nhất",
     "desc": "Đăng ký để nhận thông tin về sản phẩm và mã giảm giá",
     "placeholder": "Nhập email của bạn",
-    "subscribe": "Đăng ký"
+    "subscribe": "Đăng ký",
+    "subscribe_success": "Đăng ký nhận tin thành công!",
+    "subscribe_success_desc": "Cảm ơn bạn đã đăng ký. Các thông tin khuyến mãi sẽ được gửi tới hòm thư của bạn.",
+    "invalid_email": "Vui lòng nhập địa chỉ email hợp lệ"
+  },
+  "flash_sale": {
+    "title": "Giờ Vàng Giá Sốc",
+    "ends_in": "Kết thúc sau:",
+    "ongoing": "Đang diễn ra",
+    "upcoming": "Sắp diễn ra",
+    "sold": "Đã bán {count} suất",
+    "left": "Còn {left}/{total} suất",
+    "sold_out": "Đã hết suất"
   }
 }

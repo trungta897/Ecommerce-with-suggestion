@@ -444,11 +444,13 @@ Các công việc phục vụ vận hành kỹ thuật hoặc đánh giá học 
 **Ưu tiên:** Must  
 **Truy vết:** Mục 3.6.4 (Cập nhật)
 
-**Acceptance Criteria:**
+**[CẬP NHẬT v2]** Trong triển khai thực tế, tài khoản đăng nhập bằng SĐT được xác thực ngay lập tức (isVerified = true), không có trạng thái "chưa kích hoạt" như SRS gốc mô tả. Cron được tái định nghĩa như sau:
 
-1. **Given** Đơn hàng tạm của Guest, **when** qua 24 giờ không kích hoạt OTP, **then** hệ thống tự động xóa đơn và hoàn tồn kho (nếu có giữ).
-2. **Given** Tài khoản Guest chưa kích hoạt, **when** đến ngày thứ 6, **then** hệ thống gửi 1 Email cảnh báo xóa tài khoản.
-3. **Given** Tài khoản Guest chưa kích hoạt, **when** đến ngày thứ 7, **then** hệ thống tự động xóa tài khoản và gửi 1 Email thông báo đã xóa.
+**Acceptance Criteria (cập nhật):**
+
+1. **Given** Tài khoản đăng nhập bằng SĐT (email `@placeholder.local`), **when** đã qua 30 ngày kể từ ngày tạo VÀ chưa có bất kỳ đơn hàng nào, **then** hệ thống tự động xóa tài khoản.
+2. **Given** Dữ liệu hành vi (`UserActivityLog`), **when** tài khoản bị xóa, **then** được giữ lại với `userId = null` — không xóa dữ liệu RecSys.
+3. **Given** Đơn hàng chưa thanh toán quá hạn, **when** cronjob chạy, **then** tự động hủy đơn và hoàn tồn kho.
 
 ## 12. Yêu cầu chất lượng áp dụng chung
 

@@ -4,10 +4,7 @@ import * as React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useTranslations } from 'next-intl';
-import {
-  loginSchema,
-  LoginFormData,
-} from '@/schemas';
+import { loginSchema, LoginFormData } from '@/schemas';
 import { BaseInput, BaseButton } from '@/components/base';
 import { authService } from '@/services/authService';
 import { useAuthStore } from '@/store';
@@ -70,9 +67,7 @@ export function AdminLoginForm() {
       </div>
 
       {errorsEmail.root && (
-        <div className="text-sm font-medium text-destructive mt-2">
-          {errorsEmail.root.message}
-        </div>
+        <div className="text-sm font-medium text-destructive mt-2">{errorsEmail.root.message}</div>
       )}
 
       <BaseButton type="submit" className="w-full" isLoading={isSubmittingEmail}>

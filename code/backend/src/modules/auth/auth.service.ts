@@ -173,6 +173,18 @@ export class AuthService {
       throw new BadRequestException(msg);
     }
 
+    // Merge guest activity logs if sessionId provided
+    if (dto.sessionId) {
+      try {
+        await this.prisma.userActivityLog.updateMany({
+          where: { sessionId: dto.sessionId, userId: null },
+          data: { userId: user.id },
+        });
+      } catch (err) {
+        console.error('Failed to merge activity logs on login:', err);
+      }
+    }
+
     // Generate JWT
     const payload = { sub: user.id, email: user.email, role: user.role };
     const accessToken = this.jwtService.sign(payload);
@@ -196,13 +208,15 @@ export class AuthService {
   }
 
   async requestPhoneOtp(phone: string) {
+    const lang = I18nContext.current()?.lang || 'vi';
+
     // Check if user is blocked or something if we want, but for now we just send OTP
     const user = await this.prisma.user.findUnique({
       where: { phone },
     });
 
     if (user && !user.isActive) {
-      throw new BadRequestException('Tài khoản của bạn đã bị khóa');
+      throw new BadRequestException(this.i18n.t('auth.PHONE_LOCKED', { lang }));
     }
 
     const otp = this.generateOtp();
@@ -213,30 +227,35 @@ export class AuthService {
     console.log(`[MOCK SMS] Gửi mã OTP ${otp} đến số điện thoại ${phone}`);
 
     return {
-      message: 'Mã OTP đã được gửi đến số điện thoại của bạn',
+      message: this.i18n.t('auth.PHONE_OTP_SENT', { lang }),
       phone,
     };
   }
 
-  async verifyPhoneOtp(phone: string, otp: string) {
+  async verifyPhoneOtp(phone: string, otp: string, sessionId?: string) {
+    const lang = I18nContext.current()?.lang || 'vi';
     const redisKey = `OTP:PHONE:${phone}`;
     const failKey = `OTP:FAIL_PHONE:${phone}`;
 
     const fails = await this.redisService.get(failKey);
     if (fails && parseInt(fails, 10) >= 3) {
       throw new BadRequestException(
-        'Bạn đã nhập sai mã OTP quá nhiều lần. Vui lòng thử lại sau.',
+        this.i18n.t('auth.PHONE_OTP_EXCEEDED', { lang }),
       );
     }
 
     const savedOtp = await this.redisService.get(redisKey);
     if (!savedOtp) {
-      throw new BadRequestException('Mã OTP đã hết hạn hoặc không tồn tại');
+      throw new BadRequestException(
+        this.i18n.t('auth.PHONE_OTP_EXPIRED', { lang }),
+      );
     }
 
     if (savedOtp !== otp) {
       await this.redisService.incr(failKey);
-      throw new BadRequestException('Mã OTP không chính xác');
+      throw new BadRequestException(
+        this.i18n.t('auth.PHONE_OTP_INVALID', { lang }),
+      );
     }
 
     // OTP is valid. Now find or create user.
@@ -249,7 +268,7 @@ export class AuthService {
       user = await this.prisma.user.create({
         data: {
           phone,
-          email: `${phone}@placeholder.local`, // Mock email since it is @unique in schema. Wait, email is unique. It should be unique.
+          email: `${phone}@placeholder.local`, // Mock email since it is @unique in schema
           fullName: 'Khách Hàng',
           passwordHash: '', // No password
           isVerified: true,
@@ -261,6 +280,18 @@ export class AuthService {
     // Clear OTP
     await this.redisService.del(redisKey);
     await this.redisService.del(failKey);
+
+    // Merge guest activity logs if sessionId provided
+    if (sessionId) {
+      try {
+        await this.prisma.userActivityLog.updateMany({
+          where: { sessionId, userId: null },
+          data: { userId: user.id },
+        });
+      } catch (err) {
+        console.error('Failed to merge activity logs on verifyPhoneOtp:', err);
+      }
+    }
 
     // Generate JWT
     const payload = {

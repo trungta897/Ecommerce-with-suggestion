@@ -4,6 +4,7 @@ import { OrderStatus, PaymentStatus } from '@prisma/client';
 import { VnPayService } from './vnpay.service';
 import { ReturnQueryFromVNPay } from 'vnpay';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { USD_TO_VND_RATE } from '../../common/constants/currency.constant';
 
 @Injectable()
 export class PaymentService {
@@ -34,11 +35,12 @@ export class PaymentService {
       return { RspCode: '01', Message: 'Order not found' };
     }
 
-    // Lớp 2: Amount Match
-    const expectedAmount = order.isDepositPayment
+    // Lớp 2: Amount Match in VND
+    const expectedAmountUsd = order.isDepositPayment
       ? Number(order.depositAmount)
       : Number(order.totalAmount);
-    if (vnp_Amount !== expectedAmount) {
+    const expectedAmountVnd = Math.round(expectedAmountUsd * USD_TO_VND_RATE);
+    if (vnp_Amount !== expectedAmountVnd) {
       return { RspCode: '04', Message: 'Amount mismatch' };
     }
 

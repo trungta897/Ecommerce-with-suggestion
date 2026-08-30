@@ -10,6 +10,17 @@
     "authMismatch": "Thông tin xác thực không khớp",
     "invalidStatus": "Trạng thái không hợp lệ",
     "invalidFileFormat": "Định dạng file không hợp lệ",
-    "missingEvidence": "Vui lòng cung cấp file chứng minh"
+    "missingEvidence": "Vui lòng cung cấp file chứng minh",
+    "cannotCancel": "Đơn hàng không ở trạng thái hợp lệ để hủy (có thể đã được xác nhận hoặc thanh toán)",
+    "invalidTrackingToken": "Mã xác thực theo dõi đơn hàng không hợp lệ hoặc đã hết hạn",
+    "selectProvinceRequired": "Vui lòng chọn Tỉnh/Thành phố giao hàng",
+    "provinceNotFound": "Tỉnh/Thành phố không tồn tại",
+    "productNotFoundWithId": "Sản phẩm không tồn tại (ID: {id})",
+    "insufficientStock": "Sản phẩm {name} không đủ tồn kho (Còn: {stock})",
+    "insufficientVipPoints": "Số điểm VIP không đủ để thanh toán",
+    "invalidPickupTimePast": "Thời gian lấy hàng không hợp lệ (trong quá khứ)",
+    "invalidPickupTimeMax": "Chỉ hỗ trợ đặt giữ hàng tối đa 5 ngày",
+    "invalidPickupTimeHours": "Thời gian lấy hàng phải trong giờ làm việc (08:00 - 22:00)",
+    "flashSaleStockRace": "Sản phẩm {name} đã hết hàng trong quá trình thanh toán"
   }
 }

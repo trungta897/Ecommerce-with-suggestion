@@ -1,0 +1,8 @@
+{
+  "NOT_FOUND": "Chương trình khuyến mãi/giảm giá không tồn tại",
+  "OVERLAP_ERROR": "Sản phẩm này đã có đợt Flash Sale trong khung giờ {start} – {end}, vui lòng chọn khung giờ khác",
+  "INVALID_DATES": "Thời gian kết thúc phải diễn ra sau thời gian bắt đầu",
+  "PRODUCT_NOT_FOUND": "Sản phẩm không tồn tại hoặc đã bị ẩn",
+  "FLASH_SALE_INSUFFICIENT": "Sản phẩm flash sale không đủ số lượng suất có sẵn",
+  "FLASH_SALE_CONFLICT": "Sản phẩm đang trong chương trình Flash Sale, không thể áp dụng Voucher giảm theo %"
+}

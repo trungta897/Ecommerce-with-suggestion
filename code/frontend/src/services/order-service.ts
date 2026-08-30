@@ -1,5 +1,6 @@
 import { apiClient } from '@/lib/api-client';
 import { Order } from '@/types/order';
+import { getOrCreateSessionId } from '@/utils/session';
 
 export interface ReturnEligibilityResponse {
   eligible: boolean;
@@ -26,41 +27,100 @@ export interface CreateOrderDto {
   voucherId?: string;
   email?: string;
   items?: { productId: string; quantity: number }[];
+  sessionId?: string;
+}
+
+export interface GuestOrderLookupResponse extends Order {
+  trackingToken?: string;
+}
+
+export interface OrdersListResponse {
+  data: Order[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
 }
 
 export const orderService = {
   async createOrder(dto: CreateOrderDto): Promise<Order> {
-    const { data } = await apiClient.post<{ data: Order }>('/orders', dto);
-    return data.data;
+    const payload = {
+      ...dto,
+      sessionId: dto.sessionId || getOrCreateSessionId(),
+    };
+    const { data } = await apiClient.post<Order | { data: Order }>('/orders', payload);
+    return ((data as { data?: Order })?.data || data) as Order;
   },
 
   async createGuestOrder(dto: CreateOrderDto): Promise<Order> {
-    const { data } = await apiClient.post<{ data: Order }>('/orders/guest', dto);
-    return data.data;
+    const payload = {
+      ...dto,
+      sessionId: dto.sessionId || getOrCreateSessionId(),
+    };
+    const { data } = await apiClient.post<Order | { data: Order }>('/orders/guest', payload);
+    return ((data as { data?: Order })?.data || data) as Order;
   },
 
   async payAgain(orderId: string): Promise<Order> {
-    const { data } = await apiClient.post<{ data: Order }>(`/orders/${orderId}/pay-again`);
-    return data.data;
+    const { data } = await apiClient.post<Order | { data: Order }>(`/orders/${orderId}/pay-again`);
+    return ((data as { data?: Order })?.data || data) as Order;
   },
 
   async payAgainGuest(orderId: string, phone: string): Promise<Order> {
-    const { data } = await apiClient.post<{ data: Order }>(`/orders/guest/${orderId}/pay-again`, {
-      phone,
+    const { data } = await apiClient.post<Order | { data: Order }>(
+      `/orders/guest/${orderId}/pay-again`,
+      {
+        phone,
+      }
+    );
+    return ((data as { data?: Order })?.data || data) as Order;
+  },
+
+  async getMyOrders(page = 1, limit = 10): Promise<OrdersListResponse> {
+    const { data } = await apiClient.get<OrdersListResponse>('/orders/my', {
+      params: { page, limit },
     });
-    return data.data;
+    return data;
   },
 
   async getOrderById(orderId: string): Promise<Order> {
-    const { data } = await apiClient.get<{ data: Order }>(`/orders/${orderId}`);
-    return data.data;
+    const { data } = await apiClient.get<Order | { data: Order }>(`/orders/${orderId}`);
+    return ((data as { data?: Order })?.data || data) as Order;
   },
 
-  async getGuestOrderById(orderId: string, phone: string): Promise<Order> {
-    const { data } = await apiClient.get<{ data: Order }>(`/orders/guest/${orderId}`, {
+  async cancelOrder(orderId: string): Promise<Order> {
+    const { data } = await apiClient.post<Order | { data: Order }>(`/orders/${orderId}/cancel`);
+    return ((data as { data?: Order })?.data || data) as Order;
+  },
+
+  async getGuestOrderById(orderId: string, phone: string): Promise<GuestOrderLookupResponse> {
+    const { data } = await apiClient.get<GuestOrderLookupResponse>(`/orders/guest/${orderId}`, {
       params: { phone },
     });
-    return data.data;
+    return data;
+  },
+
+  async getAdminOrders(page = 1, limit = 10, status?: string): Promise<OrdersListResponse> {
+    const { data } = await apiClient.get<OrdersListResponse>('/orders/admin', {
+      params: { page, limit, status: status || undefined },
+    });
+    return data;
+  },
+
+  async updateOrderStatus(
+    orderId: string,
+    status: string,
+    trackingData?: { deliveryPartner?: string; trackingId?: string }
+  ): Promise<Order> {
+    const payload = {
+      status,
+      ...trackingData,
+    };
+    const { data } = await apiClient.patch<Order | { data: Order }>(
+      `/orders/${orderId}/status`,
+      payload
+    );
+    return ((data as { data?: Order })?.data || data) as Order;
   },
 
   async checkReturnEligibility(orderId: string): Promise<ReturnEligibilityResponse> {

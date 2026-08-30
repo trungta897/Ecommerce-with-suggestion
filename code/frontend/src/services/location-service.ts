@@ -4,14 +4,15 @@ export interface LocationItem {
   id: string;
   name: string;
   fullName: string;
+  mergedFrom?: string | null;
+}
+
+export interface WardItem extends LocationItem {
+  provinceId: string;
 }
 
 export interface DistrictItem extends LocationItem {
   provinceId: string;
-}
-
-export interface WardItem extends LocationItem {
-  districtId: string;
 }
 
 export const locationService = {
@@ -24,20 +25,21 @@ export const locationService = {
     }
   },
 
-  getDistricts: async (provinceId: string): Promise<DistrictItem[]> => {
+  getWards: async (provinceId: string): Promise<WardItem[]> => {
     if (!provinceId) return [];
     try {
-      const { data } = await apiClient.get(`/locations/provinces/${provinceId}/districts`);
+      const { data } = await apiClient.get(`/locations/provinces/${provinceId}/wards`);
       return Array.isArray(data) ? data : [];
     } catch {
       return [];
     }
   },
 
-  getWards: async (districtId: string): Promise<WardItem[]> => {
-    if (!districtId) return [];
+  // Fallback for district APIs if called
+  getDistricts: async (provinceId: string): Promise<DistrictItem[]> => {
+    if (!provinceId) return [];
     try {
-      const { data } = await apiClient.get(`/locations/districts/${districtId}/wards`);
+      const { data } = await apiClient.get(`/locations/provinces/${provinceId}/districts`);
       return Array.isArray(data) ? data : [];
     } catch {
       return [];

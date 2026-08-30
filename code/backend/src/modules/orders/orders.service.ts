@@ -1,48 +1,40 @@
-import {
-  BadRequestException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service';
 import { CreateOrderDto } from './dto/create-order.dto';
-import { PaymentMethod, OrderStatus, Product, Prisma } from '@prisma/client';
-import { RedisService } from '../redis/redis.service';
+import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
+import {
+  PaymentMethod,
+  OrderStatus,
+  Prisma,
+  ActivityType,
+} from '@prisma/client';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { ORDER_MESSAGES } from '../../common/constants/order-message.constant';
-import { I18nService } from 'nestjs-i18n';
+import { OrdersShippingService } from './orders-shipping.service';
+import { OrdersCheckoutService } from './orders-checkout.service';
+import { OrdersQueryService } from './orders-query.service';
+import { OrdersStatusService } from './orders-status.service';
 
 @Injectable()
 export class OrdersService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly redisService: RedisService,
     private readonly eventEmitter: EventEmitter2,
-    private readonly i18n: I18nService,
+    private readonly shippingService: OrdersShippingService,
+    private readonly checkoutService: OrdersCheckoutService,
+    private readonly queryService: OrdersQueryService,
+    private readonly statusService: OrdersStatusService,
   ) {}
 
   async calculateShipping(
     deliveryMethod?: string,
     provinceId?: string,
+    lang?: string,
   ): Promise<number> {
-    if (deliveryMethod === 'PICKUP') return 0;
-    if (!provinceId)
-      throw new BadRequestException('Vui lòng chọn Tỉnh/Thành phố giao hàng');
-
-    const province = await this.prisma.province.findUnique({
-      where: { id: provinceId },
-    });
-    if (!province)
-      throw new BadRequestException('Tỉnh/Thành phố không tồn tại');
-
-    if (province.id === '01') {
-      return deliveryMethod === 'EXPRESS' ? 40000 : 15000;
-    }
-
-    if (province.region === 'NORTH') return 30000;
-    if (province.region === 'CENTRAL') return 40000;
-    if (province.region === 'SOUTH') return 50000;
-
-    return 30000;
+    return this.shippingService.calculateShipping(
+      deliveryMethod,
+      provinceId,
+      lang,
+    );
   }
 
   async createOrder(
@@ -50,67 +42,32 @@ export class OrdersService {
     createOrderDto: CreateOrderDto,
     lang?: string,
   ) {
-    // 1. Get cart items (from DB if user, or directly from DTO if guest)
-    let cartItems: Array<{
-      productId: string;
-      quantity: number;
-      product: Product;
-    }> = [];
-    if (userId) {
-      const dbCartItems = await this.prisma.cartItem.findMany({
-        where: { userId },
-        include: { product: true },
-      });
-      cartItems = dbCartItems;
-    } else {
-      // Guest Checkout - items must be in DTO
-      if (!createOrderDto.items || createOrderDto.items.length === 0) {
-        throw new BadRequestException(
-          this.i18n.t(ORDER_MESSAGES.CART_EMPTY, { lang }),
-        );
-      }
-      // Fetch product details for guest items
-      for (const item of createOrderDto.items) {
-        const product = await this.prisma.product.findUnique({
-          where: { id: item.productId },
-        });
-        if (!product)
-          throw new BadRequestException(
-            `Sản phẩm không tồn tại (ID: ${item.productId})`,
-          );
-        cartItems.push({
-          productId: item.productId,
-          quantity: item.quantity,
-          product,
-        });
-      }
-    }
+    const now = new Date();
 
-    if (cartItems.length === 0) {
-      throw new BadRequestException(
-        this.i18n.t(ORDER_MESSAGES.CART_EMPTY, { lang }),
-      );
-    }
-
-    // 2. Calculate totals and check stock
-    let subtotal = 0;
-    for (const item of cartItems) {
-      if (item.product.stock < item.quantity) {
-        throw new BadRequestException(
-          `Sản phẩm ${item.product.name} không đủ tồn kho (Còn: ${item.product.stock})`,
-        );
-      }
-      const price = item.product.discountPrice
-        ? Number(item.product.discountPrice)
-        : Number(item.product.price);
-      subtotal += price * item.quantity;
-    }
-
-    const shippingFee = await this.calculateShipping(
-      createOrderDto.deliveryMethod,
-      createOrderDto.provinceId,
+    // 1. Resolve cart items (User DB or Guest DTO)
+    const cartItems = await this.checkoutService.resolveCartItems(
+      userId,
+      createOrderDto,
+      lang,
     );
 
+    // 2. Resolve active Flash Sale discounts & calculate effective prices
+    const itemsWithDiscount =
+      await this.checkoutService.resolveFlashSaleDiscounts(cartItems, lang);
+
+    let subtotal = 0;
+    for (const item of itemsWithDiscount) {
+      subtotal += item.effectivePrice * item.quantity;
+    }
+
+    // 3. Calculate Shipping Fee
+    const shippingFee = await this.shippingService.calculateShipping(
+      createOrderDto.deliveryMethod,
+      createOrderDto.provinceId,
+      lang,
+    );
+
+    // 4. Calculate VIP points discount
     let vipDiscountAmount = 0;
     let usedVipPoints = 0;
     if (createOrderDto.useVipPoints && userId) {
@@ -125,22 +82,15 @@ export class OrdersService {
       }
     }
 
-    let discountAmount = 0;
-    // FREE_SHIPPING voucher logic mockup (we assume a 100% discount on shipping for now if voucherId is 'FREE_SHIP')
-    if (createOrderDto.voucherId) {
-      const voucher = await this.prisma.voucher.findUnique({
-        where: { id: createOrderDto.voucherId },
-      });
-      if (voucher && voucher.isActive) {
-        if (voucher.type === 'FREE_SHIPPING') {
-          discountAmount = shippingFee;
-        } else if (voucher.type === 'FIXED_AMOUNT') {
-          discountAmount = Number(voucher.value);
-        } else if (voucher.type === 'PERCENTAGE') {
-          discountAmount = (subtotal * Number(voucher.value)) / 100;
-        }
-      }
-    }
+    // 5. Validate and calculate Voucher
+    const { discountAmount, appliedVoucherId, voucher } =
+      await this.checkoutService.validateAndCalculateVoucher(
+        createOrderDto.voucherId,
+        itemsWithDiscount,
+        subtotal,
+        shippingFee,
+        lang,
+      );
 
     const totalAmount = Math.max(
       0,
@@ -149,33 +99,14 @@ export class OrdersService {
 
     let isDepositPayment = false;
     let depositAmount: number | null = null;
-
-    if (createOrderDto.deliveryMethod !== 'PICKUP' && subtotal < 200000) {
+    if (createOrderDto.deliveryMethod !== 'PICKUP' && subtotal < 8) {
       isDepositPayment = true;
-      depositAmount = 50000;
+      depositAmount = 2;
     }
 
-    if (
-      createOrderDto.deliveryMethod === 'PICKUP' &&
-      createOrderDto.pickupTime
-    ) {
-      const pickupTime = new Date(createOrderDto.pickupTime);
-      const now = new Date();
-      if (pickupTime < now) {
-        throw new BadRequestException(
-          'Thời gian lấy hàng không hợp lệ (trong quá khứ)',
-        );
-      }
-      const maxTime = new Date(now.getTime() + 5 * 24 * 60 * 60 * 1000);
-      if (pickupTime > maxTime) {
-        throw new BadRequestException('Chỉ hỗ trợ đặt giữ hàng tối đa 5 ngày');
-      }
-      const hour = pickupTime.getHours();
-      if (hour < 8 || hour >= 22) {
-        throw new BadRequestException(
-          'Thời gian lấy hàng phải trong giờ làm việc (08:00 - 22:00)',
-        );
-      }
+    // 6. Validate Pickup Time
+    if (createOrderDto.deliveryMethod === 'PICKUP') {
+      this.checkoutService.validatePickupTime(createOrderDto.pickupTime, lang);
     }
 
     let paymentExpiresAt: Date | null = null;
@@ -188,38 +119,39 @@ export class OrdersService {
 
     const earnedVipPoints = Math.floor(totalAmount / 1000);
 
+    // 7. Atomic Claims and Order Creation Transaction
     const order = await this.prisma.$transaction(async (tx) => {
-      for (const item of cartItems) {
-        const updatedProduct = await tx.product.updateMany({
-          where: {
-            id: item.productId,
-            stock: { gte: item.quantity },
-          },
-          data: {
-            stock: { decrement: item.quantity },
-          },
-        });
+      // 7a. Claim Inventory
+      await this.checkoutService.claimInventory(tx, itemsWithDiscount, lang);
 
-        if (updatedProduct.count === 0) {
-          throw new BadRequestException(
-            `Sản phẩm ${item.product.name} đã hết hàng trong quá trình thanh toán`,
-          );
-        }
+      // 7b. Claim Flash Sale Quotas
+      await this.checkoutService.claimFlashSaleQuota(
+        tx,
+        itemsWithDiscount,
+        now,
+        lang,
+      );
+
+      // 7c. Claim VIP Points
+      if (usedVipPoints > 0 && userId) {
+        await this.checkoutService.claimVipPoints(
+          tx,
+          userId,
+          usedVipPoints,
+          lang,
+        );
       }
 
-      if (usedVipPoints > 0 && userId) {
-        const updatedUser = await tx.user.updateMany({
-          where: {
-            id: userId,
-            vipPoints: { gte: usedVipPoints },
-          },
-          data: {
-            vipPoints: { decrement: usedVipPoints },
-          },
-        });
-        if (updatedUser.count === 0) {
-          throw new BadRequestException('Số điểm VIP không đủ để thanh toán');
-        }
+      // 7d. Claim Voucher & Check Per-User Limit
+      if (appliedVoucherId && voucher) {
+        await this.checkoutService.claimVoucher(
+          tx,
+          appliedVoucherId,
+          userId,
+          createOrderDto.shippingPhone,
+          voucher.perUserLimit,
+          lang,
+        );
       }
 
       const orderData: Prisma.OrderUncheckedCreateInput = {
@@ -235,6 +167,7 @@ export class OrdersService {
         shippingPhone: createOrderDto.shippingPhone,
         deliveryMethod: createOrderDto.deliveryMethod,
         userId: userId || undefined,
+        voucherId: appliedVoucherId || undefined,
         depositAmount,
         isDepositPayment,
         pickupTime: createOrderDto.pickupTime,
@@ -242,13 +175,12 @@ export class OrdersService {
         usedVipPoints,
         vipDiscountAmount,
         items: {
-          create: cartItems.map((item) => ({
+          create: itemsWithDiscount.map((item) => ({
             productId: item.productId,
+            productDiscountId: item.productDiscountId || undefined,
             quantity: item.quantity,
-            unitPrice: item.product.discountPrice || item.product.price,
-            subtotal:
-              Number(item.product.discountPrice || item.product.price) *
-              item.quantity,
+            unitPrice: item.effectivePrice,
+            subtotal: item.effectivePrice * item.quantity,
           })),
         },
       };
@@ -256,6 +188,16 @@ export class OrdersService {
       const newOrder = await tx.order.create({
         data: orderData,
       });
+
+      if (appliedVoucherId) {
+        await tx.userVoucherUsage.create({
+          data: {
+            voucherId: appliedVoucherId,
+            userId: userId || undefined,
+            orderId: newOrder.id,
+          },
+        });
+      }
 
       if (userId) {
         await tx.cartItem.deleteMany({
@@ -266,196 +208,75 @@ export class OrdersService {
       return newOrder;
     });
 
-    if (order.paymentMethod === PaymentMethod.STRIPE) {
-      // Logic for Stripe
+    // 8. Post-Transaction: Log PURCHASE activity
+    if (cartItems.length > 0) {
+      try {
+        await this.prisma.userActivityLog.createMany({
+          data: cartItems.map((item) => ({
+            userId: userId || undefined,
+            sessionId: createOrderDto.sessionId || undefined,
+            productId: item.productId,
+            action: ActivityType.PURCHASE,
+          })),
+        });
+      } catch (err) {
+        console.error('Failed to log purchase activity:', err);
+      }
     }
 
     return order;
   }
 
+  // ==================== QUERY DELEGATION ====================
+
   async getGuestOrderById(orderId: string, phone: string, lang?: string) {
-    if (!phone) {
-      throw new BadRequestException(
-        this.i18n.t(ORDER_MESSAGES.MISSING_PHONE, { lang }),
-      );
-    }
+    return this.queryService.getGuestOrderById(orderId, phone, lang);
+  }
 
-    const order = await this.prisma.order.findUnique({
-      where: { id: orderId },
-      include: {
-        items: {
-          include: {
-            product: true,
-          },
-        },
-      },
-    });
-
-    if (!order) {
-      throw new NotFoundException(
-        this.i18n.t(ORDER_MESSAGES.NOT_FOUND, { lang }),
-      );
-    }
-
-    if (order.shippingPhone !== phone) {
-      throw new BadRequestException(
-        this.i18n.t(ORDER_MESSAGES.AUTH_MISMATCH, { lang }),
-      );
-    }
-
-    return order;
+  verifyGuestTrackingToken(orderId: string, token: string, lang?: string) {
+    return this.queryService.verifyGuestTrackingToken(orderId, token, lang);
   }
 
   getEventEmitter() {
     return this.eventEmitter;
   }
 
+  async getOrderById(
+    orderId: string,
+    user: { id: string; role: string },
+    lang?: string,
+  ) {
+    return this.queryService.getOrderById(orderId, user, lang);
+  }
+
   async verifyOrderOwnership(orderId: string, userId: string, lang?: string) {
-    const order = await this.prisma.order.findUnique({
-      where: { id: orderId },
-      select: { userId: true },
-    });
-    if (!order) {
-      throw new NotFoundException(
-        this.i18n.t(ORDER_MESSAGES.NOT_FOUND, { lang }),
-      );
-    }
-    if (order.userId !== userId) {
-      throw new BadRequestException(
-        this.i18n.t(ORDER_MESSAGES.UNAUTHORIZED, { lang }),
-      );
-    }
+    return this.queryService.verifyOrderOwnership(orderId, userId, lang);
   }
 
   async getUserOrders(userId: string, page: number = 1, limit: number = 10) {
-    const skip = (page - 1) * limit;
-    const [orders, total] = await Promise.all([
-      this.prisma.order.findMany({
-        where: { userId },
-        include: { items: { include: { product: true } } },
-        orderBy: { createdAt: 'desc' },
-        skip,
-        take: limit,
-      }),
-      this.prisma.order.count({ where: { userId } }),
-    ]);
-
-    return {
-      data: orders,
-      total,
-      page,
-      limit,
-      totalPages: Math.ceil(total / limit),
-    };
+    return this.queryService.getUserOrders(userId, page, limit);
   }
 
   async getAdminOrders(page: number = 1, limit: number = 10, status?: string) {
-    const skip = (page - 1) * limit;
-    const whereCondition = status ? { status: status as OrderStatus } : {};
-
-    const [orders, total] = await Promise.all([
-      this.prisma.order.findMany({
-        where: whereCondition,
-        include: {
-          user: { select: { id: true, fullName: true, email: true } },
-          items: { include: { product: true } },
-        },
-        orderBy: { createdAt: 'desc' },
-        skip,
-        take: limit,
-      }),
-      this.prisma.order.count({ where: whereCondition }),
-    ]);
-
-    return {
-      data: orders,
-      total,
-      page,
-      limit,
-      totalPages: Math.ceil(total / limit),
-    };
+    return this.queryService.getAdminOrders(page, limit, status);
   }
 
-  async updateOrderStatus(orderId: string, status: string, lang?: string) {
-    if (!Object.values(OrderStatus).includes(status as OrderStatus)) {
-      throw new BadRequestException(
-        this.i18n.t(ORDER_MESSAGES.INVALID_STATUS, { lang }),
-      );
-    }
+  // ==================== STATUS DELEGATION ====================
 
-    const order = await this.prisma.order.findUnique({
-      where: { id: orderId },
-    });
-    if (!order) {
-      throw new NotFoundException(
-        this.i18n.t(ORDER_MESSAGES.NOT_FOUND, { lang }),
-      );
-    }
+  async cancelOrder(
+    orderId: string,
+    userId?: string,
+    isStaff: boolean = false,
+    lang?: string,
+  ) {
+    return this.statusService.cancelOrder(orderId, userId, isStaff, lang);
+  }
 
-    const updated = await this.prisma.$transaction(async (tx) => {
-      const updateData: Prisma.OrderUpdateInput = {
-        status: status as OrderStatus,
-      };
-
-      if (status === OrderStatus.COMPLETED && !order.pointsCreditedAt) {
-        if (order.userId && order.earnedVipPoints > 0) {
-          await tx.user.update({
-            where: { id: order.userId },
-            data: { vipPoints: { increment: order.earnedVipPoints } },
-          });
-        }
-        updateData.pointsCreditedAt = new Date();
-        updateData.completedAt = new Date();
-      }
-
-      if (status === OrderStatus.CANCELLED) {
-        if (order.userId && order.usedVipPoints > 0) {
-          await tx.user.update({
-            where: { id: order.userId },
-            data: { vipPoints: { increment: order.usedVipPoints } },
-          });
-          updateData.usedVipPoints = 0;
-        }
-      }
-
-      if (status === OrderStatus.RETURNED) {
-        if (
-          order.userId &&
-          order.pointsCreditedAt &&
-          order.earnedVipPoints > 0
-        ) {
-          const user = await tx.user.findUnique({
-            where: { id: order.userId },
-          });
-          if (user) {
-            if (user.vipPoints >= order.earnedVipPoints) {
-              await tx.user.update({
-                where: { id: order.userId },
-                data: { vipPoints: { decrement: order.earnedVipPoints } },
-              });
-            } else {
-              const debt = order.earnedVipPoints - user.vipPoints;
-              await tx.user.update({
-                where: { id: order.userId },
-                data: { vipPoints: 0, vipPointsDebt: { increment: debt } },
-              });
-            }
-          }
-          // Prevent double revoke
-          updateData.pointsCreditedAt = null;
-          updateData.earnedVipPoints = 0;
-        }
-      }
-
-      return tx.order.update({
-        where: { id: orderId },
-        data: updateData,
-      });
-    });
-
-    this.eventEmitter.emit(`order.updated.${orderId}`, { status });
-    this.eventEmitter.emit(`order.status.changed`, { orderId, status });
-
-    return updated;
+  async updateOrderStatus(
+    orderId: string,
+    dto: UpdateOrderStatusDto,
+    lang?: string,
+  ) {
+    return this.statusService.updateOrderStatus(orderId, dto, lang);
   }
 }

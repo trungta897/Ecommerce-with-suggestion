@@ -23,6 +23,7 @@ import { OrdersService } from './orders.service';
 import { OrdersPaymentService } from './orders-payment.service';
 import { OrdersReturnService } from './orders-return.service';
 import { CreateOrderDto } from './dto/create-order.dto';
+import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
@@ -75,7 +76,6 @@ export class OrdersController {
     @Body('phone') phone: string,
     @I18nLang() lang: string,
   ) {
-    // Basic protection
     return this.ordersPaymentService.payAgainGuest(orderId, phone, lang);
   }
 
@@ -89,12 +89,12 @@ export class OrdersController {
   }
 
   @Sse('guest/:id/tracking')
-  async trackGuestOrder(
+  trackGuestOrder(
     @Param('id') orderId: string,
-    @Query('phone') phone: string,
-  ): Promise<Observable<MessageEvent>> {
-    // Basic verification
-    await this.ordersService.getGuestOrderById(orderId, phone); // Throws if invalid
+    @Query('token') token: string,
+    @I18nLang() lang: string,
+  ): Observable<MessageEvent> {
+    this.ordersService.verifyGuestTrackingToken(orderId, token, lang);
     return fromEvent(
       this.ordersService.getEventEmitter(),
       `order.updated.${orderId}`,
@@ -117,12 +117,37 @@ export class OrdersController {
   }
 
   @UseGuards(AuthGuard('jwt'))
+  @Get(':id')
+  async getOrderById(
+    @Req() req: Request & { user: { id: string; role: string } },
+    @Param('id') orderId: string,
+    @I18nLang() lang: string,
+  ) {
+    return this.ordersService.getOrderById(orderId, req.user, lang);
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Post(':id/cancel')
+  async cancelOrder(
+    @Req() req: Request & { user: { id: string; role: string } },
+    @Param('id') orderId: string,
+    @I18nLang() lang: string,
+  ) {
+    const staffRoles: UserRole[] = [
+      UserRole.ADMIN,
+      UserRole.SUPER_ADMIN,
+      UserRole.EMPLOYEE,
+    ];
+    const isStaff = staffRoles.includes(req.user.role as UserRole);
+    return this.ordersService.cancelOrder(orderId, req.user.id, isStaff, lang);
+  }
+
+  @UseGuards(AuthGuard('jwt'))
   @Sse(':id/tracking')
   async trackUserOrder(
     @Req() req: Request & { user: { id: string } },
     @Param('id') orderId: string,
   ): Promise<Observable<MessageEvent>> {
-    // Verification
     await this.ordersService.verifyOrderOwnership(orderId, req.user.id);
     return fromEvent(
       this.ordersService.getEventEmitter(),
@@ -150,10 +175,14 @@ export class OrdersController {
   @Patch(':id/status')
   async updateOrderStatus(
     @Param('id') orderId: string,
-    @Body('status') status: string,
+    @Body() updateOrderStatusDto: UpdateOrderStatusDto,
     @I18nLang() lang: string,
   ) {
-    return await this.ordersService.updateOrderStatus(orderId, status, lang);
+    return await this.ordersService.updateOrderStatus(
+      orderId,
+      updateOrderStatusDto,
+      lang,
+    );
   }
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)

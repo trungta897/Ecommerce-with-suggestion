@@ -26,7 +26,7 @@ export function ProductImageCarousel({
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalIndex, setModalIndex] = useState(0);
-  
+
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const resetTimeout = () => {
@@ -156,7 +156,7 @@ export function ProductImageCarousel({
           >
             <X className="w-8 h-8" />
           </button>
-          
+
           <div className="relative w-full h-full max-w-5xl max-h-[90vh] flex items-center justify-center">
             <Image
               src={displayImages[modalIndex].url}

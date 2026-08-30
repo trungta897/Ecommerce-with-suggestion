@@ -13,12 +13,14 @@ import {
   Settings,
   LogOut,
   Sparkles,
+  Zap,
 } from '@/components/base/icons';
 
 const ADMIN_NAV = [
   { key: 'dashboard', href: '/admin/dashboard', icon: BarChart3 },
   { key: 'products', href: '/admin/products', icon: ShoppingBag },
   { key: 'orders', href: '/admin/orders', icon: Package },
+  { key: 'promotions', href: '/admin/promotions/discounts', icon: Zap },
   { key: 'users', href: '/admin/users', icon: Users },
   { key: 'reviews', href: '/admin/reviews', icon: MessageSquare },
   { key: 'returns', href: '/admin/returns', icon: RotateCcw },

@@ -24,5 +24,5 @@ export const categoryService = {
 
   delete: async (id: string): Promise<void> => {
     await apiClient.delete(`/categories/${id}`);
-  }
+  },
 };

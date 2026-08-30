@@ -25,6 +25,12 @@
   - [x] Kiểm tra hiển thị Frontend ở trang chủ, trang danh mục và trang chi tiết.
   - [x] Quy hoạch trang chủ và trang danh mục thành 11 chuyên mục E-commerce. Áp dụng thuật toán **Pure Amazon Tag Matching** (`product.tags`) — loại bỏ hoàn toàn regex trên tên sản phẩm. Chuẩn hóa cấu trúc theo đúng Project Structure Mandate: các hằng số phân loại (`SMART_SLUGS`, `TAG_TO_SLUG`, `DEFAULT_SMART_SLUG`) đặt tại `src/constants/product.ts`, còn logic phân loại tại `src/utils/classify-product.ts` được refactor để vận hành hoàn toàn động (dynamic reduce), loại bỏ triệt để magic strings. Thiết lập **Constants Separation Mandate** trong `.agents/AGENTS.md` để đảm bảo vĩnh viễn không lặp lại lỗi để hằng số trong utils hay quên thư mục constants. Đảm bảo 100% Zero Overlap.
 
-- [x] **5. Nâng cấp bảo mật Authentication & Route Protection (US-AUTH)**
-  - [x] Tích hợp mô hình Hybrid Auth (HttpOnly Cookies + Bearer Token) giữa Next.js và NestJS
-  - [x] Nâng cấp Next.js Edge Middleware để bảo vệ các Protected Routes và Guest Routes từ tầng máy chủ
+- [x] **5. Đăng nhập & Đăng ký Khách hàng (US-AUTH-01, US-AUTH-02)**
+  - [x] Đăng nhập bằng SMS OTP (Twilio/ZNS hoặc giả lập Dev)
+  - [x] Xử lý giới hạn spam (Rate Limit & Google reCAPTCHA)
+
+- [x] **6. Đăng nhập Nội bộ & Đặt lại mật khẩu (US-AUTH-03, US-AUTH-04)**
+  - [x] Đăng nhập Admin/Nhân viên bằng Email và Mật khẩu
+  - [x] Khôi phục mật khẩu qua Email (Nodemailer)
+  - [x] Tích hợp mô hình Hybrid Auth (HttpOnly Cookies + Bearer Token)
+  - [x] Next.js Edge Middleware bảo vệ Protected Routes

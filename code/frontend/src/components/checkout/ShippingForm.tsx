@@ -3,6 +3,7 @@
 import { useLocale, useTranslations } from 'next-intl';
 import { BaseInput } from '@/components/base';
 import { AddressSelector } from '@/components/features/address/AddressSelector';
+import { PickupTimeSelector } from './PickupTimeSelector';
 import { formatPrice } from '@/utils/format';
 
 interface AddressDetails {
@@ -30,7 +31,6 @@ interface ShippingFormErrors {
 
 interface ShippingFormProps {
   shippingData: ShippingData;
-  addressDetails: AddressDetails;
   deliveryMethod: string;
   errors: ShippingFormErrors;
   onShippingDataChange: (data: ShippingData) => void;
@@ -41,7 +41,6 @@ interface ShippingFormProps {
 
 export function ShippingForm({
   shippingData,
-  addressDetails,
   deliveryMethod,
   errors,
   onShippingDataChange,
@@ -51,8 +50,6 @@ export function ShippingForm({
 }: ShippingFormProps) {
   const locale = useLocale();
   const t = useTranslations('checkout');
-
-  const hasAddress = !!addressDetails?.provinceName;
 
   return (
     <div className="bg-white border border-rule rounded-xl p-6 space-y-6 shadow-sm">
@@ -108,31 +105,24 @@ export function ShippingForm({
         <label className="text-sm font-bold text-ink">{t('deliveryMethod')}</label>
         {['standard', 'express', 'pickup'].map((method) => {
           const isPickup = method === 'pickup';
-          const isDisabled = !isPickup && !hasAddress;
+          const isSelected = deliveryMethod === method;
 
           return (
             <label
               key={method}
-              className={`flex items-center gap-3 p-3.5 rounded-xl border transition-all ${
-                isDisabled
-                  ? 'opacity-50 cursor-not-allowed bg-gray-50'
-                  : 'cursor-pointer hover:border-ink-2'
-              } ${
-                deliveryMethod === method
-                  ? 'border-primary bg-primary/5 font-medium'
-                  : 'border-rule'
+              className={`flex items-center gap-3 p-3.5 rounded-xl border transition-all cursor-pointer hover:border-ink-2 ${
+                isSelected ? 'border-primary bg-primary/5 font-medium shadow-xs' : 'border-rule'
               }`}
             >
               <input
                 type="radio"
                 name="delivery"
                 value={method}
-                checked={deliveryMethod === method}
-                disabled={isDisabled}
+                checked={isSelected}
                 onChange={(e) => onDeliveryMethodChange(e.target.value)}
-                className="accent-primary w-4 h-4 disabled:opacity-50"
+                className="accent-primary w-4 h-4 cursor-pointer"
               />
-              <span className="text-sm text-ink">
+              <span className="text-sm text-ink font-medium">
                 {t(method as 'standard' | 'express' | 'pickup')}
               </span>
               <span className="text-sm font-semibold text-primary ml-auto">
@@ -144,20 +134,15 @@ export function ShippingForm({
       </div>
 
       {deliveryMethod === 'pickup' && (
-        <div className="space-y-2 pt-4 border-t border-rule">
-          <label className="text-sm font-bold text-ink">{t('pickupTime')} *</label>
-          <input
-            type="datetime-local"
-            className="w-full px-4 py-2 border border-rule rounded-xl text-ink outline-none focus:border-primary transition-colors"
-            min={new Date().toISOString().slice(0, 16)}
-            max={new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString().slice(0, 16)}
-            value={shippingData.pickupTime || ''}
-            onChange={(e) => {
-              onShippingDataChange({ ...shippingData, pickupTime: e.target.value });
+        <div className="pt-4 border-t border-rule">
+          <PickupTimeSelector
+            value={shippingData.pickupTime}
+            onChange={(isoString) => {
+              onShippingDataChange({ ...shippingData, pickupTime: isoString });
               onErrorsChange({ ...errors, pickupTime: undefined });
             }}
+            error={errors.pickupTime}
           />
-          {errors.pickupTime && <p className="text-xs text-red-500">{errors.pickupTime}</p>}
         </div>
       )}
     </div>

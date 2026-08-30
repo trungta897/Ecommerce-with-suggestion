@@ -22,37 +22,45 @@ export function OrderSummarySidebar({
   const t = useTranslations('checkout');
 
   return (
-    <div className="lg:w-80">
-      <div className="bg-white border border-rule rounded-xl p-6 sticky top-4 shadow-sm">
-        <h3 className="text-lg font-bold text-ink mb-4 border-b border-rule pb-3">
-          {t('orderSummary')}
-        </h3>
-        <div className="space-y-3 text-sm">
-          <div className="flex justify-between items-center">
-            <span className="text-ink-2">{t('subtotal')}</span>
-            <span className="font-semibold">{formatPrice(subtotal, locale)}</span>
-          </div>
-          <div className="flex justify-between items-center">
-            <span className="text-ink-2">{t('shippingFee')}</span>
-            <span className="font-semibold">{formatPrice(shippingFee, locale)}</span>
-          </div>
-          <div className="flex justify-between items-center">
-            <span className="text-ink-2">{t('discount')}</span>
-            <span className="font-semibold text-green-600">-{formatPrice(discount, locale)}</span>
-          </div>
-          <div className="border-t border-rule pt-3 mt-3">
-            <div className="flex justify-between items-center pt-4 border-t border-rule">
-              <span className="text-base font-bold text-ink">{t('total')}</span>
-              <span className="text-lg font-bold text-primary">{formatPrice(total, locale)}</span>
-            </div>
-            {isDepositRequired && (
-              <div className="flex justify-between items-center pt-2 mt-2 border-t border-dashed border-rule text-orange-600">
-                <span className="text-sm font-semibold">Cần thanh toán cọc trước:</span>
-                <span className="text-sm font-bold">{formatPrice(50000, locale)}</span>
-              </div>
-            )}
+    <div className="w-full mb-6">
+      <div className="bg-white border border-rule rounded-xl p-5 shadow-sm">
+        <div className="flex flex-wrap items-center justify-between border-b border-rule pb-3 mb-4 gap-2">
+          <h3 className="text-base font-bold text-ink">{t('orderSummary')}</h3>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-ink-2 font-medium">{t('total')}:</span>
+            <span className="text-lg font-bold text-primary">{formatPrice(total, locale)}</span>
           </div>
         </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
+          <div className="p-3 bg-gray-50/80 rounded-xl border border-gray-100">
+            <span className="block text-xs text-ink-2 mb-1">{t('subtotal')}</span>
+            <span className="font-semibold text-ink">{formatPrice(subtotal, locale)}</span>
+          </div>
+          <div className="p-3 bg-gray-50/80 rounded-xl border border-gray-100">
+            <span className="block text-xs text-ink-2 mb-1">{t('shippingFee')}</span>
+            <span className="font-semibold text-ink">
+              {shippingFee === 0 ? t('free') : formatPrice(shippingFee, locale)}
+            </span>
+          </div>
+          <div className="p-3 bg-gray-50/80 rounded-xl border border-gray-100">
+            <span className="block text-xs text-ink-2 mb-1">{t('discount')}</span>
+            <span className="font-semibold text-emerald-600">
+              {discount > 0 ? `-${formatPrice(discount, locale)}` : '0 đ'}
+            </span>
+          </div>
+          <div className="p-3 bg-primary/5 rounded-xl border border-primary/20">
+            <span className="block text-xs text-primary font-medium mb-1">{t('total')}</span>
+            <span className="font-bold text-primary text-base">{formatPrice(total, locale)}</span>
+          </div>
+        </div>
+
+        {isDepositRequired && (
+          <div className="flex items-center justify-between mt-3 p-3 bg-orange-50 border border-orange-200 rounded-xl text-orange-700 text-xs">
+            <span className="font-semibold">{t('depositRequired')}</span>
+            <span className="font-bold text-sm">{formatPrice(2, locale)}</span>
+          </div>
+        )}
       </div>
     </div>
   );
