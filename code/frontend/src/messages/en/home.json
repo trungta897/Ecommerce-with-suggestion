@@ -79,7 +79,10 @@
     "title": "Don't Miss Latest Offers",
     "desc": "Subscribe to receive product info and discount codes",
     "placeholder": "Enter your email",
-    "subscribe": "Subscribe"
+    "subscribe": "Subscribe",
+    "subscribe_success": "Subscribed successfully!",
+    "subscribe_success_desc": "Thank you for subscribing. We will send the latest promotions to your inbox.",
+    "invalid_email": "Please enter a valid email address"
   },
   "flash_sale": {
     "title": "Flash Sale",

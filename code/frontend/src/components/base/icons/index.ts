@@ -79,6 +79,8 @@ export {
   Copy,
   History,
   Percent,
+  Bell,
+  Lock,
 } from 'lucide-react';
 
 // Export custom icons

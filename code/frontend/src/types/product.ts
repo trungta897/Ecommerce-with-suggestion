@@ -36,3 +36,11 @@ export interface Product {
   isActive: boolean;
   createdAt: string;
 }
+
+export interface WishlistItem {
+  id: string;
+  userId: string;
+  productId: string;
+  createdAt: string;
+  product: Product;
+}

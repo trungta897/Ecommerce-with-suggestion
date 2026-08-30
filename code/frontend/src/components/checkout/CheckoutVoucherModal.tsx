@@ -71,7 +71,7 @@ export function CheckoutVoucherModal({
     } catch (err: unknown) {
       const msg =
         (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
-        'Mã giảm giá không hợp lệ';
+        t('noVouchers');
       setManualError(msg);
     } finally {
       setValidating(false);
@@ -81,10 +81,9 @@ export function CheckoutVoucherModal({
   const checkEligibility = (voucher: VoucherItem) => {
     // 1. Min order value check
     if (voucher.minOrderValue && subtotal < Number(voucher.minOrderValue)) {
-      const remaining = Number(voucher.minOrderValue) - subtotal;
       return {
         eligible: false,
-        reason: `Mua thêm ${remaining.toLocaleString('vi-VN')}đ để áp dụng`,
+        reason: t('ineligibleHint'),
       };
     }
 
@@ -94,7 +93,9 @@ export function CheckoutVoucherModal({
       if (!hasCategory) {
         return {
           eligible: false,
-          reason: `Chỉ áp dụng cho danh mục ${voucher.category?.name || 'chỉ định'}`,
+          reason: t('applyToCategory', {
+            name: voucher.category?.name || t('specifiedProduct'),
+          }),
         };
       }
     }
@@ -104,7 +105,9 @@ export function CheckoutVoucherModal({
       if (!hasProduct) {
         return {
           eligible: false,
-          reason: `Chỉ áp dụng cho sản phẩm ${voucher.product?.name || 'chỉ định'}`,
+          reason: t('productSpecificOnly', {
+            product: voucher.product?.name || t('specifiedProduct'),
+          }),
         };
       }
     }
@@ -145,13 +148,13 @@ export function CheckoutVoucherModal({
               disabled={validating || !manualCode.trim()}
               className="shrink-0"
             >
-              {validating ? 'Kiểm tra...' : t('apply')}
+              {validating ? t('checking') : t('apply')}
             </BaseButton>
           </div>
           {manualError && (
             <div className="text-xs text-red-600 mt-1.5 flex items-center gap-1">
               <AlertCircle className="w-3.5 h-3.5" />
-              {manualError}
+              <span>{manualError}</span>
             </div>
           )}
         </form>
@@ -161,7 +164,7 @@ export function CheckoutVoucherModal({
 
         <div className="overflow-y-auto flex-1 space-y-3 pr-1">
           {loading ? (
-            <div className="text-center py-10 text-ink-2 text-sm">Đang tải danh sách ưu đãi...</div>
+            <div className="text-center py-10 text-ink-2 text-sm">{t('loadingVouchers')}</div>
           ) : publicVouchers.length === 0 ? (
             <div className="text-center py-10 text-ink-2 text-sm">{t('noVouchers')}</div>
           ) : (
@@ -210,15 +213,24 @@ export function CheckoutVoucherModal({
 
                       <div className="text-xs font-semibold text-primary mt-0.5">
                         {voucher.type === 'FREE_SHIPPING'
-                          ? 'Miễn phí vận chuyển'
+                          ? t('freeShippingLabel')
                           : voucher.type === 'PERCENTAGE'
-                            ? `Giảm ${voucher.value}%${voucher.maxDiscount ? ` (Tối đa ${Number(voucher.maxDiscount).toLocaleString('vi-VN')}đ)` : ''}`
-                            : `Giảm ${Number(voucher.value).toLocaleString('vi-VN')}đ`}
+                            ? voucher.maxDiscount
+                              ? t('discountPercentageMaxText', {
+                                  value: voucher.value,
+                                  max: Number(voucher.maxDiscount).toLocaleString('vi-VN'),
+                                })
+                              : t('discountPercentageText', { value: voucher.value })
+                            : t('discountFixedText', {
+                                value: Number(voucher.value).toLocaleString('vi-VN'),
+                              })}
                       </div>
 
                       {voucher.minOrderValue && Number(voucher.minOrderValue) > 0 && (
                         <div className="text-[11px] text-ink-2 mt-0.5">
-                          Đơn tối thiểu: {Number(voucher.minOrderValue).toLocaleString('vi-VN')}đ
+                          {t('minOrderValueLabel', {
+                            min: Number(voucher.minOrderValue).toLocaleString('vi-VN'),
+                          })}
                         </div>
                       )}
 
@@ -230,7 +242,9 @@ export function CheckoutVoucherModal({
                       )}
 
                       <div className="text-[10px] text-ink-2 mt-1">
-                        HSD: {new Date(voucher.endDate).toLocaleDateString('vi-VN')}
+                        {t('expiryDate', {
+                          date: new Date(voucher.endDate).toLocaleDateString('vi-VN'),
+                        })}
                       </div>
                     </div>
                   </div>

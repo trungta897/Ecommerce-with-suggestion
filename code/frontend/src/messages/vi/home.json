@@ -79,7 +79,10 @@
     "title": "Đừng Bỏ Lỡ Các Ưu Đãi Mới Nhất",
     "desc": "Đăng ký để nhận thông tin về sản phẩm và mã giảm giá",
     "placeholder": "Nhập email của bạn",
-    "subscribe": "Đăng ký"
+    "subscribe": "Đăng ký",
+    "subscribe_success": "Đăng ký nhận tin thành công!",
+    "subscribe_success_desc": "Cảm ơn bạn đã đăng ký. Các thông tin khuyến mãi sẽ được gửi tới hòm thư của bạn.",
+    "invalid_email": "Vui lòng nhập địa chỉ email hợp lệ"
   },
   "flash_sale": {
     "title": "Giờ Vàng Giá Sốc",

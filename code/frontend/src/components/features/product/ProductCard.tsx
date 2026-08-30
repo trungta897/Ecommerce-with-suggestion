@@ -4,8 +4,9 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
-import { ShoppingCart } from '@/components/base/icons';
+import { ShoppingCart, Heart } from '@/components/base/icons';
 import { useCart } from '@/hooks/use-cart';
+import { useWishlistIds, useToggleWishlist } from '@/hooks/use-wishlist';
 import { useToast } from '@/providers/toast-provider';
 import { formatPrice } from '@/utils/format';
 import { Product } from '@/types';
@@ -37,6 +38,16 @@ export default function ProductCard({ product, isFlashSale, flashSaleData }: Pro
     hasDiscount && originalPrice
       ? Math.round(((originalPrice - currentPrice) / originalPrice) * 100)
       : undefined;
+
+  const { isWishlisted } = useWishlistIds();
+  const toggleWishlistMutation = useToggleWishlist();
+  const isLiked = isWishlisted(product.id);
+
+  const handleToggleWishlist = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    toggleWishlistMutation.mutate(product.id);
+  };
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -77,13 +88,29 @@ export default function ProductCard({ product, isFlashSale, flashSaleData }: Pro
           fill
           className="object-cover group-hover:scale-105 transition-transform duration-300"
         />
+
+        {/* Wishlist Heart Button */}
+        <button
+          type="button"
+          onClick={handleToggleWishlist}
+          disabled={toggleWishlistMutation.isPending}
+          className="absolute top-2 right-2 z-20 p-2 rounded-full bg-white/85 backdrop-blur-sm shadow-sm hover:bg-white text-ink-2 hover:text-red-500 transition-all hover:scale-110"
+          aria-label={isLiked ? t('removeFromWishlist') : t('addToWishlist')}
+        >
+          <Heart
+            className={`w-4 h-4 transition-colors ${
+              isLiked ? 'fill-red-500 text-red-500' : 'text-gray-500 hover:text-red-500'
+            }`}
+          />
+        </button>
+
         {discountPercentage && !isFlashSale && (
           <div className="absolute top-2 left-2 bg-primary text-primary-foreground text-xs font-bold px-2 py-1 rounded">
             {t('discount', { percent: discountPercentage })}
           </div>
         )}
         {discountPercentage && isFlashSale && (
-          <div className="absolute top-0 right-0 bg-red-600 text-white text-xs font-bold px-2 py-1.5 rounded-bl-lg shadow-md z-10">
+          <div className="absolute top-0 left-0 bg-red-600 text-white text-xs font-bold px-2 py-1.5 rounded-br-lg shadow-md z-10">
             {t('discount', { percent: discountPercentage })}
           </div>
         )}

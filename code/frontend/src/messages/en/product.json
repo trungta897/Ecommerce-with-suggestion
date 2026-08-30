@@ -51,5 +51,10 @@
   "maxPrice": "Max (₫)",
   "applyFilter": "Apply",
   "clearFilter": "Reset Filters",
-  "noSearchResults": "No products found matching your criteria. Please try different keywords or filters."
+  "noSearchResults": "No products found matching your criteria. Please try different keywords or filters.",
+  "addToWishlist": "Add to wishlist",
+  "removeFromWishlist": "Remove from wishlist",
+  "wishlistAdded": "Product added to wishlist",
+  "wishlistRemoved": "Product removed from wishlist",
+  "requireLoginWishlist": "Please sign in to save your favorite products"
 }

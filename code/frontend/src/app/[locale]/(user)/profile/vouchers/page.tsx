@@ -45,7 +45,7 @@ export default function ProfileVouchersPage() {
   const handleCopyCode = (code: string) => {
     navigator.clipboard.writeText(code);
     setCopiedCode(code);
-    toast.success(`Đã sao chép mã ${code} vào bộ nhớ tạm!`, 'Thành công');
+    toast.success(t('copySuccess', { code }), t('copiedTitle'));
     setTimeout(() => setCopiedCode(null), 2500);
   };
 
@@ -64,7 +64,7 @@ export default function ProfileVouchersPage() {
             className="inline-flex items-center gap-1.5 text-xs text-ink-2 hover:text-primary font-medium mb-2 transition-colors"
           >
             <ChevronLeft className="w-4 h-4" />
-            Quay lại trang cá nhân
+            {t('backToProfile')}
           </Link>
           <div className="flex items-center gap-2.5">
             <Ticket className="w-7 h-7 text-primary" />
@@ -76,10 +76,10 @@ export default function ProfileVouchersPage() {
         {/* Filter Tabs */}
         <div className="flex gap-2 flex-wrap">
           {[
-            { key: 'ALL', label: 'Tất cả' },
-            { key: 'PERCENTAGE' as VoucherType, label: 'Giảm %' },
-            { key: 'FIXED_AMOUNT' as VoucherType, label: 'Giảm tiền' },
-            { key: 'FREE_SHIPPING' as VoucherType, label: 'Freeship' },
+            { key: 'ALL', label: t('filterAll') },
+            { key: 'PERCENTAGE' as VoucherType, label: t('filterPercentage') },
+            { key: 'FIXED_AMOUNT' as VoucherType, label: t('filterFixedAmount') },
+            { key: 'FREE_SHIPPING' as VoucherType, label: t('filterFreeShipping') },
           ].map((tab) => (
             <button
               key={tab.key}
@@ -107,9 +107,7 @@ export default function ProfileVouchersPage() {
         <div className="bg-white border border-rule rounded-2xl p-12 text-center">
           <Ticket className="w-12 h-12 text-muted mx-auto mb-3" />
           <p className="text-ink font-semibold">{t('noVouchers')}</p>
-          <p className="text-sm text-ink-2 mt-1">
-            Các chương trình ưu đãi mới sẽ sớm được cập nhật!
-          </p>
+          <p className="text-sm text-ink-2 mt-1">{t('upcomingVouchersHint')}</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -143,10 +141,12 @@ export default function ProfileVouchersPage() {
                     <div>
                       <div className="font-bold text-ink text-base">
                         {voucher.type === 'FREE_SHIPPING'
-                          ? 'Miễn phí vận chuyển'
+                          ? t('freeShippingLabel')
                           : voucher.type === 'PERCENTAGE'
-                            ? `Giảm ${voucher.value}%`
-                            : `Giảm ${Number(voucher.value).toLocaleString('vi-VN')}đ`}
+                            ? t('discountPercentageText', { value: voucher.value })
+                            : t('discountFixedText', {
+                                value: Number(voucher.value).toLocaleString('vi-VN'),
+                              })}
                       </div>
                       <span
                         className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${scopeMeta.color}`}
@@ -157,25 +157,45 @@ export default function ProfileVouchersPage() {
                   </div>
 
                   <span className="text-xs bg-gray-100 text-ink-2 px-2.5 py-1 rounded-full font-medium">
-                    Còn {voucher.usageLimit ? voucher.usageLimit - voucher.usedCount : 'Nhiều'} lượt
+                    {voucher.usageLimit
+                      ? t('remainingUses', {
+                          count: voucher.usageLimit - voucher.usedCount,
+                        })
+                      : t('unlimitedUses')}
                   </span>
                 </div>
 
                 {/* Conditions / Scope specifics */}
                 <div className="text-xs text-ink-2 space-y-1 mb-4">
                   {voucher.maxDiscount && (
-                    <div>• Giảm tối đa: {Number(voucher.maxDiscount).toLocaleString('vi-VN')}đ</div>
+                    <div>
+                      •{' '}
+                      {t('maxDiscountLabel', {
+                        max: Number(voucher.maxDiscount).toLocaleString('vi-VN'),
+                      })}
+                    </div>
                   )}
                   {voucher.minOrderValue && Number(voucher.minOrderValue) > 0 && (
                     <div>
-                      • Đơn tối thiểu: {Number(voucher.minOrderValue).toLocaleString('vi-VN')}đ
+                      •{' '}
+                      {t('minOrderValueLabel', {
+                        min: Number(voucher.minOrderValue).toLocaleString('vi-VN'),
+                      })}
                     </div>
                   )}
-                  {voucher.category && <div>• Áp dụng cho: Danh mục {voucher.category.name}</div>}
-                  {voucher.product && <div>• Áp dụng cho: Sản phẩm {voucher.product.name}</div>}
+                  {voucher.category && (
+                    <div>• {t('applyToCategory', { name: voucher.category.name })}</div>
+                  )}
+                  {voucher.product && (
+                    <div>• {t('applyToProduct', { name: voucher.product.name })}</div>
+                  )}
                   <div className="flex items-center gap-1 text-ink-2 pt-1">
                     <Calendar className="w-3.5 h-3.5" />
-                    <span>HSD: {new Date(voucher.endDate).toLocaleDateString('vi-VN')}</span>
+                    <span>
+                      {t('expiryDate', {
+                        date: new Date(voucher.endDate).toLocaleDateString('vi-VN'),
+                      })}
+                    </span>
                   </div>
                 </div>
 
