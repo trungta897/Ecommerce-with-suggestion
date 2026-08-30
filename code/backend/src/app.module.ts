@@ -25,6 +25,7 @@ import { ReviewsModule } from './modules/reviews/reviews.module';
 import { ActivitiesModule } from './modules/activities/activities.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { PromotionsModule } from './modules/promotions/promotions.module';
+import { WishlistModule } from './modules/wishlist/wishlist.module';
 
 @Module({
   imports: [
@@ -67,6 +68,7 @@ import { PromotionsModule } from './modules/promotions/promotions.module';
     ActivitiesModule,
     DashboardModule,
     PromotionsModule,
+    WishlistModule,
   ],
 
   controllers: [AppController],
