@@ -269,7 +269,7 @@ export class AuthService {
         data: {
           phone,
           email: `${phone}@placeholder.local`, // Mock email since it is @unique in schema
-          fullName: 'Khách Hàng',
+          fullName: 'Customer',
           passwordHash: '', // No password
           isVerified: true,
           role: 'CUSTOMER',

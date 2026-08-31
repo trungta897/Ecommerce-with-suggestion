@@ -100,7 +100,7 @@ export class OrdersPaymentService {
 
           if (updatedProduct.count === 0) {
             throw new BadRequestException(
-              'Không đủ tồn kho để thanh toán lại đơn hàng này',
+              this.i18n.t(ORDER_MESSAGES.INSUFFICIENT_STOCK_REPAY, { lang }),
             );
           }
         }
@@ -146,6 +146,7 @@ export class OrdersPaymentService {
           Number(orderToRefund.totalAmount),
           orderToRefund.paymentGatewayTxnId!,
           orderToRefund.paymentGatewayPayDate!,
+          lang,
         );
       } else {
         isSuccess = true; // COD, STRIPE etc. mock or actual implementation
@@ -179,15 +180,22 @@ export class OrdersPaymentService {
             });
           }
         });
-        return { success: true, message: 'Hoàn tiền thành công' }; // Admin msg, mostly ok to keep hardcoded or add to i18n
+        return {
+          success: true,
+          message: this.i18n.t(ORDER_MESSAGES.REFUND_SUCCESS, { lang }),
+        };
       }
     } catch (error) {
       await this.prisma.order.update({
         where: { id: orderId },
         data: { refundStatus: null },
       });
+      const errorMsg = (error as Error).message;
       throw new BadRequestException(
-        'Hoàn tiền thất bại: ' + (error as Error).message,
+        this.i18n.t(ORDER_MESSAGES.REFUND_FAILED, {
+          lang,
+          args: { reason: errorMsg },
+        }),
       );
     }
   }
@@ -200,7 +208,7 @@ export class OrdersPaymentService {
   ) {
     if (!reason) {
       throw new BadRequestException(
-        'Bắt buộc phải nhập lý do khi Gỡ kẹt hoàn tiền',
+        this.i18n.t(ORDER_MESSAGES.REFUND_RESET_REASON_REQUIRED, { lang }),
       );
     }
 
@@ -226,6 +234,9 @@ export class OrdersPaymentService {
       });
     });
 
-    return { success: true, message: 'Đã gỡ kẹt cờ hoàn tiền' };
+    return {
+      success: true,
+      message: this.i18n.t(ORDER_MESSAGES.REFUND_RESET_SUCCESS, { lang }),
+    };
   }
 }

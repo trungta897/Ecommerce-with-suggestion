@@ -1,5 +1,16 @@
 {
-  "USER_NOT_FOUND": "Không tìm thấy thông tin hồ sơ người dùng trong hệ thống.",
+  "USER_NOT_FOUND": "Không tìm thấy thông tin người dùng trong hệ thống.",
   "UPDATE_SUCCESS": "Cập nhật hồ sơ cá nhân và thông tin địa chỉ nhận hàng thành công!",
-  "UNAUTHORIZED_ACTION": "Bạn không có quyền thực hiện thao tác này trên hồ sơ người dùng khác."
+  "UNAUTHORIZED_ACTION": "Bạn không có quyền thực hiện thao tác này trên hồ sơ người dùng khác.",
+  "ONLY_SUPER_ADMIN_CAN_INVITE_ADMIN": "Chỉ Super Admin mới có quyền mời hoặc phân quyền Quản trị viên (Admin)",
+  "EMAIL_ALREADY_EXISTS": "Email đã tồn tại trong hệ thống",
+  "INVITE_STAFF_SUCCESS": "Đã gửi lời mời tham gia quản trị thành công",
+  "CANNOT_CHANGE_OWN_ROLE": "Không thể tự thay đổi quyền của chính mình",
+  "NO_PERMISSION_CHANGE_ROLE": "Bạn không có quyền thay đổi vai trò của người dùng này",
+  "NO_PERMISSION_GRANT_ROLE": "Bạn không có quyền cấp vai trò này",
+  "CHANGE_ROLE_SUCCESS": "Cập nhật vai trò thành công",
+  "CANNOT_LOCK_OWN_ACCOUNT": "Không thể tự khóa tài khoản của chính mình",
+  "NO_PERMISSION_LOCK_USER": "Bạn không có quyền khóa tài khoản của người dùng này",
+  "UNLOCKED_ACCOUNT_SUCCESS": "Đã mở khóa tài khoản",
+  "LOCKED_ACCOUNT_SUCCESS": "Đã khóa tài khoản"
 }
