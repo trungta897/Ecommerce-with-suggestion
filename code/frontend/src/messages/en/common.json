@@ -23,6 +23,8 @@
     "email": "support@example.com",
     "account": "Account",
     "login_register": "Login / Register",
+    "cart": "Shopping Cart",
+    "wishlist": "Wishlist",
     "quick_link": "Quick Link",
     "privacy_policy": "Privacy Policy",
     "refund_policy": "Refund Policy",

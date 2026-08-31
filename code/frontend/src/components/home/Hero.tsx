@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import {
@@ -86,33 +86,33 @@ export default function Hero() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="h-24 md:h-32 relative rounded-2xl overflow-hidden bg-gradient-to-br from-orange-500 to-red-500 p-4 flex flex-col justify-end group cursor-pointer shadow-sm">
             <h3 className="text-white font-bold text-sm md:text-base leading-tight relative z-10">
-              Mùa Tựu Trường
+              {t('small_banners.back_to_school_title')}
               <br />
-              Giảm 10%
+              {t('small_banners.back_to_school_sub')}
             </h3>
             <div className="absolute inset-0 bg-black opacity-0 group-hover:opacity-10 transition-opacity"></div>
           </div>
           <div className="h-24 md:h-32 relative rounded-2xl overflow-hidden bg-gradient-to-br from-green-500 to-emerald-700 p-4 flex flex-col justify-end group cursor-pointer shadow-sm">
             <h3 className="text-white font-bold text-sm md:text-base leading-tight relative z-10">
-              Xả Kho Linh Kiện
+              {t('small_banners.warehouse_clearance_title')}
               <br />
-              Lên đến 50%
+              {t('small_banners.warehouse_clearance_sub')}
             </h3>
             <div className="absolute inset-0 bg-black opacity-0 group-hover:opacity-10 transition-opacity"></div>
           </div>
           <div className="h-24 md:h-32 relative rounded-2xl overflow-hidden bg-gradient-to-br from-purple-500 to-fuchsia-600 p-4 flex flex-col justify-end group cursor-pointer shadow-sm">
             <h3 className="text-white font-bold text-sm md:text-base leading-tight relative z-10">
-              Tuần Lễ Apple
+              {t('small_banners.apple_week_title')}
               <br />
-              Giá Sốc
+              {t('small_banners.apple_week_sub')}
             </h3>
             <div className="absolute inset-0 bg-black opacity-0 group-hover:opacity-10 transition-opacity"></div>
           </div>
           <div className="h-24 md:h-32 relative rounded-2xl overflow-hidden bg-gradient-to-br from-blue-500 to-cyan-500 p-4 flex flex-col justify-end group cursor-pointer shadow-sm">
             <h3 className="text-white font-bold text-sm md:text-base leading-tight relative z-10">
-              Build PC
+              {t('small_banners.build_pc_title')}
               <br />
-              Tặng Màn Hình
+              {t('small_banners.build_pc_sub')}
             </h3>
             <div className="absolute inset-0 bg-black opacity-0 group-hover:opacity-10 transition-opacity"></div>
           </div>

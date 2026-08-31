@@ -1,4 +1,4 @@
-﻿import { useTranslations } from 'next-intl';
+import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import {
   MapPin,
@@ -68,12 +68,12 @@ export function Footer() {
               </li>
               <li>
                 <Link href="/cart" className="text-sm text-ink-2 hover:text-primary transition">
-                  {t('account')}
+                  {t('cart')}
                 </Link>
               </li>
               <li>
                 <Link href="/wishlist" className="text-sm text-ink-2 hover:text-primary transition">
-                  {t('account')}
+                  {t('wishlist')}
                 </Link>
               </li>
             </ul>
