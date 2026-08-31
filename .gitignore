@@ -1,5 +1,5 @@
 # Internal planning documents
-plans/
+/plans/
 
 # Machine Learning Data
 ml/data/*.csv

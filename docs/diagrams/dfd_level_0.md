@@ -10,7 +10,7 @@ graph TD
     VNPay[Cổng thanh toán VNPay]
     Gmail[Gmail SMTP Server]
     Cloudinary[Cloudinary Storage]
-    Recaptcha[Google reCAPTCHA v3]
+    Redis[(Redis Cache & Rate Limiter)]
 
     User -- "Tìm kiếm, Đặt hàng, Đánh giá, Quản lý" --> System
     System -- "Thông tin sản phẩm, Gợi ý, Trạng thái đơn" --> User
@@ -18,12 +18,12 @@ graph TD
     System -- "Tạo GD, Hoàn tiền" --> VNPay
     VNPay -- "IPN Callback, Kết quả GD" --> System
     
-    System -- "Nội dung Email, OTP" --> Gmail
+    System -- "Nội dung Email thông báo" --> Gmail
     Gmail -- "Gửi mail" --> User
     
     System -- "Upload hình ảnh SP" --> Cloudinary
     Cloudinary -- "URL hình ảnh" --> System
     
-    User -- "Tương tác (ẩn)" --> Recaptcha
-    Recaptcha -- "Score Token" --> System
+    System -- "Rate limiting OTP, Cache RecSys & Catalog" --> Redis
+    Redis -- "TTL Key, Token xác thực" --> System
 ```
