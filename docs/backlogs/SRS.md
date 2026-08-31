@@ -66,8 +66,8 @@ graph TD
 ### 2.3. Các yếu tố bên ngoài tác động (External factors)
 | Yếu tố | Tác động | Giải pháp |
 |---|---|---|
-| **API Cổng thanh toán (VNPay)** | Cần mạng Internet để gọi VNPay, phụ thuộc vào tốc độ và uptime của sandbox VNPay. | Có cơ chế fallback về thanh toán COD nếu VNPay lỗi; lưu trạng thái Pending rõ ràng. |
-| **Bảo mật và Bot spam** | Nguy cơ bị bot spam API đăng ký, gửi OTP, hoặc brute-force mật khẩu. | Tích hợp Google reCAPTCHA v3 (ngưỡng score < 0.5 bị chặn); rate limit Redis (5 req/phút). |
+| **API Cổng thanh toán (VNPay)** | Cần mạng Internet để gọi VNPay, phụ thuộc vào tốc độ và uptime của sandbox VNPay. API hoàn tiền (Refund) trên Sandbox yêu cầu tài khoản Merchant doanh nghiệp có ký quỹ. | Có cơ chế fallback về thanh toán COD nếu VNPay lỗi; lưu trạng thái Pending rõ ràng; Backend chủ động xử lý và thông báo nghiệp vụ nếu refund trên Sandbox. |
+| **Bảo mật và Bot spam (SMS OTP)** | Nguy cơ bị bot spam API đăng ký, rút cạn hạn ngạch SMS OTP, hoặc brute-force mã OTP. | Áp dụng Redis Rate Limiting theo SĐT (5 req/phút, khóa 15 phút nếu sai 3 lần) và IP để kiểm soát chi phí SMS; mock SMS log môi trường Dev. |
 | **Hệ thống Email (SMTP)** | Lỗi mạng, email bị đánh dấu spam, hết hạn ngạch gửi mail miễn phí. | Sử dụng Nodemailer; cho phép resend OTP (tối đa 5 lần); lưu log gửi email để debug. |
 | **Object Storage (Cloudinary)** | Quản lý lưu trữ ảnh sản phẩm, ảnh avatar. | Sử dụng duy nhất Cloudinary làm Object Storage chính thức để đơn giản hóa kiến trúc. |
 | **ML Service (FastAPI)** | Quá trình dự đoán mô hình có thể chậm hoặc server Python sập/quá tải. | Timeout internal API (5s) và fallback trả về Popular Items; cache kết quả trong Redis 1 giờ. |
@@ -156,7 +156,7 @@ flowchart TD
 
 | ID | Chức năng | Mô tả chi tiết | Quyền |
 |---|---|---|---|
-| FR-01 | Đăng nhập & Đăng ký Khách hàng | Khách hàng đăng nhập bằng Số điện thoại và xác thực OTP. Hệ thống tự động tạo tài khoản nếu SĐT chưa tồn tại. Bắt buộc có Google reCAPTCHA v3. Không sử dụng mật khẩu hay email cho xác thực. Chờ tích hợp SMS Gateway (Twilio/Zalo ZNS). | Guest |
+| FR-01 | Đăng nhập & Đăng ký Khách hàng | Khách hàng đăng nhập bằng Số điện thoại và xác thực OTP. Hệ thống tự động tạo tài khoản nếu SĐT chưa tồn tại. Áp dụng Redis Rate Limiting theo SĐT (5 req/phút, khóa 15 phút nếu sai 3 lần) để chống spam và brute-force. Không sử dụng mật khẩu hay email cho xác thực. Chờ tích hợp SMS Gateway (Twilio/Zalo ZNS). | Guest |
 | FR-02 | Xác thực SMS OTP | Gửi OTP qua SMS/Zalo. Hiệu lực 5 phút. Nhập đúng -> cấp JWT. Sai 3 lần -> khóa 15 phút. Wording lỗi: *"Mã OTP không chính xác, vui lòng kiểm tra lại"*. | Guest |
 | FR-03 | Đăng nhập Admin/Nhân viên | Dành riêng cho luồng quản trị: Admin và Nhân viên đăng nhập bằng Email và Mật khẩu. | Admin, Employee |
 | FR-04 | Tìm kiếm & Lọc SP | Full-text search, lọc theo giá, category, rating. | All |
@@ -449,7 +449,7 @@ Sử dụng kiến trúc đa kênh, hệ thống tiếp nhận Webhook từ đ�
 - **Yêu cầu:** 
   - FR-V1: Tạo URL thanh toán an toàn (HMAC-SHA512).
   - FR-V2: Xử lý IPN callback để chuyển `payment_status` thành `completed`.
-  - FR-V3: Cung cấp API Refund để hoàn tiền khi đơn chuyển trạng thái `Returned`.
+  - FR-V3: Cung cấp API Refund để hoàn tiền khi đơn chuyển trạng thái `Returned`. *(Lưu ý: Trên môi trường VNPay Sandbox, API hoàn tiền tự động chỉ khả dụng cho tài khoản Merchant doanh nghiệp có ký quỹ; Backend chủ động xử lý và trả về thông báo lỗi nghiệp vụ rõ ràng, ngăn chặn desync dữ liệu)*.
 
 ### 5.2. Tích hợp Email (Nodemailer + Gmail SMTP)
 - **Mục đích:** Gửi thông báo hệ thống tự động. Text đơn giản. Hệ thống KHÔNG gửi OTP đăng nhập/đăng ký Khách hàng qua Email (chuyển sang SMS).
@@ -458,9 +458,9 @@ Sử dụng kiến trúc đa kênh, hệ thống tiếp nhận Webhook từ đ�
   - FR-E2: Gửi mail chúc mừng + link đánh giá khi đơn `Completed`.
   - FR-E3: Gửi link/OTP đặt lại mật khẩu cho Admin/Nhân viên (hết hạn 15p, giới hạn 5 lần).
 
-### 5.3. Tích hợp chống Spam (Google reCAPTCHA v3)
-- **Mục đích:** Ngăn chặn bot cào dữ liệu và spam API.
-- **Yêu cầu:** Invisible CAPTCHA gắn vào luồng Đăng ký, Đăng nhập, và Thêm giỏ hàng. Score < 0.5 bị chặn trực tiếp ở Backend.
+### 5.3. Cơ chế Chống Spam & Brute-force (Redis Rate Limiting)
+- **Mục đích:** Ngăn chặn bot spam rút cạn hạn ngạch SMS OTP, chống tấn công brute-force mã OTP và bảo vệ các endpoint nhạy cảm.
+- **Yêu cầu:** Áp dụng Rate Limiting theo Số điện thoại và IP trên Redis (tối đa 5 lượt gửi OTP/phút; khóa 15 phút nếu xác thực sai 3 lần liên tiếp). Môi trường Dev giả lập log SMS an toàn.
 
 ### 5.4. Tích hợp lưu trữ hình ảnh (Cloudinary)
 - **Mục đích:** Giảm tải cho server, lưu trữ và resize hình ảnh nhanh chóng.
