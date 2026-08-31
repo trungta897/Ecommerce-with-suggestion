@@ -124,7 +124,10 @@
     "refund": "Refund",
     "pending": "Pending",
     "approved": "Approved",
-    "rejected": "Rejected"
+    "rejected": "Rejected",
+    "sandbox_refund_title": "VNPay Gateway Refund Information",
+    "sandbox_refund_desc": "The VNPay Sandbox gateway does not support automated refund APIs for individual test accounts. In a production enterprise environment (with merchant deposit contract), this action triggers automated refund processing.",
+    "sandbox_refund_understood": "Understood"
   },
   "categories": {
     "title": "Category Management",

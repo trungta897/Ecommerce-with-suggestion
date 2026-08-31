@@ -124,7 +124,10 @@
     "refund": "Hoàn tiền",
     "pending": "Chờ duyệt",
     "approved": "Đã duyệt",
-    "rejected": "Đã từ chối"
+    "rejected": "Đã từ chối",
+    "sandbox_refund_title": "Thông tin Hoàn tiền Cổng VNPay",
+    "sandbox_refund_desc": "Cổng VNPay Sandbox không hỗ trợ API hoàn tiền tự động cho tài khoản Test cá nhân. Trong môi trường Production (Doanh nghiệp có ký quỹ), yêu cầu này sẽ kích hoạt hoàn tiền tự động tới tài khoản/thẻ của khách hàng.",
+    "sandbox_refund_understood": "Đã hiểu"
   },
   "categories": {
     "title": "Quản lý danh mục",

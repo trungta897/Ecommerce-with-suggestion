@@ -1,13 +1,15 @@
 'use client';
 
+import { useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
-import { BaseButton, BaseInput } from '@/components/base';
-import { Search, CheckCircle2, XCircle, Clock } from '@/components/base/icons';
+import { BaseButton, BaseInput, BaseModal } from '@/components/base';
+import { Search, CheckCircle2, XCircle, Clock, Info } from '@/components/base/icons';
 import { formatPrice } from '@/utils/format';
 
 export default function AdminReturnsPage() {
   const locale = useLocale();
   const t = useTranslations('admin.returns');
+  const [selectedRefundOrder, setSelectedRefundOrder] = useState<string | null>(null);
 
   const mockReturns = [
     {
@@ -114,7 +116,12 @@ export default function AdminReturnsPage() {
                     </div>
                   )}
                   {ret.status === 'approved' && (
-                    <BaseButton size="sm" variant="outline" className="gap-1">
+                    <BaseButton
+                      size="sm"
+                      variant="outline"
+                      className="gap-1"
+                      onClick={() => setSelectedRefundOrder(ret.orderId)}
+                    >
                       {t('refund')}
                     </BaseButton>
                   )}
@@ -124,6 +131,30 @@ export default function AdminReturnsPage() {
           );
         })}
       </div>
+
+      {/* Sandbox Refund Modal */}
+      <BaseModal
+        isOpen={!!selectedRefundOrder}
+        onClose={() => setSelectedRefundOrder(null)}
+        title={t('sandbox_refund_title')}
+      >
+        <div className="space-y-4 py-2">
+          <div className="flex items-start gap-3 p-4 bg-amber-50 rounded-xl border border-amber-200">
+            <Info className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+            <div className="text-sm text-amber-900 leading-relaxed">
+              <p className="font-semibold mb-1">
+                {t('orderId')}: {selectedRefundOrder}
+              </p>
+              <p>{t('sandbox_refund_desc')}</p>
+            </div>
+          </div>
+          <div className="flex justify-end pt-2">
+            <BaseButton onClick={() => setSelectedRefundOrder(null)}>
+              {t('sandbox_refund_understood')}
+            </BaseButton>
+          </div>
+        </div>
+      </BaseModal>
     </div>
   );
 }

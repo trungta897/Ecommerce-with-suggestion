@@ -50,5 +50,7 @@
   "rejectSuccess": "Return request rejected successfully",
   "rejectError": "Failed to reject return request",
   "rejectPlaceholder": "Enter reject reason",
-  "reject": "Reject"
+  "reject": "Reject",
+  "liveTracking": "Live SSE",
+  "orderStatusUpdated": "Order status updated: {status}"
 }

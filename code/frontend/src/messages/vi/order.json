@@ -50,5 +50,7 @@
   "rejectSuccess": "Đã từ chối yêu cầu trả hàng",
   "rejectError": "Lỗi khi từ chối trả hàng",
   "rejectPlaceholder": "Nhập lý do từ chối",
-  "reject": "Từ chối"
+  "reject": "Từ chối",
+  "liveTracking": "Trực tiếp (Live SSE)",
+  "orderStatusUpdated": "Trạng thái đơn hàng đã cập nhật: {status}"
 }
