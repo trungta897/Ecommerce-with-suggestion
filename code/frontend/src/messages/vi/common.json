@@ -35,5 +35,9 @@
   },
   "viewCart": "Xem giỏ hàng",
   "error": "Đã xảy ra lỗi. Vui lòng thử lại.",
-  "loading": "Đang xử lý..."
+  "loading": "Đang xử lý...",
+  "cancel": "Hủy",
+  "confirm": "Xác nhận",
+  "save": "Lưu",
+  "close": "Đóng"
 }

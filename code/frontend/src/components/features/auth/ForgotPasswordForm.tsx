@@ -7,15 +7,19 @@ import { z } from 'zod';
 import { useTranslations } from 'next-intl';
 import { BaseInput, BaseButton } from '@/components/base';
 
-const forgotPasswordSchema = z.object({
-  email: z.string().email({ message: 'Email không hợp lệ' }),
-});
-
-type ForgotPasswordFormData = z.infer<typeof forgotPasswordSchema>;
-
 export function ForgotPasswordForm() {
   const t = useTranslations('auth');
   const [isSuccess, setIsSuccess] = React.useState(false);
+
+  const forgotPasswordSchema = React.useMemo(
+    () =>
+      z.object({
+        email: z.string().email({ message: t('email_invalid') }),
+      }),
+    [t]
+  );
+
+  type ForgotPasswordFormData = z.infer<typeof forgotPasswordSchema>;
 
   const {
     register,
@@ -35,7 +39,7 @@ export function ForgotPasswordForm() {
     return (
       <div className="text-center space-y-4">
         <div className="text-green-600 bg-green-50 p-4 rounded-lg">
-          Thành công! Chúng tôi đã gửi liên kết đặt lại mật khẩu đến email của bạn.
+          {t('forgot_password_success')}
         </div>
       </div>
     );

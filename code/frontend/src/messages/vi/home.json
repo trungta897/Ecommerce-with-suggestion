@@ -92,5 +92,13 @@
     "sold": "Đã bán {count} suất",
     "left": "Còn {left}/{total} suất",
     "sold_out": "Đã hết suất"
+  },
+  "promo_banners": {
+    "laptop_title": "Tuần Lễ Laptop",
+    "laptop_desc": "Giảm thêm 5% cho Học sinh - Sinh viên. Săn ngay deal hot!",
+    "laptop_cta": "Mua ngay",
+    "vga_title": "Xả Kho Linh Kiện",
+    "vga_desc": "Build PC giá sốc, tặng ngay màn hình Gaming 144Hz.",
+    "vga_cta": "Khám phá"
   }
 }

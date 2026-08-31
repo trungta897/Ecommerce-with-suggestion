@@ -72,5 +72,20 @@
   "expiryDate": "Exp: {date}",
   "remainingUses": "{count} uses left",
   "unlimitedUses": "Many",
-  "upcomingVouchersHint": "New promotional vouchers will be updated soon!"
+  "upcomingVouchersHint": "New promotional vouchers will be updated soon!",
+  "codePlaceholder": "e.g. SALE2026, FREESHIP",
+  "typePercentage": "Percentage (%)",
+  "typeFixed": "Fixed Amount (VND)",
+  "typeFreeShipping": "Free Shipping",
+  "discountPercentage": "Discount Percentage (%)",
+  "discountFixed": "Discount Amount (VND)",
+  "unlimitedHint": "Leave blank for unlimited",
+  "usageCount": "uses",
+  "phoneOrEmail": "Phone / Email",
+  "orderTotal": "Order Value",
+  "loadingHistory": "Loading history...",
+  "guestCustomer": "Guest Customer",
+  "pageText": "Page {page} / {total}",
+  "previous": "Previous",
+  "next": "Next"
 }

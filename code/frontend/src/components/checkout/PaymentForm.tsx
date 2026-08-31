@@ -160,7 +160,7 @@ export function PaymentForm({
             disabled={validating || !voucherCode.trim()}
             onClick={() => handleValidateAndApply(voucherCode)}
           >
-            {validating ? 'Kiểm tra...' : t('applyVoucher')}
+            {validating ? tVoucher('checking') : t('applyVoucher')}
           </BaseButton>
         </div>
 
@@ -193,10 +193,12 @@ export function PaymentForm({
         <div className="pt-4 border-t border-rule space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex flex-col">
-              <span className="text-sm font-bold text-ink">Sử dụng điểm VIP</span>
+              <span className="text-sm font-bold text-ink">{t('useVipPoints')}</span>
               <span className="text-xs text-ink-2">
-                Bạn có <span className="font-bold text-primary">{user.vipPoints}</span> điểm (tương
-                đương {formatPrice(user.vipPoints * 10, locale)})
+                {t('vipPointsHint', {
+                  points: user.vipPoints,
+                  amount: formatPrice(user.vipPoints * 10, locale),
+                })}
               </span>
             </div>
             <label className="relative inline-flex items-center cursor-pointer">

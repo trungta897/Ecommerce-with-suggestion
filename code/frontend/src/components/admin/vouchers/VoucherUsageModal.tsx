@@ -56,7 +56,7 @@ export function VoucherUsageModal({ isOpen, onClose, voucher }: VoucherUsageModa
               {t('usageHistory')}: <span className="text-primary font-mono">{voucher.code}</span>
             </h2>
             <span className="text-xs bg-paper-2 text-ink-2 px-2 py-0.5 rounded-full border border-rule">
-              {total} lượt
+              {total} {t('usageCount')}
             </span>
           </div>
           <button
@@ -72,9 +72,9 @@ export function VoucherUsageModal({ isOpen, onClose, voucher }: VoucherUsageModa
             <thead>
               <tr className="text-left text-ink-2 border-b border-rule bg-paper-2">
                 <th className="px-4 py-2.5 font-medium">{t('userName')}</th>
-                <th className="px-4 py-2.5 font-medium">SĐT / Email</th>
+                <th className="px-4 py-2.5 font-medium">{t('phoneOrEmail')}</th>
                 <th className="px-4 py-2.5 font-medium">{t('orderCode')}</th>
-                <th className="px-4 py-2.5 font-medium">Giá trị đơn</th>
+                <th className="px-4 py-2.5 font-medium">{t('orderTotal')}</th>
                 <th className="px-4 py-2.5 font-medium">{t('status')}</th>
                 <th className="px-4 py-2.5 font-medium">{t('usedAt')}</th>
               </tr>
@@ -83,7 +83,7 @@ export function VoucherUsageModal({ isOpen, onClose, voucher }: VoucherUsageModa
               {loading ? (
                 <tr>
                   <td colSpan={6} className="text-center py-10 text-ink-2">
-                    Đang tải lịch sử...
+                    {t('loadingHistory')}
                   </td>
                 </tr>
               ) : usages.length === 0 ? (
@@ -96,7 +96,7 @@ export function VoucherUsageModal({ isOpen, onClose, voucher }: VoucherUsageModa
                 usages.map((item) => (
                   <tr key={item.id} className="border-b border-rule hover:bg-paper-2">
                     <td className="px-4 py-3 font-medium text-ink">
-                      {item.user?.fullName || item.order?.shippingName || 'Khách vãng lai'}
+                      {item.user?.fullName || item.order?.shippingName || t('guestCustomer')}
                     </td>
                     <td className="px-4 py-3 text-ink-2 text-xs">
                       <div>{item.user?.phone || item.order?.shippingPhone}</div>
@@ -125,9 +125,7 @@ export function VoucherUsageModal({ isOpen, onClose, voucher }: VoucherUsageModa
 
         {totalPages > 1 && (
           <div className="flex justify-between items-center mt-4 pt-3 border-t border-rule">
-            <span className="text-xs text-ink-2">
-              Trang {page} / {totalPages}
-            </span>
+            <span className="text-xs text-ink-2">{t('pageText', { page, total: totalPages })}</span>
             <div className="flex gap-2">
               <BaseButton
                 variant="outline"
@@ -135,7 +133,7 @@ export function VoucherUsageModal({ isOpen, onClose, voucher }: VoucherUsageModa
                 disabled={page === 1}
                 onClick={() => fetchUsages(page - 1)}
               >
-                Trước
+                {t('previous')}
               </BaseButton>
               <BaseButton
                 variant="outline"
@@ -143,7 +141,7 @@ export function VoucherUsageModal({ isOpen, onClose, voucher }: VoucherUsageModa
                 disabled={page === totalPages}
                 onClick={() => fetchUsages(page + 1)}
               >
-                Sau
+                {t('next')}
               </BaseButton>
             </div>
           </div>

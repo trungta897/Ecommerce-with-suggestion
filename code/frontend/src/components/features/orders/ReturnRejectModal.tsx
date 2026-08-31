@@ -18,6 +18,7 @@ export const ReturnRejectModal: React.FC<ReturnRejectModalProps> = ({
   onSuccess,
 }) => {
   const tOrder = useTranslations('order');
+  const tCommon = useTranslations('common');
   const toast = useToast();
   const [reason, setReason] = useState('');
   const [loading, setLoading] = useState(false);
@@ -32,19 +33,19 @@ export const ReturnRejectModal: React.FC<ReturnRejectModalProps> = ({
     try {
       setLoading(true);
       await orderService.rejectReturn(orderId, { rejectReason: reason });
-      toast.success('Đã từ chối yêu cầu trả hàng');
+      toast.success(tOrder('rejectSuccess'));
       onSuccess();
       onClose();
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Lỗi khi từ chối trả hàng');
+      toast.error(error.response?.data?.message || tOrder('rejectError'));
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <BaseModal isOpen={isOpen} onClose={onClose} title="Từ chối yêu cầu trả hàng">
+    <BaseModal isOpen={isOpen} onClose={onClose} title={tOrder('rejectModalTitle')}>
       <form onSubmit={handleSubmit} className="space-y-4 p-4">
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -55,15 +56,15 @@ export const ReturnRejectModal: React.FC<ReturnRejectModalProps> = ({
             onChange={(e) => setReason(e.target.value)}
             className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white"
             rows={3}
-            placeholder="Nhập lý do từ chối"
+            placeholder={tOrder('rejectPlaceholder')}
           />
         </div>
         <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200 dark:border-gray-700">
           <BaseButton type="button" variant="outline" onClick={onClose} disabled={loading}>
-            Hủy
+            {tCommon('cancel')}
           </BaseButton>
           <BaseButton type="submit" variant="destructive" isLoading={loading}>
-            Từ chối
+            {tOrder('reject')}
           </BaseButton>
         </div>
       </form>

@@ -72,5 +72,20 @@
   "expiryDate": "HSD: {date}",
   "remainingUses": "Còn {count} lượt",
   "unlimitedUses": "Nhiều",
-  "upcomingVouchersHint": "Các chương trình ưu đãi mới sẽ sớm được cập nhật!"
+  "upcomingVouchersHint": "Các chương trình ưu đãi mới sẽ sớm được cập nhật!",
+  "codePlaceholder": "VD: SALE2026, FREESHIP",
+  "typePercentage": "Phần trăm (%)",
+  "typeFixed": "Số tiền cố định (VNĐ)",
+  "typeFreeShipping": "Miễn phí vận chuyển",
+  "discountPercentage": "Phần trăm giảm (%)",
+  "discountFixed": "Số tiền giảm (VNĐ)",
+  "unlimitedHint": "Để trống nếu không giới hạn",
+  "usageCount": "lượt",
+  "phoneOrEmail": "SĐT / Email",
+  "orderTotal": "Giá trị đơn",
+  "loadingHistory": "Đang tải lịch sử...",
+  "guestCustomer": "Khách vãng lai",
+  "pageText": "Trang {page} / {total}",
+  "previous": "Trước",
+  "next": "Sau"
 }

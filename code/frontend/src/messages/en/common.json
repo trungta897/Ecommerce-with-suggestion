@@ -35,5 +35,9 @@
   },
   "viewCart": "View Cart",
   "error": "An error occurred. Please try again.",
-  "loading": "Loading..."
+  "loading": "Processing...",
+  "cancel": "Cancel",
+  "confirm": "Confirm",
+  "save": "Save",
+  "close": "Close"
 }

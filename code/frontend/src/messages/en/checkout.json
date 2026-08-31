@@ -68,5 +68,7 @@
     "voucherSuccessMessage": "Discount code has been successfully applied to your total.",
     "voucherErrorTitle": "Invalid Voucher Code",
     "voucherErrorMessage": "The promo code entered does not exist or has expired."
-  }
+  },
+  "useVipPoints": "Use VIP Points",
+  "vipPointsHint": "You have {points} points (equivalent to {amount})"
 }
