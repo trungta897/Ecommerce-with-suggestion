@@ -11,6 +11,7 @@
     "promo_text": "Get free delivery on orders over $80",
     "create_account": "Create an account",
     "sign_in": "Sign In",
+    "account": "Account",
     "search": "Search",
     "ai_search": "✨ Type what you need, AI will find it...",
     "wishlist": "Wishlist",
@@ -36,10 +37,29 @@
     "backHome": "Back to Home"
   },
   "viewCart": "View Cart",
+  "addToCart": "Add to Cart",
   "error": "An error occurred. Please try again.",
   "loading": "Processing...",
   "cancel": "Cancel",
   "confirm": "Confirm",
   "save": "Save",
-  "close": "Close"
+  "close": "Close",
+  "search": {
+    "title": "Product Search",
+    "placeholder": "Search by product name, brand, category...",
+    "popular_searches": "Popular Searches",
+    "recent_searches": "Recent Searches",
+    "clear_all": "Clear all",
+    "clear_query": "Clear",
+    "view_all_results": "View all {count} results for \"{query}\"",
+    "view_all": "View all results",
+    "no_results_for": "No products found matching \"{query}\"",
+    "no_results_hint": "Please check your spelling or try searching for the popular keywords below.",
+    "min_length_hint": "Type at least {min} characters for instant search",
+    "min_length_warning": "Please enter at least {min} characters",
+    "esc_to_close": "ESC to close",
+    "enter_to_search": "Enter to search",
+    "searching": "Searching products...",
+    "products_found": "Suggested Products"
+  }
 }

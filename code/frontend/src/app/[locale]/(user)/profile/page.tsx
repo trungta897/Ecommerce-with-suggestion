@@ -13,6 +13,9 @@ import {
   Lock,
   ArrowRight,
   ShieldCheck,
+  MapPin,
+  Edit,
+  Info,
 } from '@/components/base/icons';
 import { BaseButton, BaseInput } from '@/components/base';
 import { useAuthStore } from '@/store';
@@ -23,7 +26,7 @@ import { userService } from '@/services/user-service';
 import { activityService } from '@/services/activity-service';
 import { useWishlist } from '@/hooks/use-wishlist';
 import { useToast } from '@/providers/toast-provider';
-import { AddressSelector } from '@/components/features/address/AddressSelector';
+import { AddressModal } from '@/components/features/address/AddressModal';
 import ProductCard from '@/components/features/product/ProductCard';
 
 export default function UserProfilePage() {
@@ -55,8 +58,11 @@ export default function UserProfilePage() {
     address: '',
   });
 
+  const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
+  const [isAddressChanged, setIsAddressChanged] = useState(false);
+
   const [settingsData, setSettingsData] = useState({
-    promoEmails: true,
+    promoNotifications: true,
     orderNotifications: true,
   });
 
@@ -65,6 +71,8 @@ export default function UserProfilePage() {
     phone?: string;
     address?: string;
   }>({});
+
+  const hasRealEmail = Boolean(profile?.email && !profile.email.endsWith('@placeholder.local'));
 
   useEffect(() => {
     if (profile) {
@@ -88,10 +96,31 @@ export default function UserProfilePage() {
     }
   }, [profile, setAuth, accessToken]);
 
+  const isDirty = Boolean(
+    isAddressChanged ||
+    (profile &&
+      (formData.fullName !== (profile.fullName || '') ||
+        formData.phone !== (profile.phone || '') ||
+        formData.address !== (profile.address || '')))
+  );
+
+  // Warn before unload if there are unsaved changes
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (isDirty) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [isDirty]);
+
   const updateMutation = useMutation({
     mutationFn: userService.updateProfile,
     onSuccess: (updatedProfile) => {
       queryClient.setQueryData(['profile'], updatedProfile);
+      setIsAddressChanged(false);
       if (accessToken) {
         setAuth(
           {
@@ -168,14 +197,17 @@ export default function UserProfilePage() {
             <div className="flex items-center gap-3 mb-6">
               <div className="w-14 h-14 bg-gradient-to-br from-primary to-red-400 rounded-full flex items-center justify-center text-white font-bold text-xl shadow-sm">
                 {profile?.fullName?.charAt(0).toUpperCase() ||
-                  profile?.email?.charAt(0).toUpperCase() ||
-                  'U'}
+                  (hasRealEmail ? profile?.email?.charAt(0).toUpperCase() : 'U')}
               </div>
               <div className="min-w-0 flex-1">
                 <h3 className="font-bold text-ink truncate">
-                  {profile?.fullName || profile?.email?.split('@')[0] || 'User'}
+                  {profile?.fullName ||
+                    (hasRealEmail ? profile?.email?.split('@')[0] : profile?.phone) ||
+                    'User'}
                 </h3>
-                <p className="text-xs text-ink-2 truncate">{profile?.email || ''}</p>
+                <p className="text-xs text-ink-2 truncate">
+                  {hasRealEmail ? profile?.email : profile?.phone || t('unlinkedEmail')}
+                </p>
               </div>
             </div>
 
@@ -240,7 +272,12 @@ export default function UserProfilePage() {
                     </div>
                     <div className="space-y-1">
                       <label className="text-sm font-medium text-ink">{t('email')}</label>
-                      <BaseInput type="email" value={profile?.email || ''} disabled />
+                      <BaseInput
+                        type="text"
+                        value={hasRealEmail ? profile?.email || '' : t('unlinkedEmail')}
+                        disabled
+                        className={!hasRealEmail ? 'text-ink-3 italic bg-paper-2' : ''}
+                      />
                     </div>
                     <div className="space-y-1 md:col-span-2">
                       <label className="text-sm font-medium text-ink">{t('phone')}</label>
@@ -255,30 +292,85 @@ export default function UserProfilePage() {
                       {errors.phone && <p className="text-xs text-red-500 mt-1">{errors.phone}</p>}
                     </div>
 
+                    {/* Clean Shipping Address Card */}
                     <div className="space-y-2 md:col-span-2 pt-2 border-t border-rule">
-                      <label className="text-sm font-bold text-ink">{t('address')} *</label>
-                      <AddressSelector
-                        initialAddress={profile?.address || ''}
-                        onAddressChange={(fullAddress) => {
-                          setFormData((prev) => ({
-                            ...prev,
-                            address: fullAddress,
-                          }));
-                          setErrors((prev) => ({ ...prev, address: undefined }));
-                        }}
-                        error={errors.address}
-                      />
+                      <label className="text-sm font-bold text-ink">{t('shippingAddress')} *</label>
+                      {formData.address ? (
+                        <div className="p-4 bg-paper-2 border border-rule/80 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+                          <div className="flex items-center gap-3 min-w-0 flex-1">
+                            <div className="w-8 h-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                              <MapPin className="w-4 h-4" />
+                            </div>
+                            <div className="min-w-0 flex-1 flex items-center gap-2 flex-wrap">
+                              <span className="text-sm font-semibold text-ink break-words leading-normal">
+                                {formData.address}
+                              </span>
+                              {isAddressChanged && (
+                                <span className="px-2 py-0.5 text-[10px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300 rounded-md shrink-0">
+                                  {t('unsavedBadge')}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setIsAddressModalOpen(true)}
+                            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold text-primary bg-white border border-rule/80 hover:border-primary/50 hover:bg-primary/5 transition-all self-start sm:self-center shrink-0 active:scale-95 shadow-xs"
+                          >
+                            <Edit className="w-3.5 h-3.5" />
+                            <span>{t('changeAddress')}</span>
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="p-4 bg-paper-2/60 border border-dashed border-rule rounded-2xl flex items-center justify-between gap-3">
+                          <div className="flex items-center gap-3 text-ink-2 text-sm">
+                            <MapPin className="w-5 h-5 text-muted" />
+                            <span>{t('noAddressYet')}</span>
+                          </div>
+                          <BaseButton
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setIsAddressModalOpen(true)}
+                          >
+                            {t('addAddress')}
+                          </BaseButton>
+                        </div>
+                      )}
+                      {errors.address && (
+                        <p className="text-xs text-red-500 mt-1">{errors.address}</p>
+                      )}
                     </div>
                   </div>
-                  <div className="mt-6">
-                    <BaseButton type="submit" isLoading={updateMutation.isPending}>
-                      {t('saveChanges')}
-                    </BaseButton>
-                  </div>
+
+                  {isDirty && (
+                    <div className="mt-6 flex items-center gap-3 animate-in fade-in slide-in-from-bottom-2 duration-200">
+                      <BaseButton type="submit" isLoading={updateMutation.isPending}>
+                        {t('saveChanges')}
+                      </BaseButton>
+                      <span className="text-xs text-amber-700 font-medium flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+                        {t('unsavedBadge')}
+                      </span>
+                    </div>
+                  )}
                 </>
               )}
             </form>
           )}
+
+          {/* Address Update Modal */}
+          <AddressModal
+            isOpen={isAddressModalOpen}
+            onClose={() => setIsAddressModalOpen(false)}
+            initialAddress={formData.address}
+            onConfirm={(newAddress) => {
+              setFormData((prev) => ({ ...prev, address: newAddress }));
+              setIsAddressChanged(true);
+              setErrors((prev) => ({ ...prev, address: undefined }));
+              toast.info(t('toastAddressApplied'));
+            }}
+          />
 
           {activeSection === 'orders' && (
             <div className="bg-white border border-rule rounded-xl p-6">
@@ -356,13 +448,16 @@ export default function UserProfilePage() {
                     <label className="flex items-center gap-3 cursor-pointer text-sm text-ink select-none">
                       <input
                         type="checkbox"
-                        checked={settingsData.promoEmails}
+                        checked={settingsData.promoNotifications}
                         onChange={(e) =>
-                          setSettingsData((prev) => ({ ...prev, promoEmails: e.target.checked }))
+                          setSettingsData((prev) => ({
+                            ...prev,
+                            promoNotifications: e.target.checked,
+                          }))
                         }
                         className="w-4 h-4 text-primary rounded border-rule focus:ring-primary"
                       />
-                      <span>{t('promoEmails')}</span>
+                      <span>{hasRealEmail ? t('promoEmails') : t('promoSms')}</span>
                     </label>
 
                     <label className="flex items-center gap-3 cursor-pointer text-sm text-ink select-none">
@@ -377,9 +472,31 @@ export default function UserProfilePage() {
                         }
                         className="w-4 h-4 text-primary rounded border-rule focus:ring-primary"
                       />
-                      <span>{t('orderStatusNotifications')}</span>
+                      <span>
+                        {hasRealEmail ? t('orderStatusNotifications') : t('orderStatusSms')}
+                      </span>
                     </label>
                   </div>
+
+                  {/* Link Email Hint for Phone accounts */}
+                  {!hasRealEmail && (
+                    <div className="mt-4 p-3.5 bg-blue-50/70 border border-blue-100 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                      <div className="flex items-start gap-2 text-blue-900">
+                        <Info className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
+                        <div>
+                          <span className="font-semibold">{t('linkEmailTitle')}: </span>
+                          <span className="text-blue-800">{t('linkEmailDesc')}</span>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setActiveSection('info')}
+                        className="px-3 py-1.5 bg-white border border-blue-200 text-blue-700 font-semibold rounded-xl hover:bg-blue-50 transition-colors shrink-0 self-start sm:self-center shadow-xs"
+                      >
+                        {t('linkEmailAction')}
+                      </button>
+                    </div>
+                  )}
                 </div>
 
                 {/* Security Settings */}
@@ -388,30 +505,47 @@ export default function UserProfilePage() {
                     <ShieldCheck className="w-4 h-4 text-primary" />
                     {t('securitySettings')}
                   </h3>
-                  <div className="bg-paper-2 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 bg-white rounded-lg text-ink-2 shadow-xs">
-                        <Lock className="w-5 h-5" />
+
+                  {hasRealEmail ? (
+                    <div className="bg-paper-2 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-white rounded-lg text-ink-2 shadow-xs">
+                          <Lock className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <div className="text-sm font-semibold text-ink">
+                            {t('changePassword')}
+                          </div>
+                          <div className="text-xs text-ink-2">{t('changePasswordDesc')}</div>
+                        </div>
+                      </div>
+                      <BaseButton
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() =>
+                          toast.info(
+                            'Tính năng đổi mật khẩu đang gửi mã xác thực về email của bạn.',
+                            'Bảo mật'
+                          )
+                        }
+                      >
+                        {t('changePassword')}
+                      </BaseButton>
+                    </div>
+                  ) : (
+                    <div className="bg-paper-2 rounded-xl p-4 flex items-center gap-3">
+                      <div className="p-2 bg-white rounded-lg text-emerald-600 shadow-xs">
+                        <ShieldCheck className="w-5 h-5" />
                       </div>
                       <div>
-                        <div className="text-sm font-semibold text-ink">{t('changePassword')}</div>
-                        <div className="text-xs text-ink-2">{t('changePasswordDesc')}</div>
+                        <div className="text-sm font-semibold text-ink">
+                          {t('passwordlessPhone')}
+                        </div>
+                        <div className="text-xs text-ink-2">{t('passwordlessDesc')}</div>
                       </div>
                     </div>
-                    <BaseButton
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() =>
-                        toast.info(
-                          'Tính năng đổi mật khẩu đang gửi mã xác thực về email của bạn.',
-                          'Bảo mật'
-                        )
-                      }
-                    >
-                      {t('changePassword')}
-                    </BaseButton>
-                  </div>
+                  )}
                 </div>
 
                 <div className="pt-2">

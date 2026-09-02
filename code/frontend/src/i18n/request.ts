@@ -4,10 +4,14 @@ import { notFound } from 'next/navigation';
 // Các ngôn ngữ được hỗ trợ
 const locales = ['vi', 'en'];
 
-export default getRequestConfig(async ({ locale }) => {
+export default getRequestConfig(async ({ locale, requestLocale }) => {
+  // Với next-intl v3.22+/v4+, dynamic route segment [locale] được truyền qua requestLocale (Promise)
+  let currentLocale = locale || (await requestLocale);
+
   // Validate locale
-  const currentLocale = locale || 'vi';
-  if (!locales.includes(currentLocale)) notFound();
+  if (!currentLocale || !locales.includes(currentLocale)) {
+    currentLocale = 'vi';
+  }
 
   // Load namespaces concurrently for better performance
   const [

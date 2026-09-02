@@ -43,6 +43,9 @@ export default function Home() {
     <div className="flex flex-col gap-8 pb-0 pt-6 bg-[#f4f6f8] min-h-screen">
       <Hero />
 
+      {/* RECENTLY VIEWED SECTION (COMPACT STEAM STYLE) */}
+      <RecentlyViewedSlider className="container mx-auto px-4 lg:px-8 max-w-7xl" />
+
       {/* FLASH SALE SECTION */}
       {onSale.length > 0 && <FlashSaleSection products={onSale} />}
 
@@ -89,11 +92,6 @@ export default function Home() {
       {/* RECOMMENDED PRODUCTS SECTION */}
       <div className="container mx-auto px-4 lg:px-8 max-w-7xl">
         <RecommendedProducts />
-      </div>
-
-      {/* RECENTLY VIEWED SECTION */}
-      <div className="container mx-auto px-4 lg:px-8 max-w-7xl">
-        <RecentlyViewedSlider />
       </div>
 
       <Features />
