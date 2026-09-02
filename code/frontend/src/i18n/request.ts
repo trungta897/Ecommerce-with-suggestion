@@ -1,5 +1,4 @@
 import { getRequestConfig } from 'next-intl/server';
-import { notFound } from 'next/navigation';
 
 // Các ngôn ngữ được hỗ trợ
 const locales = ['vi', 'en'];
