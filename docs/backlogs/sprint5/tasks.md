@@ -36,5 +36,12 @@
   - [x] Phân trang `/category/[slug]`: Nâng lên 20 sản phẩm/trang kèm bộ điều khiển Pagination chuyển trang
   - [x] Data Sanitization: Rà soát 1,000 sản phẩm và sửa 10 sản phẩm bị gán nhầm danh mục gốc
 
+- [x] **7. Redesign Thanh "Sản phẩm vừa xem" (Recently Viewed) & Comprehensive Search Modal**
+  - [x] Tái thiết kế `RecentlyViewedSlider` dạng Compact Poster đứng (`aspect-[3/4]`), hiển thị từ 8–12+ sản phẩm cùng lúc, chỉ hiển thị ảnh và tên.
+  - [x] Icon thùng rác `Trash2` xóa lịch sử kèm tooltip alt text và cụm mũi tên cuộn chỉ hiển thị khi `displayedItems.length > 6`.
+  - [x] Di chuyển thanh Sản phẩm vừa xem lên vị trí đắc địa ngay dưới Hero Banner và trên block Flash Sale.
+  - [x] Cơ chế Empty State Zero-Footprint: Tự động `return null` khi danh sách rỗng, không sinh DOM thừa hay khoảng cách ảo (phantom gap).
+  - [x] Comprehensive Search Modal: Tích hợp popup tìm kiếm toàn diện với lịch sử tìm kiếm (`useSearchHistory`), danh mục nhanh, gợi ý sản phẩm hot và điều hướng mượt mà.
+
 
 

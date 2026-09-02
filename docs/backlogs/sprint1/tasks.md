@@ -5,7 +5,7 @@
   - [x] Viết API `GET /users/profile` lấy thông tin cá nhân
   - [x] Viết API `PATCH /users/profile` cập nhật thông tin cá nhân (Tên, SDT, Địa chỉ)
   - [x] Tích hợp Frontend UI (`profile/page.tsx`) gọi API thật
-  - [x] Tích hợp Custom Toast Notifications và Hệ thống chọn địa chỉ hành chính VN (`AddressSelector`, `LocationsModule`, `nestjs-i18n`)
+  - [x] Tối ưu Thẻ địa chỉ gọn gàng (`Clean Address Card`), `AddressModal` popup (Search-Modal style), Honest Copy & Smart Street Prefill cho địa chỉ phi cấu trúc, `isDirty` dynamic save button, và tùy biến ngữ cảnh thông minh theo loại tài khoản SĐT (OTP) vs Email.
 
 - [x] **2. Khởi tạo Backend Module: Categories (US-ADM-02)**
   - [x] Tạo `CategoryController`, `CategoryService`
@@ -27,7 +27,9 @@
 
 - [x] **5. Đăng nhập & Đăng ký Khách hàng (US-AUTH-01, US-AUTH-02)**
   - [x] Đăng nhập bằng SMS OTP (Twilio/ZNS hoặc giả lập Dev)
-  - [x] Xử lý giới hạn spam (Rate Limit & Google reCAPTCHA)
+  - [x] Nâng cấp nút "Gửi lại mã OTP" (Resend OTP) kèm đếm ngược 60s và xử lý mã lỗi HTTP 429
+  - [x] Phân lập 2 tầng chống spam & brute-force: Tầng 1 Throttler Rate Limit (5 req/min) + Tầng 2 Redis Key Fail Counter (khóa 3 lần sai / 15 phút) tự động reset khi cấp mã mới.
+  - [x] Chuẩn hóa 100% text đa ngôn ngữ i18n cho toàn bộ luồng Auth (Login, Register, Header Account)
 
 - [x] **6. Đăng nhập Nội bộ & Đặt lại mật khẩu (US-AUTH-03, US-AUTH-04)**
   - [x] Đăng nhập Admin/Nhân viên bằng Email và Mật khẩu
