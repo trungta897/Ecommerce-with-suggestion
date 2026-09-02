@@ -221,6 +221,7 @@ export class AuthService {
 
     const otp = this.generateOtp();
     await this.redisService.set(`OTP:PHONE:${phone}`, otp, 300); // 5 mins
+    await this.redisService.del(`OTP:FAIL_PHONE:${phone}`);
 
     // TODO: Actually call SMS API here
     // For now, mock it with console log
@@ -252,7 +253,10 @@ export class AuthService {
     }
 
     if (savedOtp !== otp) {
-      await this.redisService.incr(failKey);
+      const currentFails = await this.redisService.incr(failKey);
+      if (currentFails === 1) {
+        await this.redisService.set(failKey, '1', 900); // 15 mins TTL
+      }
       throw new BadRequestException(
         this.i18n.t('auth.PHONE_OTP_INVALID', { lang }),
       );

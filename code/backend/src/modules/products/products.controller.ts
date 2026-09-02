@@ -12,6 +12,7 @@ import {
   UploadedFile,
   Headers,
 } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { AuthGuard } from '@nestjs/passport';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ProductsService } from './products.service';
@@ -24,6 +25,7 @@ import { RolesGuard } from '../../common/guards/roles.guard';
 export class ProductsController {
   constructor(private readonly productsService: ProductsService) {}
 
+  @Throttle({ default: { limit: 120, ttl: 60000 } })
   @Get()
   findAll(
     @Query('page') page?: string,

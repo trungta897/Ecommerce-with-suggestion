@@ -43,7 +43,21 @@ export class ProductsService {
     }
 
     if (q) {
-      where.OR = [{ name: { contains: q } }, { description: { contains: q } }];
+      const keywords = q
+        .trim()
+        .split(/\s+/)
+        .filter((w) => w.length > 0);
+
+      if (keywords.length > 0) {
+        where.AND = keywords.map((kw) => ({
+          OR: [
+            { name: { contains: kw } },
+            { brand: { contains: kw } },
+            { description: { contains: kw } },
+            { category: { name: { contains: kw } } },
+          ],
+        }));
+      }
     }
 
     if (minPrice || maxPrice) {
