@@ -253,9 +253,9 @@ export class AuthService {
     }
 
     if (savedOtp !== otp) {
-      const currentFails = await this.redisService.incr(failKey);
-      if (currentFails === 1) {
-        await this.redisService.set(failKey, '1', 900); // 15 mins TTL
+      const isNewKey = await this.redisService.setNx(failKey, '1', 900);
+      if (!isNewKey) {
+        await this.redisService.incr(failKey);
       }
       throw new BadRequestException(
         this.i18n.t('auth.PHONE_OTP_INVALID', { lang }),
