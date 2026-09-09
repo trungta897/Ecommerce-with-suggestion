@@ -13,6 +13,11 @@ import { useAuthStore } from '@/store';
 import { useCartStore } from '@/store/useCartStore';
 import { useToast } from '@/providers/toast-provider';
 import { useRouter } from 'next/navigation';
+import { isAxiosError } from 'axios';
+
+interface ApiErrorResponse {
+  message?: string;
+}
 
 export function LoginForm() {
   const t = useTranslations('auth');
@@ -80,15 +85,15 @@ export function LoginForm() {
       setPhoneNumber(data.phone);
       setOtpSent(true);
       setCountdown(60);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } catch (err: any) {
-      if (err.response?.status === 429) {
+    } catch (err) {
+      if (isAxiosError<ApiErrorResponse>(err) && err.response?.status === 429) {
         setErrorPhone('root', {
           message: t('rate_limit_error'),
         });
       } else {
+        const msg = isAxiosError<ApiErrorResponse>(err) ? err.response?.data?.message : undefined;
         setErrorPhone('root', {
-          message: err.response?.data?.message || t('otp_send_error'),
+          message: msg || t('otp_send_error'),
         });
       }
     }
@@ -101,12 +106,12 @@ export function LoginForm() {
       await authService.requestPhoneOtp(phoneNumber);
       toast.success(t('otp_resend_success'));
       setCountdown(60);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } catch (err: any) {
-      if (err.response?.status === 429) {
+    } catch (err) {
+      if (isAxiosError<ApiErrorResponse>(err) && err.response?.status === 429) {
         toast.error(t('rate_limit_error'));
       } else {
-        toast.error(err.response?.data?.message || t('otp_send_error'));
+        const msg = isAxiosError<ApiErrorResponse>(err) ? err.response?.data?.message : undefined;
+        toast.error(msg || t('otp_send_error'));
       }
     } finally {
       setIsResending(false);
@@ -119,9 +124,9 @@ export function LoginForm() {
       setAuth(response.user, response.accessToken);
       await handleMergeCart();
       router.push('/');
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } catch (err: any) {
-      setErrorOtp('root', { message: err.response?.data?.message || t('otp_invalid') });
+    } catch (err) {
+      const msg = isAxiosError<ApiErrorResponse>(err) ? err.response?.data?.message : undefined;
+      setErrorOtp('root', { message: msg || t('otp_invalid') });
     }
   };
 

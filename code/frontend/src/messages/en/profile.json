@@ -58,7 +58,9 @@
     "updateSuccessTitle": "Update Successful",
     "updateSuccessMessage": "Your profile information and shipping address have been saved.",
     "updateErrorTitle": "Update Failed",
-    "updateErrorMessage": "Unable to update profile at this time. Please try again later."
+    "updateErrorMessage": "Unable to update profile at this time. Please try again later.",
+    "changePasswordInfo": "The password change feature is sending a verification code to your email.",
+    "securityTitle": "Security"
   },
   "loading": "Loading..."
 }

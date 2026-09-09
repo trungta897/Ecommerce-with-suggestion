@@ -58,7 +58,9 @@
     "updateSuccessTitle": "Cập Nhật Thành Công",
     "updateSuccessMessage": "Hồ sơ cá nhân và địa chỉ liên lạc của bạn đã được lưu lại trong hệ thống.",
     "updateErrorTitle": "Lỗi Cập Nhật",
-    "updateErrorMessage": "Không thể cập nhật hồ sơ cá nhân lúc này. Vui lòng thử lại sau."
+    "updateErrorMessage": "Không thể cập nhật hồ sơ cá nhân lúc này. Vui lòng thử lại sau.",
+    "changePasswordInfo": "Tính năng đổi mật khẩu đang gửi mã xác thực về email của bạn.",
+    "securityTitle": "Bảo mật"
   },
   "loading": "Đang tải..."
 }
