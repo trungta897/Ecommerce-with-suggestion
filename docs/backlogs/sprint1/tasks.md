@@ -6,6 +6,7 @@
   - [x] Viết API `PATCH /users/profile` cập nhật thông tin cá nhân (Tên, SDT, Địa chỉ)
   - [x] Tích hợp Frontend UI (`profile/page.tsx`) gọi API thật
   - [x] Tối ưu Thẻ địa chỉ gọn gàng (`Clean Address Card`), `AddressModal` popup (Search-Modal style), Honest Copy & Smart Street Prefill cho địa chỉ phi cấu trúc, `isDirty` dynamic save button, và tùy biến ngữ cảnh thông minh theo loại tài khoản SĐT (OTP) vs Email.
+  - [x] Tái cấu trúc phân rã `profile/page.tsx` từ 595 dòng xuống còn 158 dòng (tuân thủ Code Length Mandate < 300 dòng) thành 4 sub-components chuyên biệt (`ProfileInfoSection`, `ProfileSettingsSection`, `ProfileWishlistSection`, `ProfileRecommendationsSection`). Chuẩn hóa 100% i18n không hardcode text cho thông báo bảo mật và tiêu đề.
 
 - [x] **2. Khởi tạo Backend Module: Categories (US-ADM-02)**
   - [x] Tạo `CategoryController`, `CategoryService`
