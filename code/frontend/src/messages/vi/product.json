@@ -57,5 +57,21 @@
   "wishlistAdded": "Đã thêm sản phẩm vào danh sách yêu thích",
   "wishlistRemoved": "Đã xóa sản phẩm khỏi danh sách yêu thích",
   "requireLoginWishlist": "Vui lòng đăng nhập để lưu sản phẩm yêu thích",
-  "sold": "Đã bán {count}"
+  "sold": "Đã bán {count}",
+  "reviewsTitle": "Đánh giá sản phẩm",
+  "yourReview": "Đánh giá của bạn",
+  "ratingStars": "Đánh giá (Sao)",
+  "title": "Tiêu đề",
+  "titlePlaceholder": "Tóm tắt đánh giá của bạn",
+  "content": "Nội dung",
+  "contentPlaceholder": "Chia sẻ thêm về trải nghiệm của bạn...",
+  "cancel": "Hủy",
+  "submitting": "Đang gửi...",
+  "verifiedPurchase": "Đã mua hàng",
+  "noReviewsForProduct": "Chưa có đánh giá nào cho sản phẩm này.",
+  "beFirstReview": "Hãy là người đầu tiên đánh giá!",
+  "previous": "Trước",
+  "next": "Sau",
+  "errorSubmit": "Có lỗi xảy ra, vui lòng thử lại",
+  "newProduct": "Mới"
 }

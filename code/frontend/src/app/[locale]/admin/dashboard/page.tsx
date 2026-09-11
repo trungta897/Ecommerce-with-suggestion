@@ -3,20 +3,11 @@
 import { useLocale, useTranslations } from 'next-intl';
 import { TrendingUp, ShoppingBag, Package, Users, Clock, RotateCw } from '@/components/base/icons';
 import { formatPrice } from '@/utils/format';
+import { ORDER_STATUS_COLORS } from '@/constants/order';
 import Link from 'next/link';
 import { useEffect, useState, useCallback } from 'react';
 import { dashboardService } from '@/services/dashboard-service';
 import { DashboardStats } from '@/types/dashboard';
-
-const STATUS_COLORS: Record<string, string> = {
-  pending: 'bg-yellow-100 text-yellow-800 border-yellow-200',
-  pending_payment: 'bg-orange-100 text-orange-800 border-orange-200',
-  delivering: 'bg-cyan-100 text-cyan-800 border-cyan-200',
-  handed_over: 'bg-indigo-100 text-indigo-800 border-indigo-200',
-  completed: 'bg-green-100 text-green-800 border-green-200',
-  confirmed: 'bg-blue-100 text-blue-800 border-blue-200',
-  cancelled: 'bg-red-100 text-red-800 border-red-200',
-};
 
 export default function AdminDashboardPage() {
   const locale = useLocale();
@@ -58,7 +49,7 @@ export default function AdminDashboardPage() {
     {
       key: 'totalOrders',
       title: t('totalOrders'),
-      value: stats ? stats.totalOrders.toLocaleString('vi-VN') : '0',
+      value: stats ? stats.totalOrders.toLocaleString(locale === 'vi' ? 'vi-VN' : 'en-US') : '0',
       icon: Package,
       color: 'from-blue-500 to-indigo-600',
     },
@@ -67,7 +58,7 @@ export default function AdminDashboardPage() {
           {
             key: 'totalUsers',
             title: t('totalUsers'),
-            value: stats.totalUsers.toLocaleString('vi-VN'),
+            value: stats.totalUsers.toLocaleString(locale === 'vi' ? 'vi-VN' : 'en-US'),
             icon: Users,
             color: 'from-purple-500 to-violet-600',
           },
@@ -76,7 +67,7 @@ export default function AdminDashboardPage() {
     {
       key: 'totalProducts',
       title: t('totalProducts'),
-      value: stats ? stats.totalProducts.toLocaleString('vi-VN') : '0',
+      value: stats ? stats.totalProducts.toLocaleString(locale === 'vi' ? 'vi-VN' : 'en-US') : '0',
       icon: ShoppingBag,
       color: 'from-orange-500 to-red-500',
     },
@@ -87,9 +78,7 @@ export default function AdminDashboardPage() {
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-2xl font-bold text-ink">{t('title')}</h1>
-          <p className="text-sm text-ink-2 mt-1">
-            Tổng quan chỉ số hoạt động kinh doanh và vận hành
-          </p>
+          <p className="text-sm text-ink-2 mt-1">{t('subtitle')}</p>
         </div>
         <button
           onClick={() => fetchStats(true)}
@@ -97,7 +86,7 @@ export default function AdminDashboardPage() {
           className="flex items-center gap-2 px-4 py-2 rounded-xl border border-rule bg-white hover:bg-paper-2 text-sm font-medium text-ink transition-colors disabled:opacity-50 shadow-sm"
         >
           <RotateCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
-          Làm mới
+          {t('refresh')}
         </button>
       </div>
 
@@ -128,11 +117,13 @@ export default function AdminDashboardPage() {
       {/* Order Status Distribution */}
       {stats?.orderStatusCounts && (
         <div className="bg-white rounded-2xl border border-rule p-6 mb-8 shadow-sm">
-          <h3 className="font-bold text-ink mb-4">Thống kê đơn hàng theo trạng thái</h3>
+          <h3 className="font-bold text-ink mb-4">{t('statusDistribution')}</h3>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
             {Object.entries(stats.orderStatusCounts).map(([status, count]) => {
               const color =
-                STATUS_COLORS[status.toLowerCase()] || 'bg-gray-100 text-gray-800 border-gray-200';
+                ORDER_STATUS_COLORS[status] ||
+                ORDER_STATUS_COLORS[status.toLowerCase()] ||
+                'bg-gray-100 text-gray-800 border-gray-200';
               return (
                 <div
                   key={status}
@@ -154,9 +145,12 @@ export default function AdminDashboardPage() {
         <div className="flex items-center justify-between p-5 border-b border-rule bg-paper-2/50">
           <div>
             <h3 className="font-bold text-ink">{t('recentOrders')}</h3>
-            <p className="text-xs text-ink-2">5 đơn hàng gần nhất trong hệ thống</p>
+            <p className="text-xs text-ink-2">{t('recentOrdersSubtitle')}</p>
           </div>
-          <Link href="/admin/orders" className="text-sm text-primary hover:underline font-medium">
+          <Link
+            href={`/${locale}/admin/orders`}
+            className="text-sm text-primary hover:underline font-medium"
+          >
             {t('viewAll')}
           </Link>
         </div>
@@ -164,38 +158,39 @@ export default function AdminDashboardPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="text-left text-ink-2 border-b border-rule font-medium">
-                <th className="px-5 py-3.5">Mã đơn</th>
-                <th className="px-5 py-3.5">Khách hàng</th>
-                <th className="px-5 py-3.5">Tổng tiền</th>
-                <th className="px-5 py-3.5">Trạng thái</th>
-                <th className="px-5 py-3.5">Ngày đặt</th>
+                <th className="px-5 py-3.5">{t('orderId')}</th>
+                <th className="px-5 py-3.5">{t('customer')}</th>
+                <th className="px-5 py-3.5">{t('total')}</th>
+                <th className="px-5 py-3.5">{t('status')}</th>
+                <th className="px-5 py-3.5">{t('orderDate')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-rule">
               {loading ? (
                 <tr>
                   <td colSpan={5} className="text-center py-8 text-ink-2">
-                    Đang tải dữ liệu...
+                    {t('loading')}
                   </td>
                 </tr>
               ) : !stats?.recentOrders || stats.recentOrders.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="text-center py-8 text-ink-2">
-                    Chưa có đơn hàng nào
+                    {t('noOrders')}
                   </td>
                 </tr>
               ) : (
                 stats.recentOrders.map((order) => {
-                  const statusKey = order.status.toLowerCase();
                   const statusColor =
-                    STATUS_COLORS[statusKey] || 'bg-gray-100 text-gray-800 border-gray-200';
+                    ORDER_STATUS_COLORS[order.status] ||
+                    ORDER_STATUS_COLORS[order.status.toLowerCase()] ||
+                    'bg-gray-100 text-gray-800 border-gray-200';
                   return (
                     <tr key={order.id} className="hover:bg-paper-2/50 transition-colors">
                       <td className="px-5 py-3.5 font-mono font-bold text-ink">
                         #{order.id.slice(-8).toUpperCase()}
                       </td>
                       <td className="px-5 py-3.5 text-ink">
-                        <p className="font-medium">{order.user?.fullName || 'Khách vãng lai'}</p>
+                        <p className="font-medium">{order.user?.fullName || t('guestCustomer')}</p>
                         <p className="text-xs text-ink-2">{order.user?.email || '-'}</p>
                       </td>
                       <td className="px-5 py-3.5 font-bold text-ink">
@@ -210,7 +205,9 @@ export default function AdminDashboardPage() {
                       </td>
                       <td className="px-5 py-3.5 text-ink-2 text-xs flex items-center gap-1 mt-1">
                         <Clock className="w-3.5 h-3.5 text-ink-3" />
-                        {new Date(order.createdAt).toLocaleDateString('vi-VN')}
+                        {new Date(order.createdAt).toLocaleDateString(
+                          locale === 'vi' ? 'vi-VN' : 'en-US'
+                        )}
                       </td>
                     </tr>
                   );

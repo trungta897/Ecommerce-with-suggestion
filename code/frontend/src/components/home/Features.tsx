@@ -1,4 +1,4 @@
-﻿import { useTranslations } from 'next-intl';
+import { useTranslations } from 'next-intl';
 import { Truck, RefreshCcw, ShieldCheck, Headset } from '@/components/base/icons';
 
 export function Features() {
@@ -6,37 +6,37 @@ export function Features() {
 
   const features = [
     {
-      icon: <Truck className="h-8 w-8 text-red-600" />,
+      icon: <Truck className="h-8 w-8 text-primary" />,
       title: t('free_shipping'),
       desc: t('free_shipping_desc'),
     },
     {
-      icon: <RefreshCcw className="h-8 w-8 text-red-600" />,
+      icon: <RefreshCcw className="h-8 w-8 text-primary" />,
       title: t('returns'),
       desc: t('returns_desc'),
     },
     {
-      icon: <ShieldCheck className="h-8 w-8 text-red-600" />,
+      icon: <ShieldCheck className="h-8 w-8 text-primary" />,
       title: t('secure_payment'),
       desc: t('secure_payment_desc'),
     },
     {
-      icon: <Headset className="h-8 w-8 text-red-600" />,
+      icon: <Headset className="h-8 w-8 text-primary" />,
       title: t('support'),
       desc: t('support_desc'),
     },
   ];
 
   return (
-    <section className="py-8 bg-white border-y border-gray-100 shadow-sm">
+    <section className="py-8 bg-paper-1 border-y border-rule shadow-xs">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
           {features.map((item, index) => (
             <div key={index} className="flex items-center gap-5">
               <div className="shrink-0">{item.icon}</div>
               <div>
-                <h3 className="text-lg font-semibold text-gray-900">{item.title}</h3>
-                <p className="text-sm text-gray-600">{item.desc}</p>
+                <h3 className="text-base sm:text-lg font-semibold text-ink">{item.title}</h3>
+                <p className="text-sm text-ink-2">{item.desc}</p>
               </div>
             </div>
           ))}

@@ -45,5 +45,12 @@
   "returnSuccess": "Gửi yêu cầu trả hàng thành công",
   "returnRejectReason": "Lý do từ chối",
   "supplementEvidence": "Bổ sung chứng minh",
-  "supplementSuccess": "Bổ sung chứng minh thành công"
+  "supplementSuccess": "Bổ sung chứng minh thành công",
+  "rejectModalTitle": "Từ chối yêu cầu trả hàng",
+  "rejectSuccess": "Đã từ chối yêu cầu trả hàng",
+  "rejectError": "Lỗi khi từ chối trả hàng",
+  "rejectPlaceholder": "Nhập lý do từ chối",
+  "reject": "Từ chối",
+  "liveTracking": "Trực tiếp (Live SSE)",
+  "orderStatusUpdated": "Trạng thái đơn hàng đã cập nhật: {status}"
 }

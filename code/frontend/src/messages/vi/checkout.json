@@ -68,5 +68,7 @@
     "voucherSuccessMessage": "Mã giảm giá đã được thêm thành công vào đơn hàng của bạn.",
     "voucherErrorTitle": "Mã Giảm Giá Không Hợp Lệ",
     "voucherErrorMessage": "Mã giảm giá bạn vừa nhập không tồn tại hoặc đã hết hạn sử dụng."
-  }
+  },
+  "useVipPoints": "Sử dụng điểm VIP",
+  "vipPointsHint": "Bạn có {points} điểm (tương đương {amount})"
 }

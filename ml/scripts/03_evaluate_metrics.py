@@ -90,7 +90,7 @@ def main():
         if u in user2idx and it in item2idx:
             u_idx = user2idx[u]
             i_idx = item2idx[it]
-            pred = np.dot(user_factors[u_idx], item_factors[i_idx])
+            pred = global_mean + np.dot(user_factors[u_idx], item_factors[i_idx])
             pred = max(1.0, min(5.0, pred))
         else:
             pred = global_mean
@@ -99,7 +99,9 @@ def main():
         y_pred.append(pred)
 
     rmse = float(np.sqrt(mean_squared_error(y_true, y_pred)))
-    print(f"-> RMSE on Test Set: {rmse:.4f}")
+    baseline_mean_rmse = float(np.sqrt(mean_squared_error(y_true, [global_mean] * len(y_true))))
+    print(f"-> Baseline (Global Mean) RMSE: {baseline_mean_rmse:.4f}")
+    print(f"-> SVD Rating Prediction RMSE on Test Set: {rmse:.4f}")
 
     # ============================================================
     # 3. EVALUATING RANKING METRICS (@10)
@@ -157,6 +159,8 @@ def main():
             f"Recall@{K}": round(mean_recall, 4),
             f"NDCG@{K}": round(mean_ndcg, 4),
             "RMSE": round(rmse, 4),
+            "Baseline_Mean_RMSE": round(baseline_mean_rmse, 4),
+            "Global_Mean_Rating": round(global_mean, 4),
         },
         "model_architecture": "Hybrid SVD + TF-IDF with Popular Fallback",
         "status": "PASS"

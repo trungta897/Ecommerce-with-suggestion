@@ -96,7 +96,13 @@ export default function ProductCard({ product, isFlashSale, flashSaleData }: Pro
     }
   };
 
-  const ratingScore = product.avgRating && product.avgRating > 0 ? product.avgRating : 4.8;
+  const hasRating = !!(
+    product.avgRating &&
+    Number(product.avgRating) > 0 &&
+    product.reviewCount &&
+    Number(product.reviewCount) > 0
+  );
+  const ratingScore = hasRating ? Number(product.avgRating) : 0;
   const reviewCount = product.reviewCount || 0;
   const brandName = product.brand || product.category?.name;
 
@@ -167,13 +173,21 @@ export default function ProductCard({ product, isFlashSale, flashSaleData }: Pro
             {product.name}
           </h3>
 
-          {/* Rating & Sold Social Proof */}
+          {/* Rating & Sold Social Proof - Honest data handling */}
           <div className="flex items-center gap-1.5 text-[11px] text-ink-2 mb-3">
-            <span className="inline-flex items-center gap-0.5 text-amber-600 font-bold">
-              <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
-              {ratingScore.toFixed(1)}
-            </span>
-            <span className="text-ink-2/60">({reviewCount})</span>
+            {hasRating ? (
+              <>
+                <span className="inline-flex items-center gap-0.5 text-amber-600 font-bold">
+                  <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
+                  {ratingScore.toFixed(1)}
+                </span>
+                <span className="text-ink-2/60">({reviewCount})</span>
+              </>
+            ) : (
+              <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-paper-2 text-ink-2 font-medium text-[10px]">
+                {t('newProduct')}
+              </span>
+            )}
             {product.soldCount !== undefined && product.soldCount > 0 && (
               <>
                 <span className="text-rule">•</span>

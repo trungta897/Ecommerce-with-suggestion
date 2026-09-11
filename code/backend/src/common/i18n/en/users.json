@@ -1,5 +1,16 @@
 {
-  "USER_NOT_FOUND": "User profile information could not be found.",
+  "USER_NOT_FOUND": "User information could not be found in the system.",
   "UPDATE_SUCCESS": "User profile and shipping address updated successfully!",
-  "UNAUTHORIZED_ACTION": "You do not have permission to modify another user profile."
+  "UNAUTHORIZED_ACTION": "You do not have permission to perform this action on another user profile.",
+  "ONLY_SUPER_ADMIN_CAN_INVITE_ADMIN": "Only Super Admin has permission to invite or grant Admin role",
+  "EMAIL_ALREADY_EXISTS": "Email already exists in the system",
+  "INVITE_STAFF_SUCCESS": "Staff invitation email has been sent successfully",
+  "CANNOT_CHANGE_OWN_ROLE": "You cannot change your own role",
+  "NO_PERMISSION_CHANGE_ROLE": "You do not have permission to change this user's role",
+  "NO_PERMISSION_GRANT_ROLE": "You do not have permission to grant this role",
+  "CHANGE_ROLE_SUCCESS": "Role updated successfully",
+  "CANNOT_LOCK_OWN_ACCOUNT": "You cannot lock your own account",
+  "NO_PERMISSION_LOCK_USER": "You do not have permission to lock this user's account",
+  "UNLOCKED_ACCOUNT_SUCCESS": "Account unlocked successfully",
+  "LOCKED_ACCOUNT_SUCCESS": "Account locked successfully"
 }

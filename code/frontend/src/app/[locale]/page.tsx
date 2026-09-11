@@ -24,6 +24,7 @@ const ICON_MAP: Record<string, React.ReactNode> = {
 const HOME_CATEGORY_SLUGS = ['laptop', 'man-hinh', 'may-tinh-de-ban', 'o-cung', 'vga', 'ram'];
 
 export default function Home() {
+  const tHome = useTranslations('home');
   const tCat = useTranslations('home.categories');
 
   // Dedicated query to fetch 8 products for each category in parallel with caching
@@ -42,6 +43,9 @@ export default function Home() {
     <div className="flex flex-col gap-8 pb-0 pt-6 bg-[#f4f6f8] min-h-screen">
       <Hero />
 
+      {/* RECENTLY VIEWED SECTION (COMPACT STEAM STYLE) */}
+      <RecentlyViewedSlider className="container mx-auto px-4 lg:px-8 max-w-7xl" />
+
       {/* FLASH SALE SECTION */}
       {onSale.length > 0 && <FlashSaleSection products={onSale} />}
 
@@ -55,13 +59,13 @@ export default function Home() {
             <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-indigo-900 opacity-90 group-hover:scale-105 transition-transform duration-500"></div>
             <div className="absolute inset-0 p-8 flex flex-col justify-center">
               <h3 className="text-2xl md:text-3xl font-bold text-white mb-2 font-display">
-                Tuần Lễ Laptop
+                {tHome('promo_banners.laptop_title')}
               </h3>
               <p className="text-blue-100 mb-4 max-w-xs text-sm">
-                Giảm thêm 5% cho Học sinh - Sinh viên. Săn ngay deal hot!
+                {tHome('promo_banners.laptop_desc')}
               </p>
               <span className="px-4 py-2 bg-white text-blue-900 rounded-full text-sm font-bold w-fit shadow-sm">
-                Mua ngay
+                {tHome('promo_banners.laptop_cta')}
               </span>
             </div>
           </Link>
@@ -72,13 +76,13 @@ export default function Home() {
             <div className="absolute inset-0 bg-gradient-to-r from-red-600 to-orange-500 opacity-90 group-hover:scale-105 transition-transform duration-500"></div>
             <div className="absolute inset-0 p-8 flex flex-col justify-center">
               <h3 className="text-2xl md:text-3xl font-bold text-white mb-2 font-display">
-                Xả Kho Linh Kiện
+                {tHome('promo_banners.vga_title')}
               </h3>
               <p className="text-red-100 mb-4 max-w-xs text-sm">
-                Build PC giá sốc, tặng ngay màn hình Gaming 144Hz.
+                {tHome('promo_banners.vga_desc')}
               </p>
               <span className="px-4 py-2 bg-white text-red-900 rounded-full text-sm font-bold w-fit shadow-sm">
-                Khám phá
+                {tHome('promo_banners.vga_cta')}
               </span>
             </div>
           </Link>
@@ -88,11 +92,6 @@ export default function Home() {
       {/* RECOMMENDED PRODUCTS SECTION */}
       <div className="container mx-auto px-4 lg:px-8 max-w-7xl">
         <RecommendedProducts />
-      </div>
-
-      {/* RECENTLY VIEWED SECTION */}
-      <div className="container mx-auto px-4 lg:px-8 max-w-7xl">
-        <RecentlyViewedSlider />
       </div>
 
       <Features />

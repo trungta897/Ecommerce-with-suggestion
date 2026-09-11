@@ -14,9 +14,16 @@ export const ORDER_MESSAGES = {
   PROVINCE_NOT_FOUND: 'orders.error.provinceNotFound',
   PRODUCT_NOT_FOUND_WITH_ID: 'orders.error.productNotFoundWithId',
   INSUFFICIENT_STOCK: 'orders.error.insufficientStock',
+  INSUFFICIENT_STOCK_REPAY: 'orders.error.insufficientStockRepay',
   INSUFFICIENT_VIP_POINTS: 'orders.error.insufficientVipPoints',
   INVALID_PICKUP_TIME_PAST: 'orders.error.invalidPickupTimePast',
   INVALID_PICKUP_TIME_MAX: 'orders.error.invalidPickupTimeMax',
   INVALID_PICKUP_TIME_HOURS: 'orders.error.invalidPickupTimeHours',
   FLASH_SALE_STOCK_RACE: 'orders.error.flashSaleStockRace',
+  VNPAY_REFUND_SANDBOX_UNSUPPORTED:
+    'orders.error.vnpayRefundSandboxUnsupported',
+  REFUND_FAILED: 'orders.error.refundFailed',
+  REFUND_RESET_REASON_REQUIRED: 'orders.error.refundResetReasonRequired',
+  REFUND_SUCCESS: 'orders.success.refund',
+  REFUND_RESET_SUCCESS: 'orders.success.refundReset',
 };

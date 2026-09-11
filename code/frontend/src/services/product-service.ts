@@ -159,7 +159,46 @@ export const productService = {
         }))
       : [];
   },
+
+  create: async (payload: CreateProductInput): Promise<Product> => {
+    const { data } = await apiClient.post('/products', payload);
+    return mapProduct(data);
+  },
+
+  update: async (id: string, updates: UpdateProductInput): Promise<Product> => {
+    const { data } = await apiClient.patch(`/products/${id}`, updates);
+    return mapProduct(data);
+  },
+
+  delete: async (id: string): Promise<void> => {
+    await apiClient.delete(`/products/${id}`);
+  },
+
+  uploadImage: async (file: File): Promise<string> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const { data } = await apiClient.post<{ url: string }>('/products/upload-image', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return data.url;
+  },
 };
+
+export interface CreateProductInput {
+  categoryId: string;
+  name: string;
+  slug: string;
+  brand?: string;
+  description?: string;
+  specifications?: Record<string, unknown>;
+  tags?: string[];
+  price: number;
+  stock?: number;
+  images?: string[];
+  isActive?: boolean;
+}
+
+export type UpdateProductInput = Partial<CreateProductInput>;
 
 export interface HomeSection {
   slug: string;

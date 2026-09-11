@@ -14,10 +14,10 @@ import {
   Loader2,
   AlertCircle,
   CheckCircle2,
-  ChevronLeft,
-  ChevronRight,
 } from '@/components/base/icons';
 import { DiscountFormModal } from '@/components/admin/promotions/DiscountFormModal';
+import { AdminPagination } from '@/components/admin/AdminPagination';
+import { getApiErrorMessage } from '@/utils/get-api-error-message';
 
 export default function AdminDiscountsPage() {
   const t = useTranslations('admin.promotions');
@@ -49,7 +49,7 @@ export default function AdminDiscountsPage() {
       setDiscounts(res.data);
       setTotalPages(res.totalPages || 1);
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Failed to fetch discounts';
+      const message = getApiErrorMessage(err) || t('fetch_error');
       setErrorMsg(message);
     } finally {
       setLoading(false);
@@ -128,8 +128,7 @@ export default function AdminDiscountsPage() {
       setIsModalOpen(false);
       fetchDiscounts();
     } catch (err: unknown) {
-      const errObj = err as { response?: { data?: { message?: string } }; message?: string };
-      const msg = errObj.response?.data?.message || errObj.message || 'Error saving flash sale';
+      const msg = getApiErrorMessage(err) || t('save_error');
       setErrorMsg(msg);
     } finally {
       setSaving(false);
@@ -143,7 +142,7 @@ export default function AdminDiscountsPage() {
       setSuccessMsg(t('delete_success'));
       fetchDiscounts();
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Failed to delete discount';
+      const message = getApiErrorMessage(err) || t('delete_error');
       setErrorMsg(message);
     }
   };
@@ -158,7 +157,7 @@ export default function AdminDiscountsPage() {
           </div>
           <div>
             <h1 className="text-xl font-bold text-ink">{t('title')}</h1>
-            <p className="text-sm text-ink-3">Thiết lập các đợt Flash Sale và giá khuyến mãi</p>
+            <p className="text-sm text-ink-3">{t('subtitle')}</p>
           </div>
         </div>
         <button
@@ -206,7 +205,7 @@ export default function AdminDiscountsPage() {
                 <tr>
                   <td colSpan={9} className="p-8 text-center text-ink-3">
                     <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-primary" />
-                    Đang tải danh sách...
+                    {t('loadingList')}
                   </td>
                 </tr>
               ) : discounts.length === 0 ? (
@@ -259,7 +258,11 @@ export default function AdminDiscountsPage() {
                                 : 'bg-gray-100 text-gray-500'
                           }`}
                         >
-                          {isOngoing ? 'Đang chạy' : discount.isActive ? 'Lên lịch' : t('inactive')}
+                          {isOngoing
+                            ? t('ongoing')
+                            : discount.isActive
+                              ? t('scheduled')
+                              : t('inactive')}
                         </span>
                       </td>
                       <td className="p-4 text-right">
@@ -289,29 +292,7 @@ export default function AdminDiscountsPage() {
         </div>
 
         {/* Pagination */}
-        {totalPages > 1 && (
-          <div className="flex items-center justify-between px-6 py-4 border-t border-rule bg-paper-1">
-            <span className="text-xs text-ink-3">
-              Trang {page} / {totalPages}
-            </span>
-            <div className="flex items-center gap-2">
-              <button
-                disabled={page <= 1}
-                onClick={() => setPage((p) => p - 1)}
-                className="p-1.5 rounded-lg border border-rule disabled:opacity-40 hover:bg-white transition-colors"
-              >
-                <ChevronLeft className="w-4 h-4" />
-              </button>
-              <button
-                disabled={page >= totalPages}
-                onClick={() => setPage((p) => p + 1)}
-                className="p-1.5 rounded-lg border border-rule disabled:opacity-40 hover:bg-white transition-colors"
-              >
-                <ChevronRight className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-        )}
+        <AdminPagination page={page} totalPages={totalPages} onPageChange={setPage} />
       </div>
 
       {/* Extracted Form Modal */}

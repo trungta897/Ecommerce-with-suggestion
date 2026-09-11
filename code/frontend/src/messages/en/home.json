@@ -7,7 +7,17 @@
     "sub_banner_1_subtitle": "Titanium finish",
     "sub_banner_2_title": "AirPods Pro",
     "sub_banner_2_subtitle": "Magic like you've never heard",
-    "ai_assistant": "✨ AI Assistant"
+    "ai_assistant": "✨ AI Assistant",
+    "small_banners": {
+      "back_to_school_title": "Back to School",
+      "back_to_school_sub": "10% Off",
+      "warehouse_clearance_title": "Component Clearance",
+      "warehouse_clearance_sub": "Up to 50% Off",
+      "apple_week_title": "Apple Week",
+      "apple_week_sub": "Special Deals",
+      "build_pc_title": "Build PC",
+      "build_pc_sub": "Free Monitor Included"
+    }
   },
   "product": {
     "recommended_title": "Just for you",
@@ -92,5 +102,13 @@
     "sold": "{count} sold",
     "left": "{left}/{total} left",
     "sold_out": "Sold Out"
+  },
+  "promo_banners": {
+    "laptop_title": "Laptop Week Mega Deal",
+    "laptop_desc": "Extra 5% off for Students. Grab hot deals now!",
+    "laptop_cta": "Shop Now",
+    "vga_title": "PC Component Clearance",
+    "vga_desc": "Build PC at unbeatable prices, get a free 144Hz Gaming monitor.",
+    "vga_cta": "Explore"
   }
 }

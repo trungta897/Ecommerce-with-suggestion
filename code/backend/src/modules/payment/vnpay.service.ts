@@ -6,13 +6,18 @@ import {
   HashAlgorithm,
   ReturnQueryFromVNPay,
 } from 'vnpay';
+import { I18nService, I18nContext } from 'nestjs-i18n';
+import { ORDER_MESSAGES } from '../../common/constants/order-message.constant';
 
 @Injectable()
 export class VnPayService {
   private readonly vnpayInstance: VNPay;
   private readonly logger = new Logger(VnPayService.name);
 
-  constructor(private readonly configService: ConfigService) {
+  constructor(
+    private readonly configService: ConfigService,
+    private readonly i18n: I18nService,
+  ) {
     const tmnCode =
       this.configService.get<string>('VNPAY_TMN_CODE') || 'sandbox';
     const secureSecret =
@@ -59,15 +64,18 @@ export class VnPayService {
     }
   }
 
-  /* eslint-disable @typescript-eslint/no-unused-vars */
   refund(
-    orderId: string,
-    amount: number,
-    vnp_TxnRef: string,
-    vnp_TransactionDate: string,
+    _orderId: string,
+    _amount: number,
+    _vnp_TxnRef: string,
+    _vnp_TransactionDate: string,
+    lang?: string,
   ): Promise<boolean> {
-    // VNPay Refund logic
-    throw new BadRequestException('Refund not implemented in mock');
+    const currentLang = lang || I18nContext.current()?.lang || 'vi';
+    throw new BadRequestException(
+      this.i18n.t(ORDER_MESSAGES.VNPAY_REFUND_SANDBOX_UNSUPPORTED, {
+        lang: currentLang,
+      }),
+    );
   }
-  /* eslint-enable @typescript-eslint/no-unused-vars */
 }

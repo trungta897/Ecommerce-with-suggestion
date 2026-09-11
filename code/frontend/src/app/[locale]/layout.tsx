@@ -1,7 +1,7 @@
-﻿import type { Metadata } from 'next';
+import type { Metadata } from 'next';
 import '../globals.css';
 import { NextIntlClientProvider } from 'next-intl';
-import { getMessages } from 'next-intl/server';
+import { getMessages, setRequestLocale } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import { QueryProvider } from '@/providers/query-provider';
 import { ToastProvider } from '@/providers/toast-provider';
@@ -38,13 +38,16 @@ export default async function RootLayout({
     notFound();
   }
 
+  // Cung cấp locale cho next-intl
+  setRequestLocale(locale);
+
   // Lấy toàn bộ messages từ i18n/request.ts
   const messages = await getMessages();
 
   return (
     <html lang={locale}>
       <body className={`${fontDisplay.variable} ${fontBody.variable} antialiased`}>
-        <NextIntlClientProvider messages={messages}>
+        <NextIntlClientProvider messages={messages} locale={locale}>
           <GoogleOAuthProvider
             clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || 'mock-client-id'}
           >

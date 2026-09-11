@@ -136,7 +136,7 @@ export function VoucherFormModal({
               <BaseInput
                 value={code}
                 onChange={(e) => setCode(e.target.value)}
-                placeholder="VD: SALE2026, FREESHIP"
+                placeholder={t('codePlaceholder')}
                 required
               />
             </div>
@@ -147,9 +147,9 @@ export function VoucherFormModal({
                 onChange={(e) => setType(e.target.value as VoucherType)}
                 className="w-full border border-rule rounded-lg px-3 py-2 text-sm bg-white text-ink"
               >
-                <option value="PERCENTAGE">Phần trăm (%)</option>
-                <option value="FIXED_AMOUNT">Số tiền cố định (VNĐ)</option>
-                <option value="FREE_SHIPPING">Miễn phí vận chuyển</option>
+                <option value="PERCENTAGE">{t('typePercentage')}</option>
+                <option value="FIXED_AMOUNT">{t('typeFixed')}</option>
+                <option value="FREE_SHIPPING">{t('typeFreeShipping')}</option>
               </select>
             </div>
 
@@ -210,7 +210,7 @@ export function VoucherFormModal({
 
             <div>
               <label className="block text-sm font-medium mb-1 text-ink">
-                {type === 'PERCENTAGE' ? 'Phần trăm giảm (%)' : 'Số tiền giảm (VNĐ)'}
+                {type === 'PERCENTAGE' ? t('discountPercentage') : t('discountFixed')}
               </label>
               <BaseInput
                 type="number"
@@ -229,7 +229,7 @@ export function VoucherFormModal({
                 <BaseInput
                   type="number"
                   value={maxDiscount}
-                  placeholder="Để trống nếu không giới hạn"
+                  placeholder={t('unlimitedHint')}
                   onChange={(e) => setMaxDiscount(e.target.value ? Number(e.target.value) : '')}
                 />
               </div>
@@ -253,7 +253,7 @@ export function VoucherFormModal({
               <BaseInput
                 type="number"
                 value={usageLimit}
-                placeholder="Để trống nếu không giới hạn"
+                placeholder={t('unlimitedHint')}
                 onChange={(e) => setUsageLimit(e.target.value ? Number(e.target.value) : '')}
               />
             </div>
@@ -310,10 +310,10 @@ export function VoucherFormModal({
 
           <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-rule">
             <BaseButton type="button" variant="outline" onClick={onClose} disabled={submitting}>
-              {tCommon('cancel') || 'Hủy'}
+              {tCommon('cancel')}
             </BaseButton>
             <BaseButton type="submit" disabled={submitting}>
-              {submitting ? 'Đang lưu...' : tCommon('save') || 'Lưu'}
+              {submitting ? tCommon('loading') : tCommon('save')}
             </BaseButton>
           </div>
         </form>

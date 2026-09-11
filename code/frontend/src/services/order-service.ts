@@ -1,5 +1,5 @@
 import { apiClient } from '@/lib/api-client';
-import { Order } from '@/types/order';
+import { Order, OrderStatus } from '@/types/order';
 import { getOrCreateSessionId } from '@/utils/session';
 
 export interface ReturnEligibilityResponse {
@@ -121,6 +121,16 @@ export const orderService = {
       payload
     );
     return ((data as { data?: Order })?.data || data) as Order;
+  },
+
+  async recordManualShipping(
+    orderId: string,
+    dto: { carrier?: string; trackingCode?: string; status: OrderStatus | string }
+  ): Promise<Order> {
+    return this.updateOrderStatus(orderId, dto.status, {
+      deliveryPartner: dto.carrier,
+      trackingId: dto.trackingCode,
+    });
   },
 
   async checkReturnEligibility(orderId: string): Promise<ReturnEligibilityResponse> {

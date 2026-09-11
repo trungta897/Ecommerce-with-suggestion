@@ -11,6 +11,7 @@
     "promo_text": "Miễn phí giao hàng cho đơn từ 2.000.000đ",
     "create_account": "Đăng ký",
     "sign_in": "Đăng nhập",
+    "account": "Tài khoản",
     "search": "Tìm kiếm",
     "ai_search": "✨ Nhập nhu cầu, AI sẽ tìm giúp bạn...",
     "wishlist": "Yêu thích",
@@ -23,6 +24,8 @@
     "email": "support@example.com",
     "account": "Tài khoản",
     "login_register": "Đăng nhập / Đăng ký",
+    "cart": "Giỏ hàng",
+    "wishlist": "Danh sách yêu thích",
     "quick_link": "Liên kết nhanh",
     "privacy_policy": "Chính sách bảo mật",
     "refund_policy": "Chính sách đổi trả",
@@ -34,6 +37,29 @@
     "backHome": "Quay lại Trang chủ"
   },
   "viewCart": "Xem giỏ hàng",
+  "addToCart": "Thêm vào giỏ",
   "error": "Đã xảy ra lỗi. Vui lòng thử lại.",
-  "loading": "Đang xử lý..."
+  "loading": "Đang xử lý...",
+  "cancel": "Hủy",
+  "confirm": "Xác nhận",
+  "save": "Lưu",
+  "close": "Đóng",
+  "search": {
+    "title": "Tìm kiếm sản phẩm",
+    "placeholder": "Tìm kiếm theo tên sản phẩm, thương hiệu, danh mục...",
+    "popular_searches": "Từ khóa thịnh hành",
+    "recent_searches": "Lịch sử tìm kiếm",
+    "clear_all": "Xóa tất cả",
+    "clear_query": "Xóa",
+    "view_all_results": "Xem tất cả {count} kết quả cho \"{query}\"",
+    "view_all": "Xem tất cả kết quả",
+    "no_results_for": "Không tìm thấy sản phẩm phù hợp cho \"{query}\"",
+    "no_results_hint": "Hãy thử kiểm tra lỗi chính tả hoặc tìm kiếm với các từ khóa phổ biến bên dưới.",
+    "min_length_hint": "Nhập tối thiểu {min} ký tự để tìm kiếm tức thì",
+    "min_length_warning": "Vui lòng nhập tối thiểu {min} ký tự để tìm kiếm",
+    "esc_to_close": "ESC để đóng",
+    "enter_to_search": "Enter để tìm",
+    "searching": "Đang tìm kiếm sản phẩm...",
+    "products_found": "Gợi ý sản phẩm"
+  }
 }

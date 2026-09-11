@@ -7,7 +7,17 @@
     "sub_banner_1_subtitle": "Chất liệu Titanium",
     "sub_banner_2_title": "AirPods Pro",
     "sub_banner_2_subtitle": "Kỳ diệu như chưa từng nghe",
-    "ai_assistant": "✨ Trợ lý AI"
+    "ai_assistant": "✨ Trợ lý AI",
+    "small_banners": {
+      "back_to_school_title": "Mùa Tựu Trường",
+      "back_to_school_sub": "Giảm 10%",
+      "warehouse_clearance_title": "Xả Kho Linh Kiện",
+      "warehouse_clearance_sub": "Lên đến 50%",
+      "apple_week_title": "Tuần Lễ Apple",
+      "apple_week_sub": "Giá Sốc",
+      "build_pc_title": "Build PC",
+      "build_pc_sub": "Tặng Màn Hình"
+    }
   },
   "product": {
     "recommended_title": "Dành riêng cho bạn",
@@ -92,5 +102,13 @@
     "sold": "Đã bán {count} suất",
     "left": "Còn {left}/{total} suất",
     "sold_out": "Đã hết suất"
+  },
+  "promo_banners": {
+    "laptop_title": "Tuần Lễ Laptop",
+    "laptop_desc": "Giảm thêm 5% cho Học sinh - Sinh viên. Săn ngay deal hot!",
+    "laptop_cta": "Mua ngay",
+    "vga_title": "Xả Kho Linh Kiện",
+    "vga_desc": "Build PC giá sốc, tặng ngay màn hình Gaming 144Hz.",
+    "vga_cta": "Khám phá"
   }
 }

@@ -76,6 +76,7 @@ export class AuthController {
     return this.authService.logout();
   }
 
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   @Post('phone/login')
   async requestPhoneOtp(@Body('phone') phone: string) {
     const lang = I18nContext.current()?.lang || 'vi';
@@ -87,6 +88,7 @@ export class AuthController {
     return this.authService.requestPhoneOtp(phone);
   }
 
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @Post('phone/verify')
   async verifyPhoneOtp(
     @Body('phone') phone: string,

@@ -45,5 +45,12 @@
   "returnSuccess": "Return request submitted successfully",
   "returnRejectReason": "Reject Reason",
   "supplementEvidence": "Supplement Evidence",
-  "supplementSuccess": "Evidence supplemented successfully"
+  "supplementSuccess": "Evidence supplemented successfully",
+  "rejectModalTitle": "Reject Return Request",
+  "rejectSuccess": "Return request rejected successfully",
+  "rejectError": "Failed to reject return request",
+  "rejectPlaceholder": "Enter reject reason",
+  "reject": "Reject",
+  "liveTracking": "Live SSE",
+  "orderStatusUpdated": "Order status updated: {status}"
 }

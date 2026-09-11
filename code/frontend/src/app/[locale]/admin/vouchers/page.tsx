@@ -1,23 +1,27 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
+import toast from 'react-hot-toast';
 import { BaseInput, BaseButton } from '@/components/base';
-import { Search, Plus, Edit, Eye, EyeOff, History } from '@/components/base/icons';
+import { Search, Plus, Edit, Eye, EyeOff, History, Loader2 } from '@/components/base/icons';
+import { AdminPagination } from '@/components/admin/AdminPagination';
 import { voucherService } from '@/services/voucher-service';
 import { VoucherItem, CreateVoucherInput } from '@/types/voucher';
 import { VoucherFormModal } from '@/components/admin/vouchers/VoucherFormModal';
 import { VoucherUsageModal } from '@/components/admin/vouchers/VoucherUsageModal';
 import { VOUCHER_SCOPES, VOUCHER_TYPES } from '@/constants/voucher';
+import { formatPrice } from '@/utils/format';
+import { getApiErrorMessage } from '@/utils/get-api-error-message';
 
 export default function AdminVouchersPage() {
+  const locale = useLocale();
   const t = useTranslations('voucher');
   const [vouchers, setVouchers] = useState<VoucherItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [search, setSearch] = useState('');
-  const [error, setError] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [editingVoucher, setEditingVoucher] = useState<VoucherItem | null>(null);
   const [historyVoucher, setHistoryVoucher] = useState<VoucherItem | null>(null);
@@ -36,7 +40,7 @@ export default function AdminVouchersPage() {
       setPage(p);
     } catch (err: unknown) {
       console.error('Failed to load vouchers', err);
-      setError(t('loadError'));
+      toast.error(t('loadError'));
     } finally {
       setLoading(false);
     }
@@ -50,15 +54,12 @@ export default function AdminVouchersPage() {
   const handleToggle = async (id: string) => {
     try {
       await voucherService.toggleVoucherStatus(id);
+      toast.success(t('toggleSuccess'));
       fetchVouchers(page, search);
     } catch (err: unknown) {
       console.error('Failed to toggle voucher status', err);
+      toast.error(t('saveError'));
     }
-  };
-
-  const openCreateModal = () => {
-    setEditingVoucher(null);
-    setShowModal(true);
   };
 
   const openEditModal = (voucher: VoucherItem) => {
@@ -73,13 +74,13 @@ export default function AdminVouchersPage() {
       } else {
         await voucherService.createVoucher(data);
       }
+      toast.success(t('saveSuccess'));
+      setShowModal(false);
       fetchVouchers(page, search);
     } catch (err: unknown) {
       console.error('Failed to save voucher', err);
-      const msg =
-        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
-        t('saveError');
-      alert(msg);
+      const msg = getApiErrorMessage(err) || t('saveError');
+      toast.error(msg);
     }
   };
 
@@ -88,11 +89,15 @@ export default function AdminVouchersPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
           <h1 className="text-2xl font-bold text-ink">{t('manageTitle')}</h1>
-          <p className="text-sm text-ink-2 mt-1">
-            Quản lý mã giảm giá, thiết lập phạm vi áp dụng và theo dõi lượt sử dụng
-          </p>
+          <p className="text-sm text-ink-2 mt-1">{t('manageSubtitle')}</p>
         </div>
-        <BaseButton onClick={openCreateModal} className="flex items-center gap-2">
+        <BaseButton
+          onClick={() => {
+            setEditingVoucher(null);
+            setShowModal(true);
+          }}
+          className="flex items-center gap-2"
+        >
           <Plus className="w-5 h-5" />
           {t('createVoucher')}
         </BaseButton>
@@ -104,20 +109,14 @@ export default function AdminVouchersPage() {
           <BaseInput
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Tìm kiếm mã voucher..."
+            placeholder={t('searchPlaceholder')}
             className="pl-10"
           />
         </div>
         <BaseButton type="submit" variant="outline">
-          Tìm kiếm
+          {t('search')}
         </BaseButton>
       </form>
-
-      {error && (
-        <div className="mb-4 text-sm text-red-600 bg-red-50 p-3 rounded-lg border border-red-200">
-          {error}
-        </div>
-      )}
 
       <div className="bg-white rounded-xl border border-rule overflow-hidden shadow-sm">
         <div className="overflow-x-auto">
@@ -130,7 +129,7 @@ export default function AdminVouchersPage() {
                 <th className="px-5 py-3.5 font-medium">{t('value')}</th>
                 <th className="px-5 py-3.5 font-medium">{t('endDate')}</th>
                 <th className="px-5 py-3.5 font-medium">{t('usedCount')}</th>
-                <th className="px-5 py-3.5 font-medium">Giới hạn/User</th>
+                <th className="px-5 py-3.5 font-medium">{t('limitPerUser')}</th>
                 <th className="px-5 py-3.5 font-medium">{t('status')}</th>
                 <th className="px-5 py-3.5 font-medium text-right">{t('actions')}</th>
               </tr>
@@ -138,13 +137,14 @@ export default function AdminVouchersPage() {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={9} className="text-center py-10 text-ink-2">
-                    Đang tải danh sách voucher...
+                  <td colSpan={9} className="text-center py-12 text-ink-2">
+                    <Loader2 className="w-6 h-6 animate-spin mx-auto text-primary mb-2" />
+                    <span>{t('loadingList')}</span>
                   </td>
                 </tr>
               ) : vouchers.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="text-center py-10 text-ink-2">
+                  <td colSpan={9} className="text-center py-12 text-ink-2">
                     {t('noVouchers')}
                   </td>
                 </tr>
@@ -165,11 +165,11 @@ export default function AdminVouchersPage() {
                         <div className="text-xs text-ink-2 mt-0.5">
                           {voucher.isPublic ? (
                             <span className="text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
-                              Công khai
+                              {t('publicBadge')}
                             </span>
                           ) : (
                             <span className="text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200">
-                              Riêng tư
+                              {t('privateBadge')}
                             </span>
                           )}
                         </div>
@@ -208,17 +208,19 @@ export default function AdminVouchersPage() {
                         <div className="font-semibold text-ink">
                           {voucher.type === 'PERCENTAGE'
                             ? `${voucher.value}%`
-                            : `${Number(voucher.value).toLocaleString('vi-VN')}đ`}
+                            : formatPrice(Number(voucher.value), locale)}
                         </div>
                         {voucher.minOrderValue && Number(voucher.minOrderValue) > 0 && (
                           <div className="text-xs text-ink-2 mt-0.5">
-                            Min: {Number(voucher.minOrderValue).toLocaleString('vi-VN')}đ
+                            Min: {formatPrice(Number(voucher.minOrderValue), locale)}
                           </div>
                         )}
                       </td>
                       <td className="px-5 py-3.5 text-ink-2">
                         {voucher.endDate
-                          ? new Date(voucher.endDate).toLocaleDateString('vi-VN')
+                          ? new Date(voucher.endDate).toLocaleDateString(
+                              locale === 'vi' ? 'vi-VN' : 'en-US'
+                            )
                           : t('unlimited')}
                       </td>
                       <td className="px-5 py-3.5">
@@ -226,7 +228,7 @@ export default function AdminVouchersPage() {
                         <span className="text-ink-2"> / {voucher.usageLimit || '∞'}</span>
                       </td>
                       <td className="px-5 py-3.5 text-ink-2 font-medium">
-                        {voucher.perUserLimit || 1} lần
+                        {t('times', { count: voucher.perUserLimit || 1 })}
                       </td>
                       <td className="px-5 py-3.5">
                         <span
@@ -275,33 +277,14 @@ export default function AdminVouchersPage() {
             </tbody>
           </table>
         </div>
-      </div>
 
-      {totalPages > 1 && (
-        <div className="flex justify-between items-center mt-6">
-          <span className="text-sm text-ink-2">
-            Trang {page} / {totalPages}
-          </span>
-          <div className="flex gap-2">
-            <BaseButton
-              variant="outline"
-              size="sm"
-              disabled={page === 1}
-              onClick={() => fetchVouchers(page - 1, search)}
-            >
-              Trước
-            </BaseButton>
-            <BaseButton
-              variant="outline"
-              size="sm"
-              disabled={page === totalPages}
-              onClick={() => fetchVouchers(page + 1, search)}
-            >
-              Sau
-            </BaseButton>
-          </div>
-        </div>
-      )}
+        {/* Pagination */}
+        <AdminPagination
+          page={page}
+          totalPages={totalPages}
+          onPageChange={(p) => fetchVouchers(p, search)}
+        />
+      </div>
 
       <VoucherFormModal
         isOpen={showModal}

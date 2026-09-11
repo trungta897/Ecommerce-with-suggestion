@@ -23,22 +23,28 @@ export function AdminOrderDetailModal({
   approving = false,
 }: AdminOrderDetailModalProps) {
   const tOrder = useTranslations('order');
+  const tAdmin = useTranslations('admin.orders');
+  const tCommon = useTranslations('common');
   const locale = useLocale();
 
   if (!order) return null;
 
   return (
-    <BaseModal isOpen={isOpen} onClose={onClose} title={`Chi tiết đơn hàng ${order.id || ''}`}>
+    <BaseModal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={tAdmin('orderDetailTitle', { id: order.id ? `#${order.id.slice(0, 8)}` : '' })}
+    >
       <div className="space-y-5 max-h-[70vh] overflow-y-auto pr-1">
         {/* Info Grid */}
         <div className="grid grid-cols-2 gap-4 text-sm bg-paper-2 p-4 rounded-xl">
           <div>
-            <p className="text-ink-2">Khách hàng:</p>
+            <p className="text-ink-2">{tAdmin('customerLabel')}</p>
             <p className="font-semibold text-ink">{order.shippingName}</p>
             <p className="text-xs text-ink-2">{order.shippingPhone}</p>
           </div>
           <div>
-            <p className="text-ink-2">Trạng thái:</p>
+            <p className="text-ink-2">{tAdmin('statusLabel')}</p>
             <span
               className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold border mt-1 ${
                 ORDER_STATUS_COLORS[order.status] || 'bg-gray-100 text-gray-800'
@@ -48,14 +54,16 @@ export function AdminOrderDetailModal({
             </span>
           </div>
           <div className="col-span-2">
-            <p className="text-ink-2">Địa chỉ giao hàng:</p>
+            <p className="text-ink-2">{tAdmin('shippingAddressLabel')}</p>
             <p className="font-medium text-ink">{order.shippingAddress}</p>
           </div>
           {(order.deliveryPartner || order.trackingId) && (
             <div className="col-span-2 pt-2 border-t border-rule">
               <p className="text-xs text-ink-2">
-                Vận chuyển: <strong>{order.deliveryPartner || 'Chưa có'}</strong> · Mã vận đơn:{' '}
-                <strong className="font-mono">{order.trackingId || 'Chưa có'}</strong>
+                {tAdmin('shippingCarrierLabel')}{' '}
+                <strong>{order.deliveryPartner || tAdmin('noneYet')}</strong> ·{' '}
+                {tAdmin('trackingCodeLabel')}{' '}
+                <strong className="font-mono">{order.trackingId || tAdmin('noneYet')}</strong>
               </p>
             </div>
           )}
@@ -63,12 +71,14 @@ export function AdminOrderDetailModal({
 
         {/* Items */}
         <div>
-          <h4 className="font-bold text-ink mb-3">Danh sách sản phẩm</h4>
+          <h4 className="font-bold text-ink mb-3">{tAdmin('productList')}</h4>
           <div className="divide-y divide-rule border border-rule rounded-xl overflow-hidden">
             {order.items?.map((item) => (
               <div key={item.id} className="p-3 flex items-center justify-between bg-white">
                 <div>
-                  <p className="font-medium text-ink">{item.product?.name || 'Sản phẩm'}</p>
+                  <p className="font-medium text-ink">
+                    {item.product?.name || tAdmin('productDefault')}
+                  </p>
                   <p className="text-xs text-ink-2">
                     {formatPrice(item.unitPrice, locale)} x {item.quantity}
                   </p>
@@ -83,17 +93,17 @@ export function AdminOrderDetailModal({
 
         {/* Totals */}
         <div className="flex justify-between items-center pt-2 font-bold text-lg text-ink">
-          <span>Tổng tiền thanh toán:</span>
+          <span>{tAdmin('totalAmount')}</span>
           <span className="text-primary">{formatPrice(order.totalAmount, locale)}</span>
         </div>
 
         <div className="flex justify-end gap-2 pt-4 border-t border-rule">
           <BaseButton variant="outline" onClick={onClose}>
-            Đóng
+            {tCommon('close')}
           </BaseButton>
           {['PENDING', 'pending'].includes(order.status) && (
             <BaseButton onClick={() => onApprove(order.id)} disabled={approving}>
-              {approving ? 'Đang duyệt...' : 'Duyệt đơn'}
+              {approving ? tAdmin('approving') : tAdmin('approve')}
             </BaseButton>
           )}
         </div>

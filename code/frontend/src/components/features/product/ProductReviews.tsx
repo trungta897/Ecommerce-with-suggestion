@@ -11,8 +11,7 @@ interface ProductReviewsProps {
 }
 
 export function ProductReviews({ productId }: ProductReviewsProps) {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const t = useTranslations();
+  const t = useTranslations('product');
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
@@ -58,7 +57,7 @@ export function ProductReviews({ productId }: ProductReviewsProps) {
       fetchReviews(1);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
-      setSubmitError(err.response?.data?.message || 'Có lỗi xảy ra, vui lòng thử lại');
+      setSubmitError(err.response?.data?.message || t('errorSubmit'));
     } finally {
       setIsSubmitting(false);
     }
@@ -78,14 +77,14 @@ export function ProductReviews({ productId }: ProductReviewsProps) {
       <div className="flex justify-between items-center mb-8">
         <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
           <MessageCircle className="w-6 h-6 text-primary-600" />
-          Đánh giá sản phẩm
+          {t('reviewsTitle')}
         </h2>
         {isAuthenticated && !showForm && (
           <button
             onClick={() => setShowForm(true)}
             className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition font-medium"
           >
-            Viết đánh giá
+            {t('writeReview')}
           </button>
         )}
       </div>
@@ -95,7 +94,7 @@ export function ProductReviews({ productId }: ProductReviewsProps) {
           onSubmit={handleSubmit}
           className="mb-8 p-6 bg-gray-50 rounded-xl border border-gray-200"
         >
-          <h3 className="text-lg font-semibold mb-4">Đánh giá của bạn</h3>
+          <h3 className="text-lg font-semibold mb-4">{t('yourReview')}</h3>
 
           {submitError && (
             <div className="mb-4 p-3 bg-red-50 text-red-600 rounded-lg flex items-center gap-2">
@@ -105,7 +104,9 @@ export function ProductReviews({ productId }: ProductReviewsProps) {
           )}
 
           <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">Đánh giá (Sao)</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              {t('ratingStars')}
+            </label>
             <div className="flex gap-2">
               {Array.from({ length: 5 }).map((_, i) => (
                 <Star
@@ -117,23 +118,23 @@ export function ProductReviews({ productId }: ProductReviewsProps) {
             </div>
           </div>
           <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">Tiêu đề</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">{t('title')}</label>
             <input
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500"
-              placeholder="Tóm tắt đánh giá của bạn"
+              placeholder={t('titlePlaceholder')}
               maxLength={100}
             />
           </div>
           <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">Nội dung</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">{t('content')}</label>
             <textarea
               value={content}
               onChange={(e) => setContent(e.target.value)}
               className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500"
-              placeholder="Chia sẻ thêm về trải nghiệm của bạn..."
+              placeholder={t('contentPlaceholder')}
               rows={4}
             />
           </div>
@@ -143,14 +144,14 @@ export function ProductReviews({ productId }: ProductReviewsProps) {
               onClick={() => setShowForm(false)}
               className="px-4 py-2 text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
             >
-              Hủy
+              {t('cancel')}
             </button>
             <button
               type="submit"
               disabled={isSubmitting}
               className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50"
             >
-              {isSubmitting ? 'Đang gửi...' : 'Gửi đánh giá'}
+              {isSubmitting ? t('submitting') : t('submitReview')}
             </button>
           </div>
         </form>
@@ -175,7 +176,7 @@ export function ProductReviews({ productId }: ProductReviewsProps) {
                       <div className="flex">{renderStars(review.rating)}</div>
                       {review.isVerifiedPurchase && (
                         <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">
-                          Đã mua hàng
+                          {t('verifiedPurchase')}
                         </span>
                       )}
                     </div>
@@ -199,7 +200,7 @@ export function ProductReviews({ productId }: ProductReviewsProps) {
                 onClick={() => fetchReviews(page - 1)}
                 className="px-3 py-1 border rounded disabled:opacity-50 hover:bg-gray-50"
               >
-                Trước
+                {t('previous')}
               </button>
               <span className="px-3 py-1 text-gray-600">
                 {page} / {totalPages}
@@ -209,7 +210,7 @@ export function ProductReviews({ productId }: ProductReviewsProps) {
                 onClick={() => fetchReviews(page + 1)}
                 className="px-3 py-1 border rounded disabled:opacity-50 hover:bg-gray-50"
               >
-                Sau
+                {t('next')}
               </button>
             </div>
           )}
@@ -217,8 +218,8 @@ export function ProductReviews({ productId }: ProductReviewsProps) {
       ) : (
         <div className="text-center py-12 text-gray-500 bg-gray-50 rounded-xl border border-gray-100 border-dashed">
           <MessageCircle className="w-12 h-12 mx-auto text-gray-300 mb-3" />
-          <p>Chưa có đánh giá nào cho sản phẩm này.</p>
-          <p className="text-sm mt-1">Hãy là người đầu tiên đánh giá!</p>
+          <p>{t('noReviewsForProduct')}</p>
+          <p className="text-sm mt-1">{t('beFirstReview')}</p>
         </div>
       )}
     </div>

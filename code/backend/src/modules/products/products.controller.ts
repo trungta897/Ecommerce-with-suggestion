@@ -12,6 +12,7 @@ import {
   UploadedFile,
   Headers,
 } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { AuthGuard } from '@nestjs/passport';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ProductsService } from './products.service';
@@ -19,11 +20,13 @@ import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { RolesGuard } from '../../common/guards/roles.guard';
+import { UserRole } from '@prisma/client';
 
 @Controller('products')
 export class ProductsController {
   constructor(private readonly productsService: ProductsService) {}
 
+  @Throttle({ default: { limit: 120, ttl: 60000 } })
   @Get()
   findAll(
     @Query('page') page?: string,
@@ -81,7 +84,7 @@ export class ProductsController {
   }
 
   @UseGuards(AuthGuard('jwt'), RolesGuard)
-  @Roles('ADMIN')
+  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
   @Post()
   create(
     @Body() createProductDto: CreateProductDto,
@@ -91,7 +94,7 @@ export class ProductsController {
   }
 
   @UseGuards(AuthGuard('jwt'), RolesGuard)
-  @Roles('ADMIN')
+  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
   @Patch(':id')
   update(
     @Param('id') id: string,
@@ -102,7 +105,7 @@ export class ProductsController {
   }
 
   @UseGuards(AuthGuard('jwt'), RolesGuard)
-  @Roles('ADMIN')
+  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
   @Delete(':id')
   remove(
     @Param('id') id: string,
@@ -112,7 +115,7 @@ export class ProductsController {
   }
 
   @UseGuards(AuthGuard('jwt'), RolesGuard)
-  @Roles('ADMIN')
+  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
   @Post('upload-image')
   @UseInterceptors(FileInterceptor('file'))
   async uploadImage(@UploadedFile() file: Express.Multer.File) {

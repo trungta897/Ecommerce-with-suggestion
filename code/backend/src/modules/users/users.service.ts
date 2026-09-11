@@ -118,9 +118,11 @@ export class UsersService {
     fullName: string,
     role: 'ADMIN' | 'EMPLOYEE',
   ) {
+    const lang = I18nContext.current()?.lang || 'vi';
+
     if (adminRole === 'ADMIN' && role === 'ADMIN') {
       throw new BadRequestException(
-        'Chỉ Super Admin mới có quyền mời hoặc phân quyền Quản trị viên (Admin)',
+        this.i18n.t('users.ONLY_SUPER_ADMIN_CAN_INVITE_ADMIN', { lang }),
       );
     }
 
@@ -129,7 +131,9 @@ export class UsersService {
       where: { email },
     });
     if (existingUser) {
-      throw new BadRequestException('Email đã tồn tại trong hệ thống');
+      throw new BadRequestException(
+        this.i18n.t('users.EMAIL_ALREADY_EXISTS', { lang }),
+      );
     }
 
     const newUser = await this.prisma.user.create({
@@ -158,7 +162,7 @@ export class UsersService {
     );
 
     return {
-      message: 'Đã gửi lời mời tham gia quản trị thành công',
+      message: this.i18n.t('users.INVITE_STAFF_SUCCESS', { lang }),
       user: {
         id: newUser.id,
         email: newUser.email,
@@ -176,16 +180,22 @@ export class UsersService {
     targetUserId: string,
     newRole: UserRole,
   ) {
+    const lang = I18nContext.current()?.lang || 'vi';
+
     if (adminId === targetUserId) {
       throw new BadRequestException(
-        'Không thể tự thay đổi quyền của chính mình',
+        this.i18n.t('users.CANNOT_CHANGE_OWN_ROLE', { lang }),
       );
     }
 
     const targetUser = await this.prisma.user.findUnique({
       where: { id: targetUserId },
     });
-    if (!targetUser) throw new NotFoundException('Người dùng không tồn tại');
+    if (!targetUser) {
+      throw new NotFoundException(
+        this.i18n.t('users.USER_NOT_FOUND', { lang }),
+      );
+    }
 
     // RBAC Rule:
     // ADMIN can only manage EMPLOYEE/CUSTOMER
@@ -193,11 +203,13 @@ export class UsersService {
     if (adminRole === 'ADMIN') {
       if (targetUser.role === 'SUPER_ADMIN' || targetUser.role === 'ADMIN') {
         throw new BadRequestException(
-          'Bạn không có quyền thay đổi vai trò của người dùng này',
+          this.i18n.t('users.NO_PERMISSION_CHANGE_ROLE', { lang }),
         );
       }
       if (newRole === 'SUPER_ADMIN' || newRole === 'ADMIN') {
-        throw new BadRequestException('Bạn không có quyền cấp vai trò này');
+        throw new BadRequestException(
+          this.i18n.t('users.NO_PERMISSION_GRANT_ROLE', { lang }),
+        );
       }
     }
 
@@ -206,27 +218,36 @@ export class UsersService {
       data: { role: newRole },
     });
 
-    return { message: 'Cập nhật vai trò thành công', user: updatedUser };
+    return {
+      message: this.i18n.t('users.CHANGE_ROLE_SUCCESS', { lang }),
+      user: updatedUser,
+    };
   }
 
   async toggleActive(adminId: string, adminRole: string, targetUserId: string) {
+    const lang = I18nContext.current()?.lang || 'vi';
+
     if (adminId === targetUserId) {
       throw new BadRequestException(
-        'Không thể tự khóa tài khoản của chính mình',
+        this.i18n.t('users.CANNOT_LOCK_OWN_ACCOUNT', { lang }),
       );
     }
 
     const targetUser = await this.prisma.user.findUnique({
       where: { id: targetUserId },
     });
-    if (!targetUser) throw new NotFoundException('Người dùng không tồn tại');
+    if (!targetUser) {
+      throw new NotFoundException(
+        this.i18n.t('users.USER_NOT_FOUND', { lang }),
+      );
+    }
 
     if (
       adminRole === 'ADMIN' &&
       (targetUser.role === 'SUPER_ADMIN' || targetUser.role === 'ADMIN')
     ) {
       throw new BadRequestException(
-        'Bạn không có quyền khóa tài khoản của người dùng này',
+        this.i18n.t('users.NO_PERMISSION_LOCK_USER', { lang }),
       );
     }
 
@@ -237,8 +258,8 @@ export class UsersService {
 
     return {
       message: updatedUser.isActive
-        ? 'Đã mở khóa tài khoản'
-        : 'Đã khóa tài khoản',
+        ? this.i18n.t('users.UNLOCKED_ACCOUNT_SUCCESS', { lang })
+        : this.i18n.t('users.LOCKED_ACCOUNT_SUCCESS', { lang }),
       user: updatedUser,
     };
   }

@@ -57,5 +57,21 @@
   "wishlistAdded": "Product added to wishlist",
   "wishlistRemoved": "Product removed from wishlist",
   "requireLoginWishlist": "Please sign in to save your favorite products",
-  "sold": "Sold {count}"
+  "sold": "Sold {count}",
+  "reviewsTitle": "Product Reviews",
+  "yourReview": "Your Review",
+  "ratingStars": "Rating (Stars)",
+  "title": "Title",
+  "titlePlaceholder": "Summarize your review",
+  "content": "Content",
+  "contentPlaceholder": "Share more about your experience...",
+  "cancel": "Cancel",
+  "submitting": "Submitting...",
+  "verifiedPurchase": "Verified Purchase",
+  "noReviewsForProduct": "No reviews for this product yet.",
+  "beFirstReview": "Be the first to leave a review!",
+  "previous": "Previous",
+  "next": "Next",
+  "errorSubmit": "An error occurred, please try again",
+  "newProduct": "New"
 }

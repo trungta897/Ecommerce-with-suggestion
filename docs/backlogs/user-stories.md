@@ -36,8 +36,8 @@ Các công việc phục vụ vận hành kỹ thuật hoặc đánh giá học 
 
 **Acceptance Criteria:**
 
-1. **Given** Guest cung cấp Số điện thoại hợp lệ, **when** gửi yêu cầu (vượt qua reCAPTCHA nếu nghi ngờ spam), **then** hệ thống tạo OTP và gửi qua SMS (hoặc giả lập ở Dev).
-2. **Given** phát hiện hành vi spam (điểm reCAPTCHA < `0.5`), **when** Guest gửi yêu cầu, **then** hệ thống từ chối đăng nhập.
+1. **Given** Guest cung cấp Số điện thoại hợp lệ, **when** gửi yêu cầu (vượt qua kiểm tra Redis Rate Limit), **then** hệ thống tạo OTP và gửi qua SMS (hoặc mock log ở Dev).
+2. **Given** phát hiện hành vi spam / gửi OTP quá 5 lần/phút hoặc nhập sai 3 lần trong 15 phút, **when** Guest gửi yêu cầu, **then** hệ thống từ chối yêu cầu và yêu cầu thử lại sau.
 
 ### US-AUTH-02 — Xác thực SMS OTP
 
@@ -84,7 +84,7 @@ Các công việc phục vụ vận hành kỹ thuật hoặc đánh giá học 
 **Acceptance Criteria:**
 
 1. **Given** khách hàng đã đăng nhập, **when** cập nhật các thông tin Profile hợp lệ, **then** hệ thống lưu và hiển thị thông tin mới.
-2. **Given** khách hàng cập nhật địa chỉ mặc định, **when** đặt hàng lần sau, **then** địa chỉ này được tự động điền vào form Checkout.
+2. **Given** khách hàng cập nhật địa chỉ mặc định trong Profile (dạng chuỗi `address`), **when** đặt hàng lần sau, **then** thông tin liên hệ và chuỗi địa chỉ này được tự động điền vào trường `street` (Số nhà, tên đường), kết hợp giao diện phân cấp Tỉnh/Huyện/Xã. *(Known Limitation: Phân cấp hành chính định danh `provinceId`/`wardId` trong Profile schema là định hướng nâng cấp v2)*.
 
 ## 5. Epic CATALOG — Khám phá sản phẩm
 
@@ -358,7 +358,7 @@ Các công việc phục vụ vận hành kỹ thuật hoặc đánh giá học 
 
 **Acceptance Criteria:**
 
-1. **Given** đơn VNPay đã `returned`, **when** Admin hoàn tiền, **then** gọi API VNPay Refund; chỉ khi thành công mới chuyển sang `refunded`. Hoàn tiền thất bại không được chuyển trạng thái.
+1. **Given** đơn VNPay đã `returned`, **when** Admin hoàn tiền trên môi trường Sandbox, **then** hệ thống Backend chủ động thông báo cổng Sandbox chưa hỗ trợ API hoàn tiền tự động (yêu cầu tài khoản Merchant doanh nghiệp có ký quỹ). Chỉ khi cổng thanh toán xác nhận thành công mới chuyển sang `refunded`. Hoàn tiền thất bại không được chuyển trạng thái.
 2. **Given** người dùng có vai trò Nhân viên, **when** cố thực hiện thao tác hoàn tiền, **then** hệ thống từ chối truy cập.
 
 ### US-ADM-07 — Kiểm duyệt đánh giá
@@ -459,7 +459,7 @@ Các công việc phục vụ vận hành kỹ thuật hoặc đánh giá học 
 | Q-01 | Phản hồi API mục tiêu dưới 500 ms, ngoại trừ luồng ML có timeout riêng 5 giây.   | Các story gọi API         |
 | Q-02 | Trạng thái đơn được cập nhật realtime qua SSE.                                   | US-ORD-01, Admin thao tác |
 | Q-03 | Trừ và hoàn tồn kho phải an toàn khi có thao tác đồng thời (idempotent).         | Epic CHECKOUT             |
-| Q-04 | Access Token có thời hạn 15 phút; Refresh Token có thời hạn 7 ngày.              | Epic AUTH                 |
+| Q-04 | Demo áp dụng Single JWT (7 ngày) ổn định; Production Roadmap: Access Token 15 phút + Refresh Token 7 ngày. | Epic AUTH |
 | Q-05 | Dữ liệu đầu vào phải được làm sạch để giảm rủi ro XSS, SQL injection.            | Toàn hệ thống             |
 | Q-06 | Hệ thống hướng tới uptime 99% và có logging.                                     | Toàn hệ thống             |
 | Q-07 | Giao diện responsive trên mobile, tablet, desktop.                               | Các story giao diện       |
