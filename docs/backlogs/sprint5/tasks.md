@@ -43,5 +43,9 @@
   - [x] Cơ chế Empty State Zero-Footprint: Tự động `return null` khi danh sách rỗng, không sinh DOM thừa hay khoảng cách ảo (phantom gap).
   - [x] Comprehensive Search Modal: Tích hợp popup tìm kiếm toàn diện với lịch sử tìm kiếm (`useSearchHistory`), danh mục nhanh, gợi ý sản phẩm hot và điều hướng mượt mà.
 
-
-
+- [x] **8. Chuẩn Hóa i18n Zero Hardcode & Type Safety Admin Portal**
+  - [x] Quét sạch 100% hardcode text cả tiếng Việt lẫn tiếng Anh trên toàn bộ các trang và component Admin (categories, products, discounts, reviews, users, AdminGuard, layout).
+  - [x] Đồng bộ scope namespace `useTranslations`, ngăn chặn triệt để lỗi runtime `Could not resolve message`.
+  - [x] Chuẩn hóa phân trang thống nhất qua component `<AdminPagination />` tại `reviews` và `promotions/discounts`.
+  - [x] Trích xuất helper tái sử dụng `getApiErrorMessage(err)` loại bỏ 9+ đoạn type casting Axios lặp lại.
+  - [x] Chuẩn hóa typing `UserRole` enum và gom logic xác thực tại `AdminGuard.tsx`.
