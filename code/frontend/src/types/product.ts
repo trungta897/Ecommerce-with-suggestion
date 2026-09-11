@@ -32,6 +32,7 @@ export interface Product {
   categoryId: string;
   category?: Category;
   tags?: string[];
+  specifications?: Record<string, unknown>;
   aiScore?: number;
   isActive: boolean;
   createdAt: string;

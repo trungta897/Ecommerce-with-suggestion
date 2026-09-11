@@ -1,5 +1,6 @@
 export enum UserRole {
   CUSTOMER = 'CUSTOMER',
+  EMPLOYEE = 'EMPLOYEE',
   ADMIN = 'ADMIN',
   SUPER_ADMIN = 'SUPER_ADMIN',
 }
@@ -12,6 +13,7 @@ export interface User {
   address?: string;
   avatarUrl?: string;
   role: UserRole;
+  isActive?: boolean;
   isVerified: boolean;
   vipPoints?: number;
   createdAt?: string;

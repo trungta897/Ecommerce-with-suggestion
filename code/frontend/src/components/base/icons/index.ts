@@ -81,6 +81,10 @@ export {
   Percent,
   Bell,
   Lock,
+  FolderTree,
+  ShieldAlert,
+  Upload,
+  ArrowLeft,
 } from 'lucide-react';
 
 // Export custom icons

@@ -27,12 +27,19 @@ export function AdminLoginForm() {
   const onEmailSubmit = async (data: LoginFormData) => {
     try {
       const response = await authService.login(data);
-      // Ensure user is an admin here if you have a role check
-      // if (response.user.role !== 'admin') throw new Error('Not admin');
+      const allowedRoles = ['ADMIN', 'SUPER_ADMIN', 'EMPLOYEE'];
+      if (!response.user?.role || !allowedRoles.includes(response.user.role)) {
+        await authService.logout();
+        throw new Error('UNAUTHORIZED_ROLE');
+      }
       setAuth(response.user, response.accessToken);
       router.push('/admin'); // Redirect to admin dashboard
-    } catch {
-      setErrorEmail('root', { message: t('login_error') || 'Đăng nhập thất bại' });
+    } catch (err: unknown) {
+      if (err instanceof Error && err.message === 'UNAUTHORIZED_ROLE') {
+        setErrorEmail('root', { message: t('unauthorized_role') });
+      } else {
+        setErrorEmail('root', { message: t('login_error') });
+      }
     }
   };
 
@@ -71,7 +78,7 @@ export function AdminLoginForm() {
       )}
 
       <BaseButton type="submit" className="w-full" isLoading={isSubmittingEmail}>
-        Đăng nhập Quản trị
+        {t('admin_login_button')}
       </BaseButton>
     </form>
   );
