@@ -12,6 +12,7 @@ import { VoucherFormModal } from '@/components/admin/vouchers/VoucherFormModal';
 import { VoucherUsageModal } from '@/components/admin/vouchers/VoucherUsageModal';
 import { VOUCHER_SCOPES, VOUCHER_TYPES } from '@/constants/voucher';
 import { formatPrice } from '@/utils/format';
+import { getApiErrorMessage } from '@/utils/get-api-error-message';
 
 export default function AdminVouchersPage() {
   const locale = useLocale();
@@ -78,9 +79,7 @@ export default function AdminVouchersPage() {
       fetchVouchers(page, search);
     } catch (err: unknown) {
       console.error('Failed to save voucher', err);
-      const msg =
-        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
-        t('saveError');
+      const msg = getApiErrorMessage(err) || t('saveError');
       toast.error(msg);
     }
   };

@@ -29,7 +29,7 @@ export default function AdminEditProductPage() {
         if (data) setProduct(data);
       } catch (err: unknown) {
         console.error(err);
-        toast.error('Không tìm thấy sản phẩm');
+        toast.error(t('notFound'));
       } finally {
         setLoading(false);
       }

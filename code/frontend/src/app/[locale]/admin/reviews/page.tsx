@@ -6,6 +6,7 @@ import { Search, Star, Eye, EyeOff } from '@/components/base/icons';
 import { useEffect, useState } from 'react';
 import { reviewService } from '@/services/review-service';
 import { AdminReviewItem } from '@/types/review';
+import { AdminPagination } from '@/components/admin/AdminPagination';
 
 export default function AdminReviewsPage() {
   const t = useTranslations('admin.reviews');
@@ -28,7 +29,7 @@ export default function AdminReviewsPage() {
       setPage(p);
     } catch (err: unknown) {
       console.error('Failed to load reviews', err);
-      setError('Lỗi khi tải danh sách đánh giá');
+      setError(t('loadError'));
     } finally {
       setLoading(false);
     }
@@ -75,13 +76,13 @@ export default function AdminReviewsPage() {
               {loading ? (
                 <tr>
                   <td colSpan={6} className="text-center py-8">
-                    Đang tải...
+                    {t('loading')}
                   </td>
                 </tr>
               ) : reviews.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="text-center py-8">
-                    Không có đánh giá nào
+                    {t('noData')}
                   </td>
                 </tr>
               ) : (
@@ -123,7 +124,7 @@ export default function AdminReviewsPage() {
                             : 'bg-gray-100 text-gray-800'
                         }`}
                       >
-                        {review.status === 'VISIBLE' ? 'Hiển thị' : 'Đã ẩn'}
+                        {review.status === 'VISIBLE' ? t('visible') : t('hidden')}
                       </span>
                     </td>
                     <td className="px-5 py-3">
@@ -147,27 +148,12 @@ export default function AdminReviewsPage() {
         </div>
       </div>
 
-      {totalPages > 1 && (
-        <div className="flex justify-center gap-2 mt-6">
-          <button
-            disabled={page === 1}
-            onClick={() => fetchReviews(page - 1)}
-            className="px-4 py-2 border rounded-lg disabled:opacity-50"
-          >
-            Trước
-          </button>
-          <span className="px-4 py-2">
-            {page} / {totalPages}
-          </span>
-          <button
-            disabled={page === totalPages}
-            onClick={() => fetchReviews(page + 1)}
-            className="px-4 py-2 border rounded-lg disabled:opacity-50"
-          >
-            Sau
-          </button>
-        </div>
-      )}
+      <AdminPagination
+        page={page}
+        totalPages={totalPages}
+        onPageChange={fetchReviews}
+        className="mt-6 rounded-xl border border-rule"
+      />
     </div>
   );
 }

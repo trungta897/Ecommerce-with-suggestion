@@ -61,7 +61,7 @@ export default function AdminProductsPage() {
           <h1 className="text-2xl font-bold text-ink">{t('title')}</h1>
           {productsResponse?.metadata && (
             <p className="text-xs text-ink-2 mt-1">
-              Tổng cộng {productsResponse.metadata.total} sản phẩm
+              {t('totalProducts', { count: productsResponse.metadata.total })}
             </p>
           )}
         </div>
@@ -108,7 +108,7 @@ export default function AdminProductsPage() {
                 <tr>
                   <td colSpan={6} className="px-5 py-12 text-center text-ink-2">
                     <Loader2 className="w-6 h-6 animate-spin mx-auto text-primary mb-2" />
-                    <span>Đang tải danh sách sản phẩm...</span>
+                    <span>{t('loadingProducts')}</span>
                   </td>
                 </tr>
               )}

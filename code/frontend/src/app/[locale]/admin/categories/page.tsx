@@ -31,7 +31,7 @@ export default function AdminCategoriesPage() {
       setCategories(data);
     } catch (error) {
       console.error('Failed to fetch categories', error);
-      toast.error('Lỗi khi tải danh mục');
+      toast.error(t('loadError'));
     } finally {
       setLoading(false);
     }
@@ -73,7 +73,9 @@ export default function AdminCategoriesPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
           <h1 className="text-2xl font-bold text-ink">{t('title')}</h1>
-          <p className="text-xs text-ink-2 mt-1">Tổng cộng {filteredCategories.length} danh mục</p>
+          <p className="text-xs text-ink-2 mt-1">
+            {t('totalCategories', { count: filteredCategories.length })}
+          </p>
         </div>
         <Link href={`/${locale}/admin/categories/new`}>
           <BaseButton className="gap-2">
@@ -114,7 +116,7 @@ export default function AdminCategoriesPage() {
                 <tr>
                   <td colSpan={5} className="px-5 py-12 text-center text-ink-2">
                     <Loader2 className="w-6 h-6 animate-spin mx-auto text-primary mb-2" />
-                    <span>Đang tải danh mục...</span>
+                    <span>{t('loadingCategories')}</span>
                   </td>
                 </tr>
               ) : filteredCategories.length === 0 ? (

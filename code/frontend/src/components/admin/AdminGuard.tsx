@@ -2,36 +2,38 @@
 
 import React, { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useAuthStore } from '@/store';
 import { Loader2, ShieldAlert } from '@/components/base/icons';
+import { UserRole } from '@/types';
 
 interface AdminGuardProps {
   children: React.ReactNode;
 }
 
-const ALLOWED_ADMIN_ROLES = ['ADMIN', 'SUPER_ADMIN', 'EMPLOYEE'];
+const ALLOWED_ADMIN_ROLES = [UserRole.ADMIN, UserRole.SUPER_ADMIN, UserRole.EMPLOYEE];
 
 export function AdminGuard({ children }: AdminGuardProps) {
+  const t = useTranslations('admin.common');
   const router = useRouter();
   const pathname = usePathname();
   const { user, isAuthenticated } = useAuthStore();
   const [mounted, setMounted] = useState(false);
+
+  const isLoginPage = pathname?.includes('/admin/login');
+  const isAuthorized = Boolean(isAuthenticated && user && ALLOWED_ADMIN_ROLES.includes(user.role));
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
   useEffect(() => {
-    if (!mounted) return;
+    if (!mounted || isLoginPage) return;
 
-    // Nếu không phải trang admin/login và chưa xác thực hoặc không có role hợp lệ
-    const isLoginPage = pathname?.includes('/admin/login');
-    if (isLoginPage) return;
-
-    if (!isAuthenticated || !user || !ALLOWED_ADMIN_ROLES.includes(user.role)) {
+    if (!isAuthorized) {
       router.replace('/admin/login');
     }
-  }, [mounted, isAuthenticated, user, pathname, router]);
+  }, [mounted, isAuthorized, isLoginPage, router]);
 
   // Trong thời gian đợi hydrate từ localStorage
   if (!mounted) {
@@ -39,24 +41,23 @@ export function AdminGuard({ children }: AdminGuardProps) {
       <div className="flex min-h-screen items-center justify-center bg-paper-2">
         <div className="flex flex-col items-center gap-3">
           <Loader2 className="w-8 h-8 animate-spin text-primary" />
-          <p className="text-sm text-ink-2 font-medium">Đang khởi tạo...</p>
+          <p className="text-sm text-ink-2 font-medium">{t('initializing')}</p>
         </div>
       </div>
     );
   }
 
-  const isLoginPage = pathname?.includes('/admin/login');
   if (isLoginPage) {
     return <>{children}</>;
   }
 
   // Nếu không có quyền hợp lệ
-  if (!isAuthenticated || !user || !ALLOWED_ADMIN_ROLES.includes(user.role)) {
+  if (!isAuthorized) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-paper-2">
         <div className="flex flex-col items-center gap-3">
           <ShieldAlert className="w-10 h-10 text-orange-500" />
-          <p className="text-sm text-ink font-semibold">Đang xác thực quyền truy cập...</p>
+          <p className="text-sm text-ink font-semibold">{t('verifyingAccess')}</p>
         </div>
       </div>
     );

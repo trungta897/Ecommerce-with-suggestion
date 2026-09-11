@@ -25,8 +25,7 @@ import { authService } from '@/services/authService';
 interface NavItem {
   key: string;
   href: string;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  icon: any;
+  icon: React.ComponentType<{ className?: string }>;
   roles: string[];
 }
 
@@ -216,7 +215,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <div className="p-4 border-t border-rule space-y-2">
             {user?.fullName && (
               <div className="px-3 py-1">
-                <p className="text-xs text-ink-3">Đang đăng nhập:</p>
+                <p className="text-xs text-ink-3">{t('loggedInAs')}</p>
                 <p className="text-xs font-semibold text-ink truncate">{user.fullName}</p>
               </div>
             )}

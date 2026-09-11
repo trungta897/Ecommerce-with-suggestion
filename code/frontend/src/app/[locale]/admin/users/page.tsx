@@ -13,6 +13,7 @@ import { User, UserRole } from '@/types';
 import { ROLE_COLORS } from '@/constants';
 import { useAuthStore } from '@/store';
 import { useDebounce } from '@/hooks/use-debounce';
+import { getApiErrorMessage } from '@/utils/get-api-error-message';
 
 export default function AdminUsersPage() {
   const t = useTranslations('admin.users');
@@ -69,7 +70,7 @@ export default function AdminUsersPage() {
       setInviteRole('EMPLOYEE');
       fetchUsers(page);
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      const msg = getApiErrorMessage(err);
       toast.error(msg || t('invite_error'));
     } finally {
       setSubmittingInvite(false);
@@ -90,7 +91,7 @@ export default function AdminUsersPage() {
       setConfirmModal(null);
       fetchUsers(page);
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      const msg = getApiErrorMessage(err);
       toast.error(msg || t('permission_error'));
     } finally {
       setSubmittingAction(false);
@@ -124,7 +125,7 @@ export default function AdminUsersPage() {
         <div>
           <h1 className="text-2xl font-bold text-ink">{t('title')}</h1>
           <p className="text-xs text-ink-2 mt-1">
-            Tổng cộng {filteredUsers.length} người dùng hiển thị
+            {t('totalUsers', { count: filteredUsers.length })}
           </p>
         </div>
         {(currentUser?.role === UserRole.SUPER_ADMIN || currentUser?.role === UserRole.ADMIN) && (
@@ -189,7 +190,7 @@ export default function AdminUsersPage() {
                             {user.fullName?.charAt(0) || user.email?.charAt(0) || 'U'}
                           </div>
                           <span className="font-medium text-ink truncate max-w-[180px]">
-                            {user.fullName || 'No Name'}
+                            {user.fullName || t('noName')}
                           </span>
                         </div>
                       </td>

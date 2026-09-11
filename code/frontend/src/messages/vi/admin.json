@@ -9,7 +9,8 @@
     "reviews": "Đánh giá",
     "users": "Người dùng",
     "settings": "Cài đặt",
-    "logout": "Đăng xuất"
+    "logout": "Đăng xuất",
+    "loggedInAs": "Đang đăng nhập:"
   },
   "pagination": {
     "prev": "Trước",
@@ -107,7 +108,11 @@
     "desc_warranty_title": "Chế độ bảo hành & Hậu mãi",
     "desc_w1": "- Cam kết hàng chính hãng 100%, nguyên seal mới.",
     "desc_w2": "- Bảo hành 12 - 24 tháng theo tiêu chuẩn của nhà sản xuất.",
-    "desc_w3": "- Đổi mới 1:1 trong 30 ngày nếu phát sinh lỗi phần cứng do nhà sản xuất."
+    "desc_w3": "- Đổi mới 1:1 trong 30 ngày nếu phát sinh lỗi phần cứng do nhà sản xuất.",
+    "loadError": "Lỗi khi tải sản phẩm",
+    "notFound": "Không tìm thấy sản phẩm",
+    "loadingProducts": "Đang tải danh sách sản phẩm...",
+    "totalProducts": "Tổng cộng {count} sản phẩm"
   },
   "orders": {
     "title": "Quản lý đơn hàng",
@@ -198,7 +203,10 @@
     "toggle_success": "Cập nhật trạng thái thành công",
     "role_success": "Cập nhật vai trò thành công",
     "permission_error": "Lỗi phân quyền",
-    "noData": "Không tìm thấy người dùng phù hợp"
+    "noData": "Không tìm thấy người dùng phù hợp",
+    "totalUsers": "Tổng cộng {count} người dùng hiển thị",
+    "noName": "Chưa có tên",
+    "namePlaceholder": "VD: Nguyễn Văn A"
   },
   "reviews": {
     "title": "Quản lý đánh giá",
@@ -212,7 +220,10 @@
     "actions": "Thao tác",
     "hideReview": "Ẩn đánh giá",
     "showReview": "Hiện đánh giá",
-    "searchPlaceholder": "Tìm kiếm đánh giá..."
+    "searchPlaceholder": "Tìm kiếm đánh giá...",
+    "loadError": "Lỗi khi tải danh sách đánh giá",
+    "loading": "Đang tải...",
+    "noData": "Không có đánh giá nào"
   },
   "returns": {
     "title": "Quản lý trả hàng",
@@ -259,7 +270,10 @@
     "none_parent": "Không có (Danh mục gốc)",
     "cancel": "Hủy",
     "save_changes": "Lưu thay đổi",
-    "show": "Hiện"
+    "show": "Hiện",
+    "loadError": "Lỗi khi tải danh mục",
+    "loadingCategories": "Đang tải danh mục...",
+    "totalCategories": "Tổng cộng {count} danh mục"
   },
   "promotions": {
     "title": "Quản lý Flash Sale & Giảm giá",
@@ -285,6 +299,17 @@
     "create_success": "Tạo đợt Flash Sale thành công!",
     "update_success": "Cập nhật đợt Flash Sale thành công!",
     "delete_success": "Xóa đợt Flash Sale thành công!",
-    "no_data": "Chưa có chương trình Flash Sale nào được tạo"
+    "no_data": "Chưa có chương trình Flash Sale nào được tạo",
+    "subtitle": "Thiết lập các đợt Flash Sale và giá khuyến mãi",
+    "loadingList": "Đang tải danh sách...",
+    "ongoing": "Đang chạy",
+    "scheduled": "Lên lịch",
+    "fetch_error": "Lỗi khi tải danh sách khuyến mãi",
+    "save_error": "Lỗi khi lưu đợt Flash Sale",
+    "delete_error": "Lỗi khi xóa đợt Flash Sale"
+  },
+  "common": {
+    "initializing": "Đang khởi tạo...",
+    "verifyingAccess": "Đang xác thực quyền truy cập..."
   }
 }

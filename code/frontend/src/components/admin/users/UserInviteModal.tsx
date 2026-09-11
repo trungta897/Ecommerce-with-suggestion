@@ -43,7 +43,7 @@ export const UserInviteModal: React.FC<UserInviteModalProps> = ({
           <BaseInput
             value={name}
             onChange={(e) => onNameChange(e.target.value)}
-            placeholder="VD: Nguyễn Văn A"
+            placeholder={t('namePlaceholder')}
             required
           />
         </div>

@@ -14,6 +14,7 @@ import { AdminOrderCancelModal } from '@/components/admin/orders/AdminOrderCance
 import { orderService } from '@/services/order-service';
 import { Order, OrderStatus } from '@/types/order';
 import { DELIVERY_PARTNERS } from '@/constants/order';
+import { getApiErrorMessage } from '@/utils/get-api-error-message';
 
 export default function AdminOrdersPage() {
   const t = useTranslations('admin.orders');
@@ -82,7 +83,7 @@ export default function AdminOrdersPage() {
         setViewingOrder((prev) => (prev ? { ...prev, status: OrderStatus.CONFIRMED } : null));
       }
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      const msg = getApiErrorMessage(err);
       toast.error(msg || t('toast_load_error'));
     } finally {
       setSubmittingAction(false);
@@ -124,7 +125,7 @@ export default function AdminOrdersPage() {
         );
       }
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      const msg = getApiErrorMessage(err);
       toast.error(msg || t('toast_load_error'));
     } finally {
       setSubmittingAction(false);
@@ -141,7 +142,7 @@ export default function AdminOrdersPage() {
         setViewingOrder((prev) => (prev ? { ...prev, status: OrderStatus.COMPLETED } : null));
       }
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      const msg = getApiErrorMessage(err);
       toast.error(msg || t('toast_load_error'));
     } finally {
       setSubmittingAction(false);
@@ -160,7 +161,7 @@ export default function AdminOrdersPage() {
         setViewingOrder((prev) => (prev ? { ...prev, status: OrderStatus.CANCELLED } : null));
       }
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      const msg = getApiErrorMessage(err);
       toast.error(msg || t('toast_load_error'));
     } finally {
       setSubmittingAction(false);
@@ -173,8 +174,7 @@ export default function AdminOrdersPage() {
       toast.success(t('toast_return_approve_success'));
       fetchOrders();
     } catch (error: unknown) {
-      const msg = (error as { response?: { data?: { message?: string } } })?.response?.data
-        ?.message;
+      const msg = getApiErrorMessage(error);
       toast.error(msg || t('toast_load_error'));
     }
   };
