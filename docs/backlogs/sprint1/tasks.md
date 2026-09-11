@@ -11,13 +11,19 @@
 - [x] **2. Khởi tạo Backend Module: Categories (US-ADM-02)**
   - [x] Tạo `CategoryController`, `CategoryService`
   - [x] Viết CRUD API: Lấy danh sách, Tạo mới, Cập nhật, Ẩn/Hiện (Soft delete)
-  - [x] Tích hợp Frontend Admin (`admin/categories` - cần tạo UI nếu chưa có)
+  - [x] Tích hợp Frontend Admin (`admin/categories`): Tìm kiếm danh mục động, hiển thị tên danh mục cha thay vì UUID, tích hợp `CategoryEditModal` chỉnh sửa nhanh tại chỗ, nút chuyển đổi trạng thái ẩn/hiện an toàn kèm toast.
 
 - [x] **3. Khởi tạo Backend Module: Products (US-ADM-03)**
   - [x] Tạo `ProductController`, `ProductService`
-  - [x] Cấu hình luồng Upload ảnh (tích hợp module Storage có sẵn)
+  - [x] Cấu hình luồng Upload ảnh (`POST /products/upload-image` qua Multer Storage)
   - [x] Viết CRUD API: Tạo, Cập nhật, Ẩn/Hiện sản phẩm
-  - [x] Tích hợp Frontend Admin (`admin/products/new`, `admin/products`)
+  - [x] Tích hợp Frontend Admin (`admin/products/new`, `admin/products`, `admin/products/[id]/edit`):
+    - Xây dựng component `ProductForm.tsx` chuẩn hóa schema Zod + React Hook Form.
+    - Single source of truth cho giá niêm yết (bỏ trường giá khuyến mãi, chuyển quản lý giảm giá sang Flash Sale).
+    - Tự động sinh mô tả sản phẩm chuẩn kỹ thuật với nút "Tạo mô tả tự động" (Honest Copy).
+    - Quản lý thông số kỹ thuật động (Dynamic Key-Value Specifications).
+    - Tải ảnh sản phẩm thực tế với preview và xóa ảnh.
+    - Bảng sản phẩm (`admin/products/page.tsx`): Debounced search, chuyển trang phân trang `AdminPagination`, điều hướng Sửa sản phẩm và toggle trạng thái kinh doanh.
 
 - [x] **4. Tích hợp Khám phá Sản phẩm (Client) (US-CAT-01, US-CAT-02)**
   - [x] Viết API public: `GET /products` (Có phân trang, lọc, tìm kiếm theo tên/danh mục)
@@ -33,7 +39,10 @@
   - [x] Chuẩn hóa 100% text đa ngôn ngữ i18n cho toàn bộ luồng Auth (Login, Register, Header Account)
 
 - [x] **6. Đăng nhập Nội bộ & Đặt lại mật khẩu (US-AUTH-03, US-AUTH-04)**
-  - [x] Đăng nhập Admin/Nhân viên bằng Email và Mật khẩu
-  - [x] Khôi phục mật khẩu qua Email (Nodemailer)
-  - [x] Tích hợp mô hình Hybrid Auth (HttpOnly Cookies + Bearer Token)
-  - [x] Next.js Edge Middleware bảo vệ Protected Routes
+  - [x] Đăng nhập Admin/Nhân viên bằng Email và Mật khẩu: Chặn truy cập đối với tài khoản `CUSTOMER` tại form đăng nhập Admin kèm thông báo lỗi đa ngôn ngữ.
+  - [x] Khôi phục mật khẩu qua Email (Nodemailer).
+  - [x] Tích hợp mô hình Hybrid Auth (HttpOnly Cookies + Bearer Token).
+  - [x] Vá lỗ hổng bảo mật RolesGuard Backend: Chuyển `@Roles('ADMIN')` chuỗi cứng sang chuẩn Enum `@Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)`.
+  - [x] Next.js Edge Middleware bảo vệ Protected Routes (/admin/*) theo RBAC 3 cấp (EMPLOYEE, ADMIN, SUPER_ADMIN) với comment rõ ràng đây là UX gate.
+  - [x] `AdminGuard` Client-side Navigation Guard kiểm tra quyền hạn và render Skeleton Hydration chống visual flash.
+  - [x] Quản trị người dùng & Phân quyền Action-level (`admin/users`): Admin chỉ được mời/đổi vai trò Employee và không được phép khóa/sửa tài khoản Admin/Super Admin khác; thay thế `window.confirm` bằng `BaseModal` an toàn; phân tách sub-components `UserInviteModal`, `UserConfirmModal` tuân thủ nghiêm ngặt Code Length Mandate (< 300 dòng).
