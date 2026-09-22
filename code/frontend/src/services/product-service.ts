@@ -24,6 +24,15 @@ export interface ProductQueryParams {
   sort?: string;
 }
 
+export interface AdminProductQueryParams {
+  page?: number;
+  limit?: number;
+  categorySlug?: string;
+  q?: string;
+  status?: string;
+  stockStatus?: string;
+}
+
 const getDescendantSlugs = (slug: string): string[] => {
   const slugs = new Set<string>([slug]);
 
@@ -100,6 +109,30 @@ export const productService = {
     if (params?.sort) searchParams.append('sort', params.sort);
 
     const url = `/products?${searchParams.toString()}`;
+    const { data } = await apiClient.get(url);
+
+    return {
+      data: Array.isArray(data.data) ? data.data.map(mapProduct) : [],
+      metadata: data.metadata || { total: 0, page: 1, limit: 10, totalPages: 0 },
+    };
+  },
+
+  getAdminProducts: async (params?: AdminProductQueryParams): Promise<ProductsResponse> => {
+    const searchParams = new URLSearchParams();
+    if (params?.page) searchParams.append('page', params.page.toString());
+    if (params?.limit) searchParams.append('limit', params.limit.toString());
+    if (params?.categorySlug && params.categorySlug !== 'all') {
+      searchParams.append('categorySlug', params.categorySlug);
+    }
+    if (params?.q) searchParams.append('q', params.q);
+    if (params?.status && params.status !== 'all') {
+      searchParams.append('status', params.status);
+    }
+    if (params?.stockStatus && params.stockStatus !== 'all') {
+      searchParams.append('stockStatus', params.stockStatus);
+    }
+
+    const url = `/products/admin?${searchParams.toString()}`;
     const { data } = await apiClient.get(url);
 
     return {

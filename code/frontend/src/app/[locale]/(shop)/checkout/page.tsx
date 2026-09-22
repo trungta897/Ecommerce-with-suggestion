@@ -110,7 +110,7 @@ export default function CheckoutPage() {
     0
   );
 
-  const shippingFee = deliveryMethod === 'express' ? 2 : 0;
+  const shippingFee = deliveryMethod === 'express' ? 40000 : 0;
 
   let vipDiscount = 0;
   if (useVipPoints && user && user.vipPoints) {

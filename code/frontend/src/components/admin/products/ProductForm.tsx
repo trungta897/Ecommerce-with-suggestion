@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
 import toast from 'react-hot-toast';
 import Image from 'next/image';
 import { BaseButton, BaseInput } from '@/components/base';
@@ -12,6 +12,7 @@ import { Upload, Plus, Trash2, Loader2, Sparkles } from '@/components/base/icons
 import { Category, Product } from '@/types';
 import { categoryService } from '@/services/category-service';
 import { productService, CreateProductInput } from '@/services/product-service';
+import { USD_TO_VND_RATE } from '@/constants/currency';
 
 function slugify(text: string): string {
   return text
@@ -41,6 +42,12 @@ export const ProductForm: React.FC<ProductFormProps> = ({
   isSubmitting = false,
 }) => {
   const t = useTranslations('admin.products');
+  const locale = useLocale();
+  const initialPrice = initialData?.price
+    ? locale === 'en'
+      ? Number((Number(initialData.price) / USD_TO_VND_RATE).toFixed(2))
+      : Math.round(Number(initialData.price))
+    : 0;
   const [categories, setCategories] = useState<Category[]>([]);
   const [loadingCategories, setLoadingCategories] = useState(true);
 
@@ -94,7 +101,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
       slug: initialData?.slug || '',
       categoryId: initialData?.categoryId || '',
       brand: initialData?.brand || '',
-      price: initialData?.price || 0,
+      price: initialPrice,
       stock: initialData?.stock || 0,
       description: initialData?.description || '',
       isActive: initialData?.isActive !== undefined ? initialData.isActive : true,
@@ -204,12 +211,17 @@ ${t('desc_w3')}`;
       }
     });
 
+    let finalPrice = Number(data.price);
+    if (locale === 'en') {
+      finalPrice = Math.round(finalPrice * USD_TO_VND_RATE);
+    }
+
     const payload: CreateProductInput = {
       name: data.name.trim(),
       slug: data.slug.trim(),
       categoryId: data.categoryId,
       brand: data.brand?.trim() || undefined,
-      price: data.price,
+      price: finalPrice,
       stock: data.stock,
       description: data.description?.trim() || undefined,
       specifications: Object.keys(specRecord).length > 0 ? specRecord : undefined,
@@ -291,6 +303,7 @@ ${t('desc_w3')}`;
                 </label>
                 <BaseInput
                   type="number"
+                  step={locale === 'en' ? '0.01' : '1000'}
                   placeholder="0"
                   {...register('price', { valueAsNumber: true })}
                   error={errors.price?.message}
