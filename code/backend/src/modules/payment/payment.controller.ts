@@ -5,7 +5,6 @@ import { PrismaService } from '../../database/prisma.service';
 import { NotFoundException } from '@nestjs/common';
 import { VnPayService } from './vnpay.service';
 import type { ReturnQueryFromVNPay } from 'vnpay';
-import { USD_TO_VND_RATE } from '../../common/constants/currency.constant';
 
 @Controller('payment')
 export class PaymentController {
@@ -46,11 +45,12 @@ export class PaymentController {
           ? forwarded[0]?.trim()
           : req.socket?.remoteAddress) || '127.0.0.1';
 
-    // Total Amount / deposit Amount in USD converted to VND for VNPay
-    const amountUsd = order.isDepositPayment
-      ? Number(order.depositAmount)
-      : Number(order.totalAmount);
-    const amountToPayVnd = Math.round(amountUsd * USD_TO_VND_RATE);
+    // Total Amount / deposit Amount in VND for VNPay
+    const amountToPayVnd = Math.round(
+      order.isDepositPayment
+        ? Number(order.depositAmount)
+        : Number(order.totalAmount),
+    );
 
     const paymentUrl = this.vnPayService.createPaymentUrl(
       orderId,

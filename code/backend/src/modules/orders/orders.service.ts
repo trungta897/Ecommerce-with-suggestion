@@ -99,9 +99,9 @@ export class OrdersService {
 
     let isDepositPayment = false;
     let depositAmount: number | null = null;
-    if (createOrderDto.deliveryMethod !== 'PICKUP' && subtotal < 8) {
+    if (createOrderDto.deliveryMethod !== 'PICKUP' && subtotal < 200000) {
       isDepositPayment = true;
-      depositAmount = 2;
+      depositAmount = 50000;
     }
 
     // 6. Validate Pickup Time

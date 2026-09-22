@@ -124,6 +124,76 @@ export class ProductsService {
     return result;
   }
 
+  async findAllAdmin(
+    page: number = 1,
+    limit: number = 10,
+    categorySlug?: string,
+    q?: string,
+    status?: string,
+    stockStatus?: string,
+  ) {
+    const skip = (page - 1) * limit;
+    const where: Prisma.ProductWhereInput = {};
+
+    if (status === 'active') {
+      where.isActive = true;
+    } else if (status === 'inactive') {
+      where.isActive = false;
+    }
+
+    if (stockStatus === 'in_stock') {
+      where.stock = { gt: 0 };
+    } else if (stockStatus === 'out_of_stock') {
+      where.stock = { lte: 0 };
+    }
+
+    if (categorySlug && categorySlug !== 'all') {
+      where.category = { slug: categorySlug };
+    }
+
+    if (q) {
+      const keywords = q
+        .trim()
+        .split(/\s+/)
+        .filter((w) => w.length > 0);
+
+      if (keywords.length > 0) {
+        where.AND = keywords.map((kw) => ({
+          OR: [
+            { name: { contains: kw } },
+            { brand: { contains: kw } },
+            { description: { contains: kw } },
+          ],
+        }));
+      }
+    }
+
+    const [data, total] = await Promise.all([
+      this.prisma.product.findMany({
+        where,
+        skip,
+        take: Number(limit),
+        orderBy: { createdAt: 'desc' },
+        include: {
+          category: {
+            select: { id: true, name: true, slug: true },
+          },
+        },
+      }),
+      this.prisma.product.count({ where }),
+    ]);
+
+    return {
+      data,
+      metadata: {
+        total,
+        page: Number(page),
+        limit: Number(limit),
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+
   async findById(id: string, lang: string = 'vi') {
     const product = await this.prisma.product.findUnique({
       where: { id },
