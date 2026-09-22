@@ -49,3 +49,11 @@
   - [x] Chuẩn hóa phân trang thống nhất qua component `<AdminPagination />` tại `reviews` và `promotions/discounts`.
   - [x] Trích xuất helper tái sử dụng `getApiErrorMessage(err)` loại bỏ 9+ đoạn type casting Axios lặp lại.
   - [x] Chuẩn hóa typing `UserRole` enum và gom logic xác thực tại `AdminGuard.tsx`.
+
+- [x] **9. Chuẩn Hóa Single Source of Truth Tiền Tệ (VNĐ), Bộ Lọc Admin Đa Chiều & Bảo Mật Route RBAC**
+  - [x] Migration Data Clean Slate: Dọn dẹp sạch dữ liệu đơn hàng demo cũ (`orders`, `order_items`, `user_voucher_usage`), quy đổi 1,000 sản phẩm và flash sale trong DB từ USD sang VNĐ.
+  - [x] Cập nhật `seed.ts` tự động nhân tỷ giá `USD_TO_VND_RATE` từ Amazon dataset.
+  - [x] Backend Checkout & Payments: Chuẩn hóa toàn bộ `orders.service.ts` và `payment.controller.ts`/`payment.service.ts` sang VNĐ thuần túy (ngưỡng cọc 200k/50k, tích điểm VIP 1.000 VNĐ = 1 điểm, gửi thẳng VNĐ sang VNPay không nhân kép).
+  - [x] Frontend Form & Format: Chuẩn hóa `formatPrice` base VNĐ (trên `/en` quy đổi sang USD hiển thị), `ProductForm.tsx` hiển thị/lưu VNĐ trên `/vi` và USD trên `/en`.
+  - [x] Giao diện Admin: Xóa bỏ hoàn toàn placeholder `IMG` tại `/admin/categories`. Bổ sung bộ lọc đa chiều (trạng thái, danh mục cha, tình trạng tồn kho) kèm nút Reset trên cả 2 màn hình Categories và Products.
+  - [x] Bảo mật Backend: Tách route `GET /products/admin` được bảo vệ bằng `@UseGuards(AuthGuard('jwt'), RolesGuard)` và khóa chặt `GET /products` công khai (luôn ép `isActive = true`).
