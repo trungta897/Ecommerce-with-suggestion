@@ -11,6 +11,7 @@ import {
   DEFAULT_CATEGORY_SLUG,
   classifyProduct,
 } from '../src/common/constants/product.constant';
+import { USD_TO_VND_RATE } from '../src/common/constants/currency.constant';
 
 const prisma = new PrismaClient();
 
@@ -307,12 +308,13 @@ async function main() {
     }
 
     const rawPrice = item.price;
-    const price =
+    const priceUsd =
       typeof rawPrice === 'number'
         ? rawPrice
         : typeof rawPrice === 'string'
           ? parseFloat(rawPrice) || 0
           : 0;
+    const price = Math.round(priceUsd * USD_TO_VND_RATE);
     let fullDesc = '';
     if (Array.isArray(item.features) && item.features.length > 0) {
       fullDesc +=
