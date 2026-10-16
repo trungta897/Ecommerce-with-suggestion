@@ -31,7 +31,7 @@ Dự án nhằm xây dựng một Website Thương mại điện tử chuyên b�
 ### 2.1. Kiến trúc hệ thống (System architecture)
 Hệ thống sử dụng kiến trúc **Monorepo** với 3 services chính, giao tiếp qua REST API nội bộ và hiển thị qua Next.js App Router.
 - **Frontend (Giao diện):** Next.js 14, React, Shadcn UI, Zustand. Chịu trách nhiệm hiển thị và tương tác người dùng.
-- **Backend (Core API):** NestJS, TypeORM. Quản lý nghiệp vụ chính, bảo mật, tương tác cơ sở dữ liệu MySQL và Redis (caching).
+- **Backend (Core API):** NestJS, Prisma ORM. Quản lý nghiệp vụ chính, bảo mật, tương tác cơ sở dữ liệu MySQL và Redis (caching).
 - **ML Service (AI Engine):** Python, FastAPI, Surprise, Scikit-learn. Load các mô hình (`.pkl`) đã train trước, trả về list `[product_id, score]` qua API nội bộ.
 - **Database:** MySQL cho dữ liệu quan hệ (User, Product, Order). Redis cho caching session, OTP và kết quả Recommendation.
 
@@ -269,7 +269,7 @@ stateDiagram-v2
     handed_over --> delivering: Đối tác cập nhật đang giao
     delivering --> completed: Giao hàng thành công (Tự động cập nhật qua Webhook của Shipper)
 
-    completed --> return_requested: User yêu cầu trả (trong 7 ngày)
+    completed --> return_requested: User yêu cầu trả (trong 14 ngày)
     return_requested --> returned: Admin duyệt chấp nhận trả hàng
     return_requested --> return_rejected: Admin từ chối trả hàng
     returned --> refunded: Hoàn tiền (VNPay auto / COD thủ công)
@@ -486,7 +486,7 @@ Sử dụng kiến trúc đa kênh, hệ thống tiếp nhận Webhook từ đ�
 3. **Bảo mật (Security):**
    - JWT cho Authentication (Access token 15 phút, Refresh 7 ngày).
    - Tự động phát hành lại Access Token mới (cấp quyền verified) ngay khi nhập đúng OTP, không bắt user login lại.
-   - Hash password bằng bcrypt (salt 10). Sanitize mọi input chống XSS, SQLi (thông qua TypeORM).
+   - Hash password bằng bcrypt (salt 10). Sanitize mọi input chống XSS, SQLi (thông qua Prisma ORM).
 4. **Mở rộng (Scalability & DevOps):**
    - Áp dụng Module-based trong NestJS, dễ dàng thêm module mới. Phân tách rõ Frontend và Backend (Decoupled).
    - Chiến lược Backup: Dump DB MySQL định kỳ hàng ngày lên cloud storage hoặc lưu trữ nội bộ.

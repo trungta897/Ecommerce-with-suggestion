@@ -57,3 +57,11 @@
   - [x] Frontend Form & Format: Chuẩn hóa `formatPrice` base VNĐ (trên `/en` quy đổi sang USD hiển thị), `ProductForm.tsx` hiển thị/lưu VNĐ trên `/vi` và USD trên `/en`.
   - [x] Giao diện Admin: Xóa bỏ hoàn toàn placeholder `IMG` tại `/admin/categories`. Bổ sung bộ lọc đa chiều (trạng thái, danh mục cha, tình trạng tồn kho) kèm nút Reset trên cả 2 màn hình Categories và Products.
   - [x] Bảo mật Backend: Tách route `GET /products/admin` được bảo vệ bằng `@UseGuards(AuthGuard('jwt'), RolesGuard)` và khóa chặt `GET /products` công khai (luôn ép `isActive = true`).
+
+- [x] **10. Toàn Diện Bảo Mật Đơn Hàng, Khắc Phục N+1 Queries, Zero Hardcode i18n & Tái Cấu Trúc SRP Component**
+  - [x] Bảo mật DTO Create Order: Thêm `create-order-item.dto.ts` (`@IsInt @Min(1) @Max(99)`), `@ArrayMaxSize(50)`, `@ArrayUnique` chặn trùng productId, `@ValidateNested`.
+  - [x] Bảo vệ toàn vẹn Checkout & VNPay: Kiểm tra bắt buộc `product.isActive` khi đặt hàng, bảo vệ `POST /payment/vnpay/create/:orderId` (chặn thanh toán lại đơn đã hoàn tất, kiểm tra phone với guest, atomic claim cờ thanh toán).
+  - [x] Tối ưu hiệu năng Database: Triệt tiêu N+1 queries tại Guest Checkout (`findMany` batch) và Flash Sale discount resolution; cronjob dọn dẹp stuck refund chuyển sang emit event `refund.stuck` không blind-reset.
+  - [x] Zero Hardcoded String & i18n: Localize toàn bộ backend error messages trong `payment.controller`, `vouchers.controller`, `vouchers.service`; chuẩn hóa i18n frontend order detail, status labels mapper `ORDER_STATUS_LABEL_KEY` không dùng default.
+  - [x] Tái cấu trúc Single Responsibility (SRP): Trích xuất `OrderStatusTimeline`, `OrderShippingInfo`, `OrderPricingSummary`, `OrderItemsSummary` (`canReview`), `SearchHistorySection`, `SearchResultsSection`; đưa 3 file trang lớn về < 300 dòng và components con ≤ 200 dòng.
+  - [x] Đồng bộ Documentation & Package: Cập nhật SRS.md (Prisma ORM, 14 ngày trả hàng) và đổi tên package `frontend` chuẩn hóa.
