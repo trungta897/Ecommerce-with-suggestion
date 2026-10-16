@@ -54,7 +54,7 @@ export default function AdminDiscountsPage() {
     } finally {
       setLoading(false);
     }
-  }, [page]);
+  }, [page, t]);
 
   const fetchProducts = useCallback(async () => {
     try {

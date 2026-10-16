@@ -2,7 +2,7 @@
 
 import { useLocale, useTranslations } from 'next-intl';
 import { User, Phone, MapPin } from '@/components/base/icons';
-import Image from 'next/image';
+import { SafeImage } from '@/components/base';
 import { formatPrice } from '@/utils/format';
 
 interface CartProduct {
@@ -68,8 +68,8 @@ export function OrderConfirmation({
             className="flex items-center gap-3 py-2 border-b border-rule last:border-0"
           >
             <div className="w-12 h-12 bg-paper-2 rounded-lg flex-shrink-0 relative overflow-hidden flex items-center justify-center">
-              <Image
-                src={item.product?.thumbnailUrl || ''}
+              <SafeImage
+                src={item.product?.thumbnailUrl}
                 alt={item.product?.name || ''}
                 fill
                 className="object-contain"

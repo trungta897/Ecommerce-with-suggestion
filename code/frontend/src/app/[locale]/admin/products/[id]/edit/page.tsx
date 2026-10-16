@@ -35,7 +35,7 @@ export default function AdminEditProductPage() {
       }
     }
     load();
-  }, [id]);
+  }, [id, t]);
 
   const handleSubmit = async (data: CreateProductInput) => {
     try {

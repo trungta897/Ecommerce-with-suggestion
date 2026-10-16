@@ -1,5 +1,24 @@
+import { OrderStatus } from '@/types/order';
+
 export const RETURN_MAX_EVIDENCE_FILES = 5;
 export const RETURN_MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+
+export const ORDER_STATUS_LABEL_KEY: Record<OrderStatus, string> = {
+  [OrderStatus.PENDING]: 'pending',
+  [OrderStatus.PENDING_PAYMENT]: 'pending_payment',
+  [OrderStatus.CONFIRMED]: 'confirmed',
+  [OrderStatus.HANDED_OVER]: 'handed_over',
+  [OrderStatus.DELIVERING]: 'delivering',
+  [OrderStatus.COMPLETED]: 'completed',
+  [OrderStatus.RETURN_REQUESTED]: 'return_requested',
+  [OrderStatus.RETURN_REJECTED]: 'return_rejected',
+  [OrderStatus.RETURNED]: 'returned',
+  [OrderStatus.REFUNDED]: 'refunded',
+  [OrderStatus.CANCELLED]: 'cancelled',
+};
+
+export const isOrderStatus = (v: unknown): v is OrderStatus =>
+  typeof v === 'string' && v in ORDER_STATUS_LABEL_KEY;
 
 export const ORDER_STATUS_COLORS: Record<string, string> = {
   PENDING: 'bg-yellow-100 text-yellow-800 border-yellow-200',

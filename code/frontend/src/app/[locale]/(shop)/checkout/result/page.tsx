@@ -2,10 +2,10 @@
 
 import { useTranslations } from 'next-intl';
 import { useSearchParams } from 'next/navigation';
-import { CheckCircle2, XCircle, ArrowRight } from 'lucide-react';
+import { CheckCircle2, XCircle, ArrowRight } from '@/components/base/icons';
 import Link from 'next/link';
 import { BaseButton } from '@/components/base';
-import { useCartStore } from '@/store';
+import { useCart } from '@/hooks/use-cart';
 import { useEffect } from 'react';
 
 export default function CheckoutResultPage() {
@@ -13,9 +13,9 @@ export default function CheckoutResultPage() {
   const searchParams = useSearchParams();
   const status = searchParams.get('status');
   const appTransId = searchParams.get('apptransid');
-  const { clearCart } = useCartStore();
+  const { clearCart } = useCart();
 
-  const isSuccess = status === '1';
+  const isSuccess = status === '1' && Boolean(appTransId);
 
   useEffect(() => {
     if (isSuccess) {
@@ -47,18 +47,18 @@ export default function CheckoutResultPage() {
             <XCircle className="w-10 h-10 text-red-600" />
           </div>
           <h2 className="text-2xl font-bold text-ink mb-2">{t('paymentFailed')}</h2>
-          <p className="text-ink-2 mb-8">
-            {t('paymentFailedDesc') || 'Thanh toán không thành công hoặc đã bị huỷ.'}
-          </p>
-          <div className="bg-gray-50 p-4 rounded-lg mb-8 text-sm text-left inline-block">
-            <p>
-              <span className="font-semibold">Mã giao dịch:</span> {appTransId || 'Không xác định'}
-            </p>
-          </div>
+          <p className="text-ink-2 mb-8">{t('paymentFailedDesc')}</p>
+          {appTransId && (
+            <div className="bg-gray-50 p-4 rounded-lg mb-8 text-sm text-left inline-block">
+              <p>
+                <span className="font-semibold">{t('transactionCode')}:</span> {appTransId}
+              </p>
+            </div>
+          )}
           <div className="flex gap-4 justify-center">
             <Link href="/orders">
               <BaseButton variant="default" className="flex items-center gap-2">
-                Pay Again <ArrowRight className="w-4 h-4" />
+                {t('retryPayment')} <ArrowRight className="w-4 h-4" />
               </BaseButton>
             </Link>
           </div>

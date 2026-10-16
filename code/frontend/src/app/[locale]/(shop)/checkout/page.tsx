@@ -4,7 +4,8 @@ import { useTranslations } from 'next-intl';
 import { useState, useEffect } from 'react';
 import { BaseButton } from '@/components/base';
 import { ChevronRight, Package } from '@/components/base/icons';
-import { useCartStore, useAuthStore } from '@/store';
+import { useAuthStore } from '@/store';
+import { useCart } from '@/hooks/use-cart';
 import { useProducts } from '@/hooks/use-products';
 import Link from 'next/link';
 import { useToast } from '@/providers/toast-provider';
@@ -23,7 +24,7 @@ export default function CheckoutPage() {
   const tCommon = useTranslations('common');
   const toast = useToast();
   const { isAuthenticated, user } = useAuthStore();
-  const { items, clearCart } = useCartStore();
+  const { items, clearCart, isLoading: isCartLoading } = useCart();
   const { data: productsResponse, isLoading } = useProducts({ all: true });
   const products = productsResponse?.data || [];
   const [currentStep, setCurrentStep] = useState(0);
@@ -100,7 +101,7 @@ export default function CheckoutPage() {
 
   const cartProducts = items
     .map((item) => {
-      const product = products.find((p) => p.id === item.productId);
+      const product = products.find((p) => p.id === item.productId) || item.product;
       return { ...item, product };
     })
     .filter((item) => item.product);
@@ -219,8 +220,7 @@ export default function CheckoutPage() {
         setOrderPlaced(true);
         clearCart();
       } else if (order.paymentMethod === 'VNPAY') {
-        const { orderUrl } = await paymentService.createVnPayOrder(order.id);
-        clearCart();
+        const { orderUrl } = await paymentService.createVnPayOrder(order.id, order.shippingPhone);
         window.location.href = orderUrl;
       }
     } catch (error) {
@@ -237,7 +237,8 @@ export default function CheckoutPage() {
     return <CheckoutSuccess />;
   }
 
-  if (items.length > 0 && isLoading) {
+  const isPageLoading = isCartLoading || (items.length > 0 && isLoading);
+  if (isPageLoading) {
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-pulse">
         <div className="h-8 bg-paper-2 rounded w-1/3 mb-8" />
@@ -246,11 +247,11 @@ export default function CheckoutPage() {
     );
   }
 
-  if (items.length === 0 || cartProducts.length === 0) {
+  if (!isCartLoading && (items.length === 0 || cartProducts.length === 0)) {
     return (
       <div className="max-w-lg mx-auto px-4 py-16 text-center">
         <Package className="w-12 h-12 mx-auto mb-4 text-muted" />
-        <p className="text-ink-2 mb-4">{t('backToCart')}</p>
+        <p className="text-ink-2 mb-4">{t('emptyCart')}</p>
         <Link href="/cart">
           <BaseButton>{t('backToCart')}</BaseButton>
         </Link>

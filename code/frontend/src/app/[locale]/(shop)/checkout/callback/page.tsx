@@ -5,7 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import { CheckCircle2, XCircle, ArrowRight, CreditCard } from '@/components/base/icons';
 import Link from 'next/link';
 import { BaseButton } from '@/components/base';
-import { useCartStore } from '@/store';
+import { useCart } from '@/hooks/use-cart';
 import { useEffect, Suspense } from 'react';
 import { formatPrice } from '@/utils/format';
 import { USD_TO_VND_RATE } from '@/constants/currency';
@@ -14,7 +14,7 @@ function CallbackContent() {
   const t = useTranslations('checkout');
   const locale = useLocale();
   const searchParams = useSearchParams();
-  const { clearCart } = useCartStore();
+  const { clearCart } = useCart();
 
   const responseCode = searchParams.get('vnp_ResponseCode');
   const transactionStatus = searchParams.get('vnp_TransactionStatus');
@@ -24,7 +24,8 @@ function CallbackContent() {
   const orderInfo = searchParams.get('vnp_OrderInfo');
 
   // '00' is success code for VNPay
-  const isSuccess = responseCode === '00' && (!transactionStatus || transactionStatus === '00');
+  const isSuccess =
+    responseCode === '00' && (!transactionStatus || transactionStatus === '00') && Boolean(txnRef);
 
   // Amount in VNPay is multiplied by 100 in VND
   const amountVnd = rawAmount ? Number(rawAmount) / 100 : 0;
@@ -82,7 +83,7 @@ function CallbackContent() {
 
             {orderInfo && (
               <div className="flex justify-between items-center text-xs text-gray-500 pt-1 border-t border-gray-100">
-                <span>Nội dung:</span>
+                <span>{t('orderInfo')}:</span>
                 <span className="truncate max-w-[220px]">{orderInfo}</span>
               </div>
             )}
@@ -114,7 +115,7 @@ function CallbackContent() {
             )}
             {responseCode && (
               <div className="flex justify-between items-center text-xs text-rose-600">
-                <span>Mã phản hồi lỗi:</span>
+                <span>{t('errorCode')}:</span>
                 <span className="font-mono font-bold">{responseCode}</span>
               </div>
             )}
@@ -137,12 +138,14 @@ function CallbackContent() {
 }
 
 export default function CheckoutCallbackPage() {
+  const t = useTranslations('checkout');
+
   return (
     <Suspense
       fallback={
         <div className="max-w-lg mx-auto px-4 py-24 text-center">
           <div className="w-8 h-8 mx-auto border-2 border-primary border-t-transparent rounded-full animate-spin mb-4" />
-          <p className="text-sm text-ink-2">Đang xử lý kết quả thanh toán...</p>
+          <p className="text-sm text-ink-2">{t('processingPayment')}</p>
         </div>
       }
     >
