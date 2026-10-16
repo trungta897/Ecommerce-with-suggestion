@@ -59,11 +59,15 @@ export class OrdersCheckoutService {
           this.i18n.t(ORDER_MESSAGES.CART_EMPTY, { lang }),
         );
       }
-      // Fetch product details for guest items
+      // Fetch product details for guest items in a single batch query
+      const productIds = createOrderDto.items.map((i) => i.productId);
+      const products = await this.prisma.product.findMany({
+        where: { id: { in: productIds } },
+      });
+      const productMap = new Map(products.map((p) => [p.id, p]));
+
       for (const item of createOrderDto.items) {
-        const product = await this.prisma.product.findUnique({
-          where: { id: item.productId },
-        });
+        const product = productMap.get(item.productId);
         if (!product) {
           throw new BadRequestException(
             this.i18n.t(ORDER_MESSAGES.PRODUCT_NOT_FOUND_WITH_ID, {
@@ -86,6 +90,18 @@ export class OrdersCheckoutService {
       );
     }
 
+    // Guard: Prevent purchasing inactive/discontinued products
+    for (const item of cartItems) {
+      if (!item.product.isActive) {
+        throw new BadRequestException(
+          this.i18n.t(ORDER_MESSAGES.PRODUCT_INACTIVE, {
+            lang,
+            args: { name: item.product.name },
+          }),
+        );
+      }
+    }
+
     return cartItems;
   }
 
@@ -94,50 +110,61 @@ export class OrdersCheckoutService {
     lang?: string,
   ): Promise<ItemWithDiscount[]> {
     const now = new Date();
-    return Promise.all(
-      cartItems.map(async (item) => {
-        if (item.product.stock < item.quantity) {
-          throw new BadRequestException(
-            this.i18n.t(ORDER_MESSAGES.INSUFFICIENT_STOCK, {
-              lang,
-              args: {
-                name: item.product.name,
-                stock: item.product.stock,
-              },
-            }),
-          );
+    const productIds = cartItems.map((item) => item.productId);
+
+    // Batch query all active discounts for the products in cart
+    const activeDiscounts = await this.prisma.productDiscount.findMany({
+      where: {
+        productId: { in: productIds },
+        isActive: true,
+        startDate: { lte: now },
+        endDate: { gte: now },
+      },
+      orderBy: { startDate: 'asc' },
+    });
+
+    // Map each productId to its earliest active discount
+    const discountMap = new Map<string, (typeof activeDiscounts)[0]>();
+    for (const discount of activeDiscounts) {
+      if (!discountMap.has(discount.productId)) {
+        discountMap.set(discount.productId, discount);
+      }
+    }
+
+    return cartItems.map((item) => {
+      if (item.product.stock < item.quantity) {
+        throw new BadRequestException(
+          this.i18n.t(ORDER_MESSAGES.INSUFFICIENT_STOCK, {
+            lang,
+            args: {
+              name: item.product.name,
+              stock: item.product.stock,
+            },
+          }),
+        );
+      }
+
+      const activeDiscount = discountMap.get(item.productId);
+
+      let effectivePrice = item.product.discountPrice
+        ? Number(item.product.discountPrice)
+        : Number(item.product.price);
+      let productDiscountId: string | null = null;
+
+      if (activeDiscount) {
+        const discountPriceNum = Number(activeDiscount.discountPrice);
+        if (discountPriceNum < effectivePrice) {
+          effectivePrice = discountPriceNum;
+          productDiscountId = activeDiscount.id;
         }
+      }
 
-        const activeDiscount = await this.prisma.productDiscount.findFirst({
-          where: {
-            productId: item.productId,
-            isActive: true,
-            startDate: { lte: now },
-            endDate: { gte: now },
-          },
-          orderBy: { startDate: 'asc' },
-        });
-
-        let effectivePrice = item.product.discountPrice
-          ? Number(item.product.discountPrice)
-          : Number(item.product.price);
-        let productDiscountId: string | null = null;
-
-        if (activeDiscount) {
-          const discountPriceNum = Number(activeDiscount.discountPrice);
-          if (discountPriceNum < effectivePrice) {
-            effectivePrice = discountPriceNum;
-            productDiscountId = activeDiscount.id;
-          }
-        }
-
-        return {
-          ...item,
-          effectivePrice,
-          productDiscountId,
-        };
-      }),
-    );
+      return {
+        ...item,
+        effectivePrice,
+        productDiscountId,
+      };
+    });
   }
 
   async validateAndCalculateVoucher(

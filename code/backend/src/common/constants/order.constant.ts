@@ -17,3 +17,9 @@ export const RETURN_ALLOWED_MIME_TYPES = [
   'video/mp4',
   'video/quicktime',
 ];
+
+/** Số lượng tối đa cho 1 item trong đơn hàng */
+export const ORDER_ITEM_MAX_QUANTITY = 99;
+
+/** Số item tối đa trong một đơn hàng */
+export const ORDER_MAX_ITEMS = 50;

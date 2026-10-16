@@ -16,6 +16,7 @@
     "selectProvinceRequired": "Vui lòng chọn Tỉnh/Thành phố giao hàng",
     "provinceNotFound": "Tỉnh/Thành phố không tồn tại",
     "productNotFoundWithId": "Sản phẩm không tồn tại (ID: {id})",
+    "productInactive": "Sản phẩm {name} hiện đã ngừng kinh doanh",
     "insufficientStock": "Sản phẩm {name} không đủ tồn kho (Còn: {stock})",
     "insufficientStockRepay": "Không đủ tồn kho để thanh toán lại đơn hàng này",
     "insufficientVipPoints": "Số điểm VIP không đủ để thanh toán",

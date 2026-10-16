@@ -13,6 +13,7 @@ export const ORDER_MESSAGES = {
   SELECT_PROVINCE_REQUIRED: 'orders.error.selectProvinceRequired',
   PROVINCE_NOT_FOUND: 'orders.error.provinceNotFound',
   PRODUCT_NOT_FOUND_WITH_ID: 'orders.error.productNotFoundWithId',
+  PRODUCT_INACTIVE: 'orders.error.productInactive',
   INSUFFICIENT_STOCK: 'orders.error.insufficientStock',
   INSUFFICIENT_STOCK_REPAY: 'orders.error.insufficientStockRepay',
   INSUFFICIENT_VIP_POINTS: 'orders.error.insufficientVipPoints',

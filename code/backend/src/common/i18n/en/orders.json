@@ -16,6 +16,7 @@
     "selectProvinceRequired": "Please select a delivery province/city",
     "provinceNotFound": "Province/city not found",
     "productNotFoundWithId": "Product not found (ID: {id})",
+    "productInactive": "Product {name} is no longer available",
     "insufficientStock": "Product {name} does not have enough stock (Available: {stock})",
     "insufficientStockRepay": "Insufficient stock to repay this order",
     "insufficientVipPoints": "Insufficient VIP points for payment",

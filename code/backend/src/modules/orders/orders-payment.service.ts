@@ -4,7 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service';
-import { OrderStatus, Order } from '@prisma/client';
+import { OrderStatus, Order, RefundStatus } from '@prisma/client';
 import { appendAuditTrail } from '../../common/utils/audit-trail.util';
 import { ORDER_MESSAGES } from '../../common/constants/order-message.constant';
 import { I18nService } from 'nestjs-i18n';
@@ -121,10 +121,12 @@ export class OrdersPaymentService {
       where: {
         id: orderId,
         status: OrderStatus.RETURNED,
-        refundStatus: { notIn: ['PROCESSING', 'COMPLETED'] },
+        refundStatus: {
+          notIn: [RefundStatus.PROCESSING, RefundStatus.COMPLETED],
+        },
       },
       data: {
-        refundStatus: 'PROCESSING',
+        refundStatus: RefundStatus.PROCESSING,
       },
     });
 
@@ -155,10 +157,10 @@ export class OrdersPaymentService {
       if (isSuccess) {
         await this.prisma.$transaction(async (tx) => {
           const updated = await tx.order.updateMany({
-            where: { id: orderId, refundStatus: 'PROCESSING' },
+            where: { id: orderId, refundStatus: RefundStatus.PROCESSING },
             data: {
               status: OrderStatus.REFUNDED,
-              refundStatus: 'COMPLETED',
+              refundStatus: RefundStatus.COMPLETED,
             },
           });
 
@@ -215,7 +217,7 @@ export class OrdersPaymentService {
     const order = await this.prisma.order.findUnique({
       where: { id: orderId },
     });
-    if (!order || order.refundStatus !== 'PROCESSING') {
+    if (!order || order.refundStatus !== RefundStatus.PROCESSING) {
       throw new BadRequestException(
         this.i18n.t(ORDER_MESSAGES.INVALID_STATUS, { lang }),
       );

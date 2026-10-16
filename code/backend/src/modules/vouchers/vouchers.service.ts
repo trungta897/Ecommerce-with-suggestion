@@ -337,7 +337,7 @@ export class VouchersService {
     };
   }
 
-  async findOne(id: string) {
+  async findOne(id: string, lang?: string) {
     const voucher = await this.prisma.voucher.findUnique({
       where: { id },
       include: {
@@ -346,7 +346,9 @@ export class VouchersService {
       },
     });
     if (!voucher) {
-      throw new NotFoundException('Voucher not found');
+      throw new NotFoundException(
+        this.i18n.t(VOUCHER_MESSAGES.NOT_FOUND, { lang }),
+      );
     }
     return voucher;
   }
