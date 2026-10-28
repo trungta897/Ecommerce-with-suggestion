@@ -16,7 +16,7 @@ export default function OrderLookupPage() {
 
   const handleLookup = () => {
     if (!orderId || !phone) {
-      toast.error('Vui lòng nhập đầy đủ Mã đơn hàng và Số điện thoại');
+      toast.error(t('lookupMissingFields'));
       return;
     }
     setLoading(true);
@@ -51,7 +51,7 @@ export default function OrderLookupPage() {
           />
         </div>
         <BaseButton className="w-full" onClick={handleLookup} disabled={loading}>
-          {loading ? 'Đang tìm...' : t('lookupButton')}
+          {loading ? t('lookupSearching') : t('lookupButton')}
         </BaseButton>
       </div>
     </div>

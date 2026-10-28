@@ -126,7 +126,11 @@ export function ShippingForm({
                 {t(method as 'standard' | 'express' | 'pickup')}
               </span>
               <span className="text-sm font-semibold text-primary ml-auto">
-                {isPickup ? t('free') : method === 'standard' ? t('free') : formatPrice(2, locale)}
+                {isPickup
+                  ? t('free')
+                  : method === 'standard'
+                    ? t('free')
+                    : formatPrice(40000, locale)}
               </span>
             </label>
           );

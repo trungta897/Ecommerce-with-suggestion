@@ -49,3 +49,42 @@
   - [x] Chuẩn hóa phân trang thống nhất qua component `<AdminPagination />` tại `reviews` và `promotions/discounts`.
   - [x] Trích xuất helper tái sử dụng `getApiErrorMessage(err)` loại bỏ 9+ đoạn type casting Axios lặp lại.
   - [x] Chuẩn hóa typing `UserRole` enum và gom logic xác thực tại `AdminGuard.tsx`.
+
+- [x] **9. Chuẩn Hóa Single Source of Truth Tiền Tệ (VNĐ), Bộ Lọc Admin Đa Chiều & Bảo Mật Route RBAC**
+  - [x] Migration Data Clean Slate: Dọn dẹp sạch dữ liệu đơn hàng demo cũ (`orders`, `order_items`, `user_voucher_usage`), quy đổi 1,000 sản phẩm và flash sale trong DB từ USD sang VNĐ.
+  - [x] Cập nhật `seed.ts` tự động nhân tỷ giá `USD_TO_VND_RATE` từ Amazon dataset.
+  - [x] Backend Checkout & Payments: Chuẩn hóa toàn bộ `orders.service.ts` và `payment.controller.ts`/`payment.service.ts` sang VNĐ thuần túy (ngưỡng cọc 200k/50k, tích điểm VIP 1.000 VNĐ = 1 điểm, gửi thẳng VNĐ sang VNPay không nhân kép).
+  - [x] Frontend Form & Format: Chuẩn hóa `formatPrice` base VNĐ (trên `/en` quy đổi sang USD hiển thị), `ProductForm.tsx` hiển thị/lưu VNĐ trên `/vi` và USD trên `/en`.
+  - [x] Giao diện Admin: Xóa bỏ hoàn toàn placeholder `IMG` tại `/admin/categories`. Bổ sung bộ lọc đa chiều (trạng thái, danh mục cha, tình trạng tồn kho) kèm nút Reset trên cả 2 màn hình Categories và Products.
+  - [x] Bảo mật Backend: Tách route `GET /products/admin` được bảo vệ bằng `@UseGuards(AuthGuard('jwt'), RolesGuard)` và khóa chặt `GET /products` công khai (luôn ép `isActive = true`).
+
+- [x] **10. Toàn Diện Bảo Mật Đơn Hàng, Khắc Phục N+1 Queries, Zero Hardcode i18n & Tái Cấu Trúc SRP Component**
+  - [x] Bảo mật DTO Create Order: Thêm `create-order-item.dto.ts` (`@IsInt @Min(1) @Max(99)`), `@ArrayMaxSize(50)`, `@ArrayUnique` chặn trùng productId, `@ValidateNested`.
+  - [x] Bảo vệ toàn vẹn Checkout & VNPay: Kiểm tra bắt buộc `product.isActive` khi đặt hàng, bảo vệ `POST /payment/vnpay/create/:orderId` (chặn thanh toán lại đơn đã hoàn tất, kiểm tra phone với guest, atomic claim cờ thanh toán).
+  - [x] Tối ưu hiệu năng Database: Triệt tiêu N+1 queries tại Guest Checkout (`findMany` batch) và Flash Sale discount resolution; cronjob dọn dẹp stuck refund chuyển sang emit event `refund.stuck` không blind-reset.
+  - [x] Zero Hardcoded String & i18n: Localize toàn bộ backend error messages trong `payment.controller`, `vouchers.controller`, `vouchers.service`; chuẩn hóa i18n frontend order detail, status labels mapper `ORDER_STATUS_LABEL_KEY` không dùng default.
+  - [x] Tái cấu trúc Single Responsibility (SRP): Trích xuất `OrderStatusTimeline`, `OrderShippingInfo`, `OrderPricingSummary`, `OrderItemsSummary` (`canReview`), `SearchHistorySection`, `SearchResultsSection`; đưa 3 file trang lớn về < 300 dòng và components con ≤ 200 dòng.
+  - [x] Đồng bộ Documentation & Package: Cập nhật SRS.md (Prisma ORM, 14 ngày trả hàng) và đổi tên package `frontend` chuẩn hóa.
+
+- [x] **11. Thanh Toán Lại VNPay (Repay Flow), Đồng Bộ Chính Sách Đặt Cọc, Bắt Duplicate Payment 2 Chiều & Chuẩn Hóa i18n/Type Safety**
+  - [x] Policy & Khởi tạo đơn (`order-payment.policy.ts`, `orders.service.ts`): Đơn COD thuần khởi tạo ở `PENDING`; đơn VNPay hoặc có cọc (`subtotal < 200.000đ`, áp dụng cả `PICKUP`, mức cọc `50.000đ`) khởi tạo ở `PENDING_PAYMENT` kèm hạn 30 phút; đồng bộ hằng số cọc lên Frontend Checkout & Sidebar.
+  - [x] Chống Race Condition Cron & Chặn mở lại đơn hủy thủ công (`orders-status.service.ts`, `orders-cron.service.ts`, `orders-payment.service.ts`): Thêm `expiredBefore` cho Cron; xóa `paymentExpiresAt = null` khi User/Admin chủ động hủy; nhánh B `processPayAgain` kiểm tra chặt `paymentExpiresAt !== null`, `paymentStatus === PENDING`, không có ưu đãi đã hoàn trả và `product.isActive === true`.
+  - [x] Bảo mật Route Tạo Link VNPay & Webhook 2 Chiều (`payment.controller.ts`, `payment.service.ts`): Tách route User (`JWT`) và Guest (`@Throttle` 5 req/phút, gộp lỗi `NOT_FOUND`); `vnp_TxnRef` 45 ký tự hỗ trợ tra cứu 2 bước (B1/B2), xử lý Idempotency (`RspCode: '02'`) và bắt Duplicate Payment (`isOrphanedPayment`, `DUPLICATE_PAYMENT_SUPERSEDED_TXN`) theo cả 2 chiều.
+  - [x] Frontend Hook `useRepayOrder` & Phân loại lỗi (`repay-error.ts`, `order-payment.ts`): Phân loại 3 nhóm lỗi (`RATE_LIMIT`, `TRANSIENT`, `CLIENT`), chống double-click bằng `useRef`, khôi phục trạng thái nút từ `bfcache` (`pageshow`), fallback điều hướng về chi tiết đơn khi tạo link lỗi ở Checkout.
+  - [x] Chuẩn hóa i18n, Audit Constants, Type Safety & Giới hạn < 300 dòng: i18n hóa toàn bộ exception tại `orders-return.service.ts` và chuỗi UI tại `checkout/page.tsx`, `ReturnModal.tsx`, `checkout/callback/page.tsx`; chuẩn hóa `PAYMENT_AUDIT_ACTIONS`/`REFUND_AUDIT_REASONS`, `CreateOrderPayload`, `SkippedCartItem`; rút gọn `checkout/page.tsx` và `orders-return.service.ts` xuống dưới 300 dòng.
+
+- [x] **12. Chuẩn Hóa Kiến Trúc Theo Audit & Grapuco (Swagger CLI Plugin, Unit Tests, CI Pipeline, HTTP Security Headers & Toàn Bộ Repo < 300 Dòng)**
+  - [x] Tách biệt hoàn toàn `PrismaService` và logic tạo link thanh toán khỏi `payment.controller.ts` sang `payment.service.ts` (15/15 Controllers đạt chuẩn SRP).
+  - [x] Bảo mật HTTP Headers (`X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy`, ẩn `x-powered-by`) tại `main.ts` và bật `@nestjs/swagger` CLI Plugin + `@ApiTags`/`@ApiBearerAuth` cho toàn bộ 15 Controllers.
+  - [x] Khắc phục triệt để các phát hiện Audit `CQ-01` → `CQ-04`: bổ sung kiểm tra chống cộng dồn Flash Sale cho voucher `PERCENTAGE` phạm vi `CART`; chuyển ghi log `PURCHASE` sang Pub/Sub `order.created`; xóa `catch (err: any)` cuối cùng tại `ProductReviews.tsx`; tách `activity.constant.ts`.
+  - [x] Tái cấu trúc 8 file cũ vượt 300 dòng (`orders-checkout.service.ts`, `activities.service.ts`, `vouchers.service.ts`, `products.service.ts`, `ProductForm.tsx`, `products/[id]/page.tsx`, `AddressSelector.tsx`, `VoucherFormModal.tsx`) đưa 100% file xử lý logic trong toàn dự án về `< 300` dòng.
+  - [x] Bổ sung bộ Unit Tests cốt lõi (`order-payment.policy.spec.ts`, `payment.service.spec.ts`), thiết lập GitHub Actions CI (`.github/workflows/ci.yml`) và đồng bộ `project_plan.md`, `erd.md`, `sequence_vnpay_ipn.md`.
+
+- [x] **13. Nâng Cấp Hệ Thống Gợi Ý Sản Phẩm Lai (Real-time Folding-in Hybrid, Bảo Mật JWT & Đồng Bộ Xếp Hạng AI)**
+  - [x] Nâng cấp `ml/service/models/recommender.py` và `ml/service/api/recommend.py`: Kết hợp thực tế 3 nguồn điểm số (`50% SVD Latent Factors + 35% TF-IDF Cosine Similarity + 15% Bayesian Popular Prior`) dựa trên danh sách `items` (`sourceExternalId`) và `weights` thời gian thực, xóa bỏ hoàn toàn bẫy Cold-Start của UUID MySQL.
+  - [x] Khắc phục lỗ hổng bảo mật `REC-03` tại `ActivitiesController.extractUserId`: Chuyển từ `jwtService.decode` sang `jwtService.verify` chống giả mạo token.
+  - [x] Bảo toàn thứ tự xếp hạng `score` từ ML Service (`rankAndHydrateMlProducts`), mở rộng tập ứng viên (`limit * 8`, tối đa 50) để lọc khớp với sản phẩm `isActive: true` trong MySQL và quy đổi điểm `aiScore` (`75%–99%`) hiển thị trên `ProductCard` & trang Chi tiết sản phẩm.
+  - [x] Hoàn thiện Pub/Sub `@OnEvent('activity.log')` tại `ActivitiesService`, phát sự kiện `ADD_TO_CART` / `REMOVE_FROM_CART` từ `CartService`, chuẩn hóa `activityService.logActivity` kèm JWT trên Frontend và tự động xóa cache `REC:CACHE:*` khi có hành vi mới.
+  - [x] Bổ sung Unit Tests `activities.service.spec.ts` kiểm chứng xác thực JWT, xếp hạng AI `aiScore` và làm mới cache Pub/Sub.
+
+

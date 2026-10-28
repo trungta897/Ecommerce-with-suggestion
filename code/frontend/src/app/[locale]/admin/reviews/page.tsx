@@ -3,7 +3,7 @@
 import { useTranslations } from 'next-intl';
 import { BaseInput } from '@/components/base';
 import { Search, Star, Eye, EyeOff } from '@/components/base/icons';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { reviewService } from '@/services/review-service';
 import { AdminReviewItem } from '@/types/review';
 import { AdminPagination } from '@/components/admin/AdminPagination';
@@ -16,24 +16,27 @@ export default function AdminReviewsPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [error, setError] = useState('');
 
+  const fetchReviews = useCallback(
+    async (p: number) => {
+      try {
+        setLoading(true);
+        const res = await reviewService.getAdminReviews(p, 10);
+        setReviews(res.data || []);
+        setTotalPages(res.meta?.totalPages || 1);
+        setPage(p);
+      } catch (err: unknown) {
+        console.error('Failed to load reviews', err);
+        setError(t('loadError'));
+      } finally {
+        setLoading(false);
+      }
+    },
+    [t]
+  );
+
   useEffect(() => {
     fetchReviews(1);
-  }, []);
-
-  const fetchReviews = async (p: number) => {
-    try {
-      setLoading(true);
-      const res = await reviewService.getAdminReviews(p, 10);
-      setReviews(res.data || []);
-      setTotalPages(res.meta?.totalPages || 1);
-      setPage(p);
-    } catch (err: unknown) {
-      console.error('Failed to load reviews', err);
-      setError(t('loadError'));
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [fetchReviews]);
 
   const handleToggle = async (id: string) => {
     try {

@@ -9,7 +9,8 @@ import { AddToCartDto } from './dto/add-to-cart.dto';
 import { UpdateCartDto } from './dto/update-cart.dto';
 import { MergeCartDto } from './dto/merge-cart.dto';
 import { RedisService } from '../redis/redis.service';
-import { Product } from '@prisma/client';
+import { ActivityType, Product } from '@prisma/client';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 export interface CartItemWithProduct {
   userId: string;
@@ -20,12 +21,18 @@ export interface CartItemWithProduct {
   product: Product;
 }
 
+export interface SkippedCartItem {
+  productId: string;
+  reason: 'OUT_OF_STOCK' | 'INACTIVE';
+}
+
 @Injectable()
 export class CartService {
   constructor(
     private prisma: PrismaService,
     private i18n: I18nService,
     private redisService: RedisService,
+    private eventEmitter: EventEmitter2,
   ) {}
 
   private async warmupRedis(userId: string): Promise<Record<string, string>> {
@@ -141,6 +148,12 @@ export class CartService {
     );
     await this.redisService.sadd('cart_updates', userId);
 
+    this.eventEmitter.emit('activity.log', {
+      userId,
+      productId: dto.productId,
+      action: ActivityType.ADD_TO_CART,
+    });
+
     return { userId, productId: dto.productId, quantity: newQuantity };
   }
 
@@ -197,6 +210,13 @@ export class CartService {
     const cartKey = `cart:${userId}`;
     await this.redisService.hdel(cartKey, productId);
     await this.redisService.sadd('cart_updates', userId);
+
+    this.eventEmitter.emit('activity.log', {
+      userId,
+      productId,
+      action: ActivityType.REMOVE_FROM_CART,
+    });
+
     return { success: true };
   }
 
@@ -210,8 +230,8 @@ export class CartService {
   async mergeCart(
     userId: string,
     dto: MergeCartDto,
-  ): Promise<{ success: boolean; skippedItems: any[] }> {
-    const skippedItems: { productId: string; reason: string }[] = [];
+  ): Promise<{ success: boolean; skippedItems: SkippedCartItem[] }> {
+    const skippedItems: SkippedCartItem[] = [];
     const productIds = dto.items.map((item) => item.productId);
     const products = await this.prisma.product.findMany({
       where: { id: { in: productIds } },
@@ -226,18 +246,14 @@ export class CartService {
     for (const item of dto.items) {
       const product = productMap.get(item.productId);
 
-      if (!product) {
-        skippedItems.push({ productId: item.productId, reason: 'not_found' });
-        continue;
-      }
-      if (!product.isActive) {
-        skippedItems.push({ productId: item.productId, reason: 'inactive' });
+      if (!product || !product.isActive) {
+        skippedItems.push({ productId: item.productId, reason: 'INACTIVE' });
         continue;
       }
       if (product.stock <= 0) {
         skippedItems.push({
           productId: item.productId,
-          reason: 'out_of_stock',
+          reason: 'OUT_OF_STOCK',
         });
         continue;
       }

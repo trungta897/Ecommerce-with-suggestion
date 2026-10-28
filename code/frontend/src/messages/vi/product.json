@@ -10,6 +10,7 @@
   "specifications": "Thông số kỹ thuật",
   "quantity": "Số lượng",
   "inStock": "Còn hàng",
+  "inStockWithCount": "Còn hàng ({count} sản phẩm)",
   "brand": "Thương hiệu",
   "category": "Danh mục",
   "aiSummary": "AI Tóm tắt đánh giá",

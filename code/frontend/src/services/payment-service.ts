@@ -11,4 +11,12 @@ export const paymentService = {
     );
     return data;
   },
+
+  async createGuestVnPayOrder(orderId: string, phone: string): Promise<CreatePaymentOrderResponse> {
+    const { data } = await apiClient.post<CreatePaymentOrderResponse>(
+      `/payment/vnpay/create/guest/${orderId}`,
+      { phone }
+    );
+    return data;
+  },
 };

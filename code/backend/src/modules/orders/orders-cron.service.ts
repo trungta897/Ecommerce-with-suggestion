@@ -1,8 +1,9 @@
 import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { PrismaService } from '../../database/prisma.service';
-import { OrderStatus } from '@prisma/client';
+import { OrderStatus, RefundStatus } from '@prisma/client';
 import { OrdersService } from './orders.service';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 @Injectable()
 export class OrdersCronService {
@@ -11,6 +12,7 @@ export class OrdersCronService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly ordersService: OrdersService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   @Cron(CronExpression.EVERY_MINUTE)
@@ -31,7 +33,13 @@ export class OrdersCronService {
 
     for (const order of expiredOrders) {
       try {
-        await this.ordersService.cancelOrder(order.id, undefined, true);
+        await this.ordersService.cancelOrder(
+          order.id,
+          undefined,
+          true,
+          undefined,
+          { expiredBefore: now },
+        );
         this.logger.log(`Order ${order.id} cancelled due to payment timeout`);
       } catch (error: unknown) {
         if (error instanceof BadRequestException) {
@@ -59,19 +67,31 @@ export class OrdersCronService {
 
     const stuckOrders = await this.prisma.order.findMany({
       where: {
-        refundStatus: 'PROCESSING',
+        refundStatus: RefundStatus.PROCESSING,
         updatedAt: {
           lt: fifteenMinsAgo,
         },
       },
+      select: {
+        id: true,
+        totalAmount: true,
+        paymentMethod: true,
+        updatedAt: true,
+      },
     });
 
-    for (const order of stuckOrders) {
-      await this.prisma.order.update({
-        where: { id: order.id },
-        data: { refundStatus: null },
-      });
-      this.logger.warn(`Reset stuck refund status for order ${order.id}`);
+    if (stuckOrders.length > 0) {
+      for (const order of stuckOrders) {
+        this.logger.warn(
+          `Detected stuck refund for order ${order.id} (updatedAt: ${order.updatedAt.toISOString()}). Notifying Super Admin for audit.`,
+        );
+        this.eventEmitter.emit('refund.stuck', {
+          orderId: order.id,
+          totalAmount: order.totalAmount,
+          paymentMethod: order.paymentMethod,
+          updatedAt: order.updatedAt,
+        });
+      }
     }
   }
 

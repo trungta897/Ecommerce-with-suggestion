@@ -9,6 +9,8 @@
   "CATEGORY_NOT_MATCHED": "Mã giảm giá chỉ áp dụng cho danh mục được chỉ định",
   "PRODUCT_NOT_MATCHED": "Mã giảm giá chỉ áp dụng cho sản phẩm được chỉ định",
   "NO_ELIGIBLE_ITEMS": "Giỏ hàng không có sản phẩm nào thỏa mãn điều kiện mã giảm giá",
-  "FLASH_SALE_CONFLICT": "Sản phẩm đang trong chương trình Flash Sale, không thể áp dụng Voucher giảm theo %"
+  "FLASH_SALE_CONFLICT": "Sản phẩm đang trong chương trình Flash Sale, không thể áp dụng Voucher giảm theo %",
+  "REQUIRED_FIELDS": "Vui lòng nhập đầy đủ mã voucher và giá trị đơn hàng",
+  "INVALID_SUBTOTAL": "Giá trị đơn hàng không hợp lệ"
 }
 

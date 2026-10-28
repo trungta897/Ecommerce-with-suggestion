@@ -2,9 +2,8 @@
 
 import { useLocale, useTranslations } from 'next-intl';
 import Link from 'next/link';
-import Image from 'next/image';
 import { ShoppingCart, Minus, Plus, Trash2, ChevronRight } from '@/components/base/icons';
-import { BaseButton } from '@/components/base';
+import { BaseButton, SafeImage } from '@/components/base';
 import { useProducts } from '@/hooks/use-products';
 import { useToast } from '@/providers/toast-provider';
 import { useCart } from '@/hooks/use-cart';
@@ -45,7 +44,7 @@ export default function CartPage() {
     return sum + getProductPrice(item.product) * item.quantity;
   }, 0);
 
-  if (items.length > 0 && isLoading) {
+  if (isLoading) {
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-pulse">
         <div className="h-6 bg-paper-2 rounded w-1/4 mb-6" />
@@ -101,8 +100,8 @@ export default function CartPage() {
               className="flex gap-4 p-4 bg-white border border-rule rounded-xl"
             >
               <div className="w-24 h-24 rounded-lg bg-paper-2 flex-shrink-0 flex items-center justify-center overflow-hidden relative">
-                <Image
-                  src={item.product?.thumbnailUrl || ''}
+                <SafeImage
+                  src={item.product?.thumbnailUrl || item.product?.images?.[0]?.url}
                   alt={item.product?.name || ''}
                   fill
                   className="object-contain"

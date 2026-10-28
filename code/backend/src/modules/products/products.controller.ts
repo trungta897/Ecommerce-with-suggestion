@@ -21,7 +21,9 @@ import { UpdateProductDto } from './dto/update-product.dto';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { UserRole } from '@prisma/client';
+import { ApiTags } from '@nestjs/swagger';
 
+@ApiTags('Products')
 @Controller('products')
 export class ProductsController {
   constructor(private readonly productsService: ProductsService) {}
@@ -32,7 +34,6 @@ export class ProductsController {
     @Query('page') page?: string,
     @Query('limit') limit?: string,
     @Query('categorySlug') categorySlug?: string,
-    @Query('all') all?: string,
     @Query('q') q?: string,
     @Query('minPrice') minPrice?: string,
     @Query('maxPrice') maxPrice?: string,
@@ -41,17 +42,39 @@ export class ProductsController {
   ) {
     const pageNum = page ? parseInt(page, 10) : 1;
     const limitNum = limit ? parseInt(limit, 10) : 10;
-    const includeInactive = all === 'true';
     return this.productsService.findAll(
       pageNum,
       limitNum,
       categorySlug,
-      includeInactive,
+      false, // Always enforce isActive = true for public customer route
       q,
       minPrice,
       maxPrice,
       minRating,
       sort,
+    );
+  }
+
+  @Get('admin')
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN, UserRole.EMPLOYEE)
+  findAllAdmin(
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('categorySlug') categorySlug?: string,
+    @Query('q') q?: string,
+    @Query('status') status?: string,
+    @Query('stockStatus') stockStatus?: string,
+  ) {
+    const pageNum = page ? parseInt(page, 10) : 1;
+    const limitNum = limit ? parseInt(limit, 10) : 10;
+    return this.productsService.findAllAdmin(
+      pageNum,
+      limitNum,
+      categorySlug,
+      q,
+      status,
+      stockStatus,
     );
   }
 

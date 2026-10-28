@@ -19,6 +19,7 @@ import { CartService } from './cart.service';
 import { AddToCartDto } from './dto/add-to-cart.dto';
 import { UpdateCartDto } from './dto/update-cart.dto';
 import { MergeCartDto } from './dto/merge-cart.dto';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
 interface RequestWithUser extends Request {
   user: {
@@ -28,6 +29,8 @@ interface RequestWithUser extends Request {
   };
 }
 
+@ApiTags('Cart')
+@ApiBearerAuth()
 @Controller('cart')
 @UseGuards(AuthGuard('jwt'), RolesGuard)
 @Roles(UserRole.CUSTOMER, UserRole.ADMIN)

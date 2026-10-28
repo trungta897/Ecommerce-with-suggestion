@@ -7,6 +7,7 @@ import { CreditCard, Ticket, Check, X } from '@/components/base/icons';
 import { useToast } from '@/providers/toast-provider';
 import { voucherService } from '@/services/voucher-service';
 import { formatPrice } from '@/utils/format';
+import { getApiErrorMessage } from '@/utils/get-api-error-message';
 import { useAuthStore } from '@/store';
 import { ValidateVoucherCartItem } from '@/types/voucher';
 import { CheckoutVoucherModal } from './CheckoutVoucherModal';
@@ -86,8 +87,7 @@ export function PaymentForm({
     } catch (err: unknown) {
       onDiscountChange(0);
       onAppliedVoucherChange(null);
-      const error = err as { response?: { data?: { message?: string } } };
-      const errorMsg = error.response?.data?.message || t('toast.voucherErrorMessage');
+      const errorMsg = getApiErrorMessage(err) ?? t('toast.voucherErrorMessage');
       toast.error(errorMsg, t('toast.voucherErrorTitle'));
     } finally {
       setValidating(false);

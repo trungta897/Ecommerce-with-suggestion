@@ -32,7 +32,7 @@ export default function OrderHistoryPage() {
       setTotalPages(res.totalPages || 1);
     } catch (err: unknown) {
       console.error(err);
-      toast.error('Lỗi khi tải danh sách đơn hàng');
+      toast.error(t('fetchOrdersError'));
     } finally {
       setLoading(false);
     }

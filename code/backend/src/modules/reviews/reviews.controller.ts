@@ -17,7 +17,9 @@ import { Roles } from '../../common/decorators/roles.decorator';
 import { CreateReviewDto } from './dto/create-review.dto';
 import { UserRole } from '@prisma/client';
 import { I18nLang } from 'nestjs-i18n';
+import { ApiTags } from '@nestjs/swagger';
 
+@ApiTags('Reviews')
 @Controller('reviews')
 export class ReviewsController {
   constructor(private readonly reviewsService: ReviewsService) {}

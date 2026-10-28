@@ -10,6 +10,7 @@
   "specifications": "Specifications",
   "quantity": "Quantity",
   "inStock": "In Stock",
+  "inStockWithCount": "In Stock ({count} available)",
   "brand": "Brand",
   "category": "Category",
   "aiSummary": "AI Review Summary",

@@ -6,21 +6,23 @@ import {
   Body,
   Param,
   Query,
-  BadRequestException,
   UseGuards,
   Req,
 } from '@nestjs/common';
-import { VouchersService } from './vouchers.service';
+import type { Request } from 'express';
 import { AuthGuard } from '@nestjs/passport';
-import { RolesGuard } from '../../common/guards/roles.guard';
-import { Roles } from '../../common/decorators/roles.decorator';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { UserRole } from '@prisma/client';
 import { I18nLang } from 'nestjs-i18n';
-import { Request } from 'express';
+import { VouchersService } from './vouchers.service';
+import { RolesGuard } from '../../common/guards/roles.guard';
+import { Roles } from '../../common/decorators/roles.decorator';
 import { ValidateVoucherDto } from './dto/validate-voucher.dto';
 import { CreateVoucherDto } from './dto/create-voucher.dto';
 import { UpdateVoucherDto } from './dto/update-voucher.dto';
+import { DEFAULT_LANG } from '../../common/constants/order.constant';
 
+@ApiTags('Vouchers')
 @Controller('vouchers')
 export class VouchersController {
   constructor(private readonly vouchersService: VouchersService) {}
@@ -37,10 +39,9 @@ export class VouchersController {
   async validateVoucher(
     @Body() dto: ValidateVoucherDto,
     @Req() req: Request & { user?: { id: string } },
-    @I18nLang() lang: string,
+    @I18nLang() lang: string = DEFAULT_LANG,
   ) {
-    const userId = req.user?.id;
-    return this.vouchersService.validateVoucher(dto, userId, lang);
+    return this.vouchersService.validateVoucher(dto, req.user?.id, lang);
   }
 
   @Get('validate')
@@ -49,27 +50,18 @@ export class VouchersController {
     @Query('subtotal') subtotalStr: string,
     @Query('phone') phone: string,
     @Req() req: Request & { user?: { id: string } },
-    @I18nLang() lang: string,
+    @I18nLang() lang: string = DEFAULT_LANG,
   ) {
-    if (!code || !subtotalStr) {
-      throw new BadRequestException('Voucher code and subtotal are required');
-    }
-
-    const subtotal = Number(subtotalStr);
-    if (isNaN(subtotal) || subtotal < 0) {
-      throw new BadRequestException('Invalid subtotal');
-    }
-
-    const dto: ValidateVoucherDto = {
+    return this.vouchersService.validateVoucherQuery(
       code,
-      subtotal,
+      subtotalStr,
       phone,
-    };
-
-    const userId = req.user?.id;
-    return this.vouchersService.validateVoucher(dto, userId, lang);
+      req.user?.id,
+      lang,
+    );
   }
 
+  @ApiBearerAuth()
   @Get('admin')
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
@@ -81,6 +73,7 @@ export class VouchersController {
     return this.vouchersService.findAll(+page, +limit, search);
   }
 
+  @ApiBearerAuth()
   @Get(':id/usages')
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
@@ -92,13 +85,18 @@ export class VouchersController {
     return this.vouchersService.getVoucherUsages(id, +page, +limit);
   }
 
+  @ApiBearerAuth()
   @Get(':id')
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
-  async findOne(@Param('id') id: string) {
-    return this.vouchersService.findOne(id);
+  async findOne(
+    @Param('id') id: string,
+    @I18nLang() lang: string = DEFAULT_LANG,
+  ) {
+    return this.vouchersService.findOne(id, lang);
   }
 
+  @ApiBearerAuth()
   @Post()
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
@@ -106,6 +104,7 @@ export class VouchersController {
     return this.vouchersService.create(dto);
   }
 
+  @ApiBearerAuth()
   @Patch(':id')
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
@@ -113,10 +112,14 @@ export class VouchersController {
     return this.vouchersService.update(id, dto);
   }
 
+  @ApiBearerAuth()
   @Patch(':id/toggle')
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
-  async toggleStatus(@Param('id') id: string, @I18nLang() lang: string) {
+  async toggleStatus(
+    @Param('id') id: string,
+    @I18nLang() lang: string = DEFAULT_LANG,
+  ) {
     return this.vouchersService.toggleStatus(id, lang);
   }
 }

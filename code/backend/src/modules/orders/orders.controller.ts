@@ -29,7 +29,10 @@ import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { UserRole } from '@prisma/client';
 import { I18nLang } from 'nestjs-i18n';
+import { Throttle } from '@nestjs/throttler';
+import { ApiTags } from '@nestjs/swagger';
 
+@ApiTags('Orders')
 @Controller('orders')
 export class OrdersController {
   constructor(
@@ -70,6 +73,7 @@ export class OrdersController {
     return this.ordersService.createOrder(null, createOrderDto, lang);
   }
 
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   @Post('guest/:id/pay-again')
   async payAgainGuest(
     @Param('id') orderId: string,

@@ -5,16 +5,15 @@ import { useSearchParams } from 'next/navigation';
 import { CheckCircle2, XCircle, ArrowRight, CreditCard } from '@/components/base/icons';
 import Link from 'next/link';
 import { BaseButton } from '@/components/base';
-import { useCartStore } from '@/store';
+import { useCart } from '@/hooks/use-cart';
 import { useEffect, Suspense } from 'react';
 import { formatPrice } from '@/utils/format';
-import { USD_TO_VND_RATE } from '@/constants/currency';
 
 function CallbackContent() {
   const t = useTranslations('checkout');
   const locale = useLocale();
   const searchParams = useSearchParams();
-  const { clearCart } = useCartStore();
+  const { clearCart } = useCart();
 
   const responseCode = searchParams.get('vnp_ResponseCode');
   const transactionStatus = searchParams.get('vnp_TransactionStatus');
@@ -24,11 +23,11 @@ function CallbackContent() {
   const orderInfo = searchParams.get('vnp_OrderInfo');
 
   // '00' is success code for VNPay
-  const isSuccess = responseCode === '00' && (!transactionStatus || transactionStatus === '00');
+  const isSuccess =
+    responseCode === '00' && (!transactionStatus || transactionStatus === '00') && Boolean(txnRef);
 
   // Amount in VNPay is multiplied by 100 in VND
   const amountVnd = rawAmount ? Number(rawAmount) / 100 : 0;
-  const amountUsd = amountVnd / USD_TO_VND_RATE;
 
   useEffect(() => {
     if (isSuccess) {
@@ -51,7 +50,7 @@ function CallbackContent() {
             <div className="flex justify-between items-center text-xs text-ink-2 border-b border-gray-200 pb-2">
               <span className="font-semibold">{t('transactionDetails')}</span>
               <span className="inline-flex items-center gap-1 text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full font-medium border border-emerald-200">
-                <CheckCircle2 className="w-3 h-3" /> Thành công
+                <CheckCircle2 className="w-3 h-3" /> {t('paymentSuccessBadge')}
               </span>
             </div>
 
@@ -59,7 +58,7 @@ function CallbackContent() {
               <div className="flex justify-between items-center">
                 <span className="text-ink-2">{t('amountPaid')}:</span>
                 <span className="font-bold text-base text-primary">
-                  {formatPrice(amountUsd, locale)}
+                  {formatPrice(amountVnd, locale)}
                 </span>
               </div>
             )}
@@ -82,7 +81,7 @@ function CallbackContent() {
 
             {orderInfo && (
               <div className="flex justify-between items-center text-xs text-gray-500 pt-1 border-t border-gray-100">
-                <span>Nội dung:</span>
+                <span>{t('orderInfo')}:</span>
                 <span className="truncate max-w-[220px]">{orderInfo}</span>
               </div>
             )}
@@ -114,7 +113,7 @@ function CallbackContent() {
             )}
             {responseCode && (
               <div className="flex justify-between items-center text-xs text-rose-600">
-                <span>Mã phản hồi lỗi:</span>
+                <span>{t('errorCode')}:</span>
                 <span className="font-mono font-bold">{responseCode}</span>
               </div>
             )}
@@ -137,12 +136,14 @@ function CallbackContent() {
 }
 
 export default function CheckoutCallbackPage() {
+  const t = useTranslations('checkout');
+
   return (
     <Suspense
       fallback={
         <div className="max-w-lg mx-auto px-4 py-24 text-center">
           <div className="w-8 h-8 mx-auto border-2 border-primary border-t-transparent rounded-full animate-spin mb-4" />
-          <p className="text-sm text-ink-2">Đang xử lý kết quả thanh toán...</p>
+          <p className="text-sm text-ink-2">{t('processingPayment')}</p>
         </div>
       }
     >

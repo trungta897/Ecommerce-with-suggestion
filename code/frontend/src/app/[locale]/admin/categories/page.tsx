@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
 import toast from 'react-hot-toast';
 import { BaseButton, BaseInput } from '@/components/base';
@@ -17,14 +17,12 @@ export default function AdminCategoriesPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
+  const [parentFilter, setParentFilter] = useState<string>('all');
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [togglingId, setTogglingId] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchCategories();
-  }, []);
-
-  const fetchCategories = async () => {
+  const fetchCategories = useCallback(async () => {
     try {
       setLoading(true);
       const data = await categoryService.getAll();
@@ -35,7 +33,11 @@ export default function AdminCategoriesPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [t]);
+
+  useEffect(() => {
+    fetchCategories();
+  }, [fetchCategories]);
 
   const handleToggleStatus = async (category: Category) => {
     try {
@@ -60,13 +62,29 @@ export default function AdminCategoriesPage() {
     return map;
   }, [categories]);
 
+  const rootCategories = useMemo(() => {
+    return categories.filter((cat) => !cat.parentId);
+  }, [categories]);
+
   const filteredCategories = useMemo(() => {
-    if (!searchQuery.trim()) return categories;
-    const q = searchQuery.toLowerCase();
-    return categories.filter(
-      (cat) => cat.name.toLowerCase().includes(q) || cat.slug.toLowerCase().includes(q)
-    );
-  }, [categories, searchQuery]);
+    return categories.filter((cat) => {
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase();
+        const matchesQuery =
+          cat.name.toLowerCase().includes(q) || cat.slug.toLowerCase().includes(q);
+        if (!matchesQuery) return false;
+      }
+      if (statusFilter === 'active' && cat.isActive === false) return false;
+      if (statusFilter === 'inactive' && cat.isActive !== false) return false;
+
+      if (parentFilter === 'root' && cat.parentId) return false;
+      if (parentFilter !== 'all' && parentFilter !== 'root' && cat.parentId !== parentFilter) {
+        return false;
+      }
+
+      return true;
+    });
+  }, [categories, searchQuery, statusFilter, parentFilter]);
 
   return (
     <div className="p-6 lg:p-8">
@@ -86,8 +104,8 @@ export default function AdminCategoriesPage() {
       </div>
 
       {/* Search & Filter */}
-      <div className="flex gap-3 mb-6">
-        <div className="relative flex-1 max-w-md">
+      <div className="flex flex-wrap items-center gap-3 mb-6">
+        <div className="relative flex-1 min-w-[240px] max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-2" />
           <BaseInput
             placeholder={t('searchPlaceholder')}
@@ -96,6 +114,44 @@ export default function AdminCategoriesPage() {
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
+
+        <select
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value as 'all' | 'active' | 'inactive')}
+          className="border border-rule rounded-xl px-3.5 py-2 text-sm bg-white text-ink focus:outline-none focus:border-primary shadow-xs"
+        >
+          <option value="all">{t('allStatuses')}</option>
+          <option value="active">{t('active')}</option>
+          <option value="inactive">{t('inactive')}</option>
+        </select>
+
+        <select
+          value={parentFilter}
+          onChange={(e) => setParentFilter(e.target.value)}
+          className="border border-rule rounded-xl px-3.5 py-2 text-sm bg-white text-ink focus:outline-none focus:border-primary shadow-xs"
+        >
+          <option value="all">{t('allParents')}</option>
+          <option value="root">{t('onlyRoot')}</option>
+          {rootCategories.map((rc) => (
+            <option key={rc.id} value={rc.id}>
+              {rc.name}
+            </option>
+          ))}
+        </select>
+
+        {(searchQuery || statusFilter !== 'all' || parentFilter !== 'all') && (
+          <button
+            type="button"
+            onClick={() => {
+              setSearchQuery('');
+              setStatusFilter('all');
+              setParentFilter('all');
+            }}
+            className="px-3.5 py-2 text-xs font-semibold text-red-600 hover:text-red-700 hover:bg-red-50 rounded-xl transition-colors border border-red-200"
+          >
+            {t('resetFilter')}
+          </button>
+        )}
       </div>
 
       {/* Categories Table */}
@@ -144,12 +200,8 @@ export default function AdminCategoriesPage() {
                                 className="object-cover"
                               />
                             </div>
-                          ) : (
-                            <div className="w-10 h-10 bg-paper-2 rounded-lg flex-shrink-0 flex items-center justify-center text-ink-3 text-xs border border-rule/50 font-medium">
-                              IMG
-                            </div>
-                          )}
-                          <span className="font-medium text-ink truncate max-w-[200px]">
+                          ) : null}
+                          <span className="font-medium text-ink truncate max-w-[240px]">
                             {category.name}
                           </span>
                         </div>

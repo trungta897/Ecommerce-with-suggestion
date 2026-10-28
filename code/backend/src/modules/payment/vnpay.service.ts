@@ -57,7 +57,7 @@ export class VnPayService {
     try {
       const verifyResult = this.vnpayInstance.verifyIpnCall(query);
       return verifyResult;
-    } catch (e: any) {
+    } catch (e: unknown) {
       const errorMessage = e instanceof Error ? e.message : String(e);
       this.logger.error(`IPN Verify Error: ${errorMessage}`);
       return { isSuccess: false, message: errorMessage };

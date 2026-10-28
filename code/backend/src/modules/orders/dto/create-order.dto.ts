@@ -1,5 +1,17 @@
-import { IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import {
+  ArrayMaxSize,
+  ArrayUnique,
+  IsArray,
+  IsEnum,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  ValidateNested,
+} from 'class-validator';
+import { Type } from 'class-transformer';
 import { PaymentMethod } from '@prisma/client';
+import { ORDER_MAX_ITEMS } from '../../../common/constants/order.constant';
+import { CreateOrderItemDto } from './create-order-item.dto';
 
 export class CreateOrderDto {
   @IsNotEmpty()
@@ -42,7 +54,12 @@ export class CreateOrderDto {
   pickupTime?: Date;
 
   @IsOptional()
-  items?: { productId: string; quantity: number }[];
+  @IsArray()
+  @ArrayMaxSize(ORDER_MAX_ITEMS)
+  @ArrayUnique((i: CreateOrderItemDto) => i.productId)
+  @ValidateNested({ each: true })
+  @Type(() => CreateOrderItemDto)
+  items?: CreateOrderItemDto[];
 
   @IsOptional()
   useVipPoints?: boolean;

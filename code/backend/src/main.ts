@@ -1,4 +1,5 @@
 import { NestFactory } from '@nestjs/core';
+import type { Request, Response, NextFunction } from 'express';
 import { AppModule } from './app.module';
 import { I18nValidationExceptionFilter, I18nValidationPipe } from 'nestjs-i18n';
 import cookieParser from 'cookie-parser';
@@ -8,6 +9,23 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  const expressApp = app.getHttpAdapter().getInstance() as {
+    disable?: (setting: string) => void;
+  };
+  expressApp.disable?.('x-powered-by');
+
+  app.use((_req: Request, res: Response, next: NextFunction) => {
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('X-Frame-Options', 'DENY');
+    res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+    res.setHeader('X-DNS-Prefetch-Control', 'off');
+    res.setHeader(
+      'Permissions-Policy',
+      'camera=(), microphone=(), geolocation=()',
+    );
+    next();
+  });
 
   app.use(cookieParser());
 

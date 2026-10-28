@@ -35,6 +35,11 @@
   "total": "Total",
   "depositRequired": "Deposit required upfront:",
   "placeOrder": "Place Order",
+  "emptyCart": "Your cart is empty",
+  "orderInfo": "Order info",
+  "errorCode": "Error response code",
+  "processingPayment": "Processing payment result...",
+  "unknown": "Unknown",
   "backToCart": "Back to Cart",
   "next": "Continue",
   "previous": "Back",
@@ -70,5 +75,11 @@
     "voucherErrorMessage": "The promo code entered does not exist or has expired."
   },
   "useVipPoints": "Use VIP Points",
-  "vipPointsHint": "You have {points} points (equivalent to {amount})"
+  "vipPointsHint": "You have {points} points (equivalent to {amount})",
+  "orderCreatedPaymentLinkFailed": "Your order was created, but the VNPay gateway could not be opened. Please click Pay Again on the order details page.",
+  "pickupAtStoreAddress": "Store Pickup",
+  "loginPromptBanner": "Log in to auto-fill your details and earn VIP points!",
+  "loginNow": "Log in now",
+  "createOrderFailed": "Failed to create order",
+  "paymentSuccessBadge": "Successful"
 }

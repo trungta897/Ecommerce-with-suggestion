@@ -23,6 +23,7 @@ export enum PaymentMethod {
 
 export enum PaymentStatus {
   PENDING = 'PENDING',
+  PARTIALLY_PAID = 'PARTIALLY_PAID',
   COMPLETED = 'COMPLETED',
   FAILED = 'FAILED',
   REFUNDED = 'REFUNDED',
@@ -32,14 +33,37 @@ export interface OrderItem {
   id: string;
   orderId: string;
   productId: string;
+  productDiscountId?: string | null;
   quantity: number;
   unitPrice: number;
   product?: Product;
 }
 
+export interface CreateOrderItemPayload {
+  productId: string;
+  quantity: number;
+}
+
+export interface CreateOrderPayload {
+  shippingName: string;
+  shippingAddress: string;
+  shippingPhone: string;
+  deliveryMethod?: string;
+  paymentMethod: string;
+  voucherId?: string;
+  pickupTime?: string;
+  provinceId?: string;
+  wardId?: string;
+  useVipPoints?: boolean;
+  email?: string;
+  items?: CreateOrderItemPayload[];
+  sessionId?: string;
+}
+
 export interface Order {
   id: string;
   userId?: string | null;
+  subtotal?: number;
   totalAmount: number;
   shippingFee: number;
   discountAmount: number;
@@ -53,11 +77,18 @@ export interface Order {
   status: OrderStatus;
   paymentMethod: PaymentMethod | string;
   paymentStatus: PaymentStatus;
+  isDepositPayment?: boolean;
+  depositAmount?: number | null;
+  paymentExpiresAt?: string | null;
+  returnRejectReason?: string | null;
+  vipDiscountAmount?: number;
+  usedVipPoints?: number;
+  earnedVipPoints?: number;
   vnpTxnRef?: string | null;
   vnpTransactionNo?: string | null;
   vnpPayDate?: string | null;
   items?: OrderItem[];
-  user?: User; // Depending on eager loading
+  user?: User;
   createdAt?: string;
   updatedAt?: string;
 }

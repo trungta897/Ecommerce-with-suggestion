@@ -64,8 +64,8 @@ graph TD
     T3 --> Output
 ```
 
-- **Tầng 1 (Hybrid ML Engine)**: Kết hợp Collaborative Filtering (SVD) nắm bắt sở thích tiềm ẩn với Content-Based Filtering (TF-IDF vector hóa từ tiêu đề và mô tả) để bù đắp điểm yếu của ma trận thưa.
-- **Tầng 2 (Category-Seed Fallback)**: Dành cho phiên duyệt web của khách hàng chưa đăng nhập nhưng đang xem một sản phẩm cụ thể (lọc các sản phẩm tương đồng về đặc tính và khoảng giá trong cùng Category).
+- **Tầng 1 (Real-time Folding-in Hybrid ML Engine)**: Kết hợp 3 nguồn tín hiệu tại thời điểm suy luận $\text{Score}(i) = 0.50 \cdot \widehat{\text{SVD}}(i, H) + 0.35 \cdot \widehat{\text{TFIDF}}(i, H) + 0.15 \cdot \widehat{\text{Pop}}(i)$ dựa trên tập sản phẩm mồi có trọng số $H = \{(p_k, w_k)\}$ (`PURCHASE: 5`, `ADD_TO_CART: 3`, `WISHLIST_ADD: 2`, `VIEW: 1`, `CURRENT_PRODUCT: 6`), giải quyết triệt để bài toán lệch định danh giữa UUID người dùng mới trong MySQL và `user_id` của tập huấn luyện Amazon.
+- **Tầng 2 (Category-Seed & Pre-computed Fallback)**: Dành cho trường hợp ML Service timeout (> 500ms) hoặc bảo trì, tự động truy vấn sản phẩm tương đồng trong bảng `product_recommendations` và sản phẩm bán chạy/đánh giá cao cùng danh mục (`categoryId`), kèm quy đổi điểm độ khớp `aiScore` (`75%–99%`).
 - **Tầng 3 (Popular Bayesian Weighted Average)**: Công thức chuẩn IMDB $W = \frac{R \cdot v + C \cdot m}{v + m}$ xếp hạng Top 100 sản phẩm uy tín nhất, đảm bảo giao diện luôn có sản phẩm chất lượng cao hiển thị cho khách vãng lai (Khắc phục hoàn toàn Cold-start).
 
 ---
@@ -98,4 +98,4 @@ graph TD
 > **💡 Kịch bản trả lời:**  
 > *"Thưa Hội đồng, hệ thống đã giải quyết triệt để vấn đề độ trễ thông qua kiến trúc tách rời (Decoupled Services) và Bộ đệm đa tầng:  
 > 1. **Batch Pre-computing**: Các ma trận TF-IDF và SVD latent factors được huấn luyện và tính toán offline định kỳ bằng Python ML Service, đóng gói dưới dạng `.pkl` tối ưu.  
-> 2. **Redis Caching (TTL 1 giờ)**: Khi Backend NestJS gọi API ML nội bộ (`/recommend/user/:id`), kết quả gợi ý được lưu ngay vào Redis Cache. Các lần truy cập sau đó của người dùng có độ trễ truy vấn chỉ dưới **5ms** ($O(1)$ lookup), hoàn toàn không tính toán lại mô hình tại thời điểm request."*
+> 2. **Redis Caching (TTL 1 giờ & Tự động Invalidate khi có hành vi mới)**: Khi Backend NestJS gọi API ML nội bộ (`/recommend/hybrid/:user_id?items=...&weights=...`), kết quả gợi ý được lưu ngay vào Redis Cache và tự động làm mới khi người dùng phát sinh tương tác mới (`VIEW`, `ADD_TO_CART`, `WISHLIST_ADD`, `PURCHASE`). Các lần truy cập kế tiếp có độ trễ truy vấn chỉ dưới **5ms** ($O(1)$ lookup)."*

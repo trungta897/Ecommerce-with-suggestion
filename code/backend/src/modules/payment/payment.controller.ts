@@ -1,65 +1,69 @@
-import { Body, Controller, Param, Post, Req, Query } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Param,
+  Post,
+  Req,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import type { Request as ExpressRequest } from 'express';
+import { AuthGuard } from '@nestjs/passport';
+import { Throttle } from '@nestjs/throttler';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { PaymentService } from './payment.service';
-import { PrismaService } from '../../database/prisma.service';
-import { NotFoundException } from '@nestjs/common';
-import { VnPayService } from './vnpay.service';
 import type { ReturnQueryFromVNPay } from 'vnpay';
-import { USD_TO_VND_RATE } from '../../common/constants/currency.constant';
+import { I18nLang } from 'nestjs-i18n';
+import { DEFAULT_LANG } from '../../common/constants/order.constant';
 
+@ApiTags('Payment')
 @Controller('payment')
 export class PaymentController {
-  constructor(
-    private readonly paymentService: PaymentService,
-    private readonly vnPayService: VnPayService,
-    private readonly prisma: PrismaService,
-  ) {}
+  constructor(private readonly paymentService: PaymentService) {}
 
-  @Post('vnpay/create/:orderId')
-  async createVnPayOrder(
-    @Req() req: ExpressRequest,
-    @Param('orderId') orderId: string,
-  ) {
-    const order = await this.prisma.order.findUnique({
-      where: { id: orderId },
-    });
-
-    if (!order) {
-      throw new NotFoundException('Order not found');
-    }
-
-    // Format: orderId_timestamp -> unique mỗi lần gọi
-    const appTransId = `${orderId.replace(/-/g, '').slice(0, 8)}_${Date.now().toString().slice(-5)}`;
-
-    // Atomic Update DB lưu appTransId TRƯỚC
-    await this.prisma.order.update({
-      where: { id: orderId },
-      data: { paymentGatewayTxnId: appTransId },
-    });
-
-    // Dynamic resolution of client IP from headers/socket
+  private extractClientIp(req: ExpressRequest): string {
     const forwarded = req.headers['x-forwarded-for'];
-    const ipAddr =
+    return (
       (typeof forwarded === 'string'
         ? forwarded.split(',')[0].trim()
         : Array.isArray(forwarded)
           ? forwarded[0]?.trim()
-          : req.socket?.remoteAddress) || '127.0.0.1';
-
-    // Total Amount / deposit Amount in USD converted to VND for VNPay
-    const amountUsd = order.isDepositPayment
-      ? Number(order.depositAmount)
-      : Number(order.totalAmount);
-    const amountToPayVnd = Math.round(amountUsd * USD_TO_VND_RATE);
-
-    const paymentUrl = this.vnPayService.createPaymentUrl(
-      orderId,
-      amountToPayVnd,
-      ipAddr,
-      appTransId,
+          : req.socket?.remoteAddress) || '127.0.0.1'
     );
+  }
 
-    return { orderUrl: paymentUrl };
+  @ApiBearerAuth()
+  @UseGuards(AuthGuard('jwt'))
+  @Post('vnpay/create/:orderId')
+  async createVnPayOrder(
+    @Req() req: ExpressRequest & { user: { id: string } },
+    @Param('orderId') orderId: string,
+    @I18nLang() lang: string = DEFAULT_LANG,
+  ) {
+    const ipAddr = this.extractClientIp(req);
+    return this.paymentService.createVnPayOrderForUser(
+      orderId,
+      req.user.id,
+      ipAddr,
+      lang,
+    );
+  }
+
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
+  @Post('vnpay/create/guest/:orderId')
+  async createGuestVnPayOrder(
+    @Req() req: ExpressRequest,
+    @Param('orderId') orderId: string,
+    @Body('phone') phone?: string,
+    @I18nLang() lang: string = DEFAULT_LANG,
+  ) {
+    const ipAddr = this.extractClientIp(req);
+    return this.paymentService.createVnPayOrderForGuest(
+      orderId,
+      phone,
+      ipAddr,
+      lang,
+    );
   }
 
   @Post('webhook/vnpay')
@@ -68,7 +72,7 @@ export class PaymentController {
   }
 
   @Post('webhook/stripe')
-  handleStripeWebhook(@Body() data: any) {
+  handleStripeWebhook(@Body() data: unknown) {
     return this.paymentService.handleStripeWebhook(data);
   }
 }

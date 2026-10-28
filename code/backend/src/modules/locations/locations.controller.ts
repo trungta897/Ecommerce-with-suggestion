@@ -1,7 +1,9 @@
 import { Controller, Get, Param, NotFoundException } from '@nestjs/common';
 import { LocationsService } from './locations.service';
 import { I18nService, I18nContext } from 'nestjs-i18n';
+import { ApiTags } from '@nestjs/swagger';
 
+@ApiTags('Locations')
 @Controller('locations')
 export class LocationsController {
   constructor(

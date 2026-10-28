@@ -11,7 +11,9 @@ import type { Request } from 'express';
 import { JwtService } from '@nestjs/jwt';
 import { ActivitiesService } from './activities.service';
 import { LogActivityDto } from './dto/log-activity.dto';
+import { ApiTags } from '@nestjs/swagger';
 
+@ApiTags('Activities')
 @Controller('activities')
 export class ActivitiesController {
   constructor(
@@ -36,8 +38,8 @@ export class ActivitiesController {
       }
 
       if (token) {
-        const decoded = this.jwtService.decode<{ sub?: string }>(token);
-        return decoded?.sub || null;
+        const verified = this.jwtService.verify<{ sub?: string }>(token);
+        return verified?.sub || null;
       }
     } catch {
       return null;

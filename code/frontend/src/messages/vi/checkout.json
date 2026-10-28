@@ -35,6 +35,11 @@
   "total": "Tổng thanh toán",
   "depositRequired": "Cần thanh toán cọc trước:",
   "placeOrder": "Đặt hàng",
+  "emptyCart": "Giỏ hàng của bạn đang trống",
+  "orderInfo": "Nội dung",
+  "errorCode": "Mã phản hồi lỗi",
+  "processingPayment": "Đang xử lý kết quả thanh toán...",
+  "unknown": "Không xác định",
   "backToCart": "Quay lại giỏ hàng",
   "next": "Tiếp tục",
   "previous": "Quay lại",
@@ -70,5 +75,11 @@
     "voucherErrorMessage": "Mã giảm giá bạn vừa nhập không tồn tại hoặc đã hết hạn sử dụng."
   },
   "useVipPoints": "Sử dụng điểm VIP",
-  "vipPointsHint": "Bạn có {points} điểm (tương đương {amount})"
+  "vipPointsHint": "Bạn có {points} điểm (tương đương {amount})",
+  "orderCreatedPaymentLinkFailed": "Đơn hàng đã được tạo nhưng chưa mở được cổng VNPay. Vui lòng bấm Thanh toán lại tại trang chi tiết đơn.",
+  "pickupAtStoreAddress": "Nhận tại cửa hàng",
+  "loginPromptBanner": "Đăng nhập để tự động điền thông tin và tích điểm!",
+  "loginNow": "Đăng nhập ngay",
+  "createOrderFailed": "Không thể tạo đơn hàng",
+  "paymentSuccessBadge": "Thành công"
 }

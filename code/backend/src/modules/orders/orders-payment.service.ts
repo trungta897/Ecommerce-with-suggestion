@@ -4,9 +4,24 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service';
-import { OrderStatus, Order } from '@prisma/client';
+import {
+  OrderStatus,
+  Order,
+  RefundStatus,
+  PaymentStatus,
+} from '@prisma/client';
 import { appendAuditTrail } from '../../common/utils/audit-trail.util';
 import { ORDER_MESSAGES } from '../../common/constants/order-message.constant';
+import {
+  PAYMENT_AUDIT_ACTIONS,
+  PAYMENT_HOLD_MS,
+  REFUND_AUDIT_REASONS,
+} from '../../common/constants/order.constant';
+import {
+  buildReopenCancelledWhere,
+  canReopenCancelledOrder,
+  requiresOnlinePayment,
+} from './order-payment.policy';
 import { I18nService } from 'nestjs-i18n';
 import { VnPayService } from '../payment/vnpay.service';
 
@@ -23,14 +38,9 @@ export class OrdersPaymentService {
       where: { id: orderId },
     });
 
-    if (!order) {
+    if (!order || order.userId !== userId) {
       throw new NotFoundException(
         this.i18n.t(ORDER_MESSAGES.NOT_FOUND, { lang }),
-      );
-    }
-    if (order.userId !== userId) {
-      throw new BadRequestException(
-        this.i18n.t(ORDER_MESSAGES.UNAUTHORIZED, { lang }),
       );
     }
 
@@ -38,18 +48,19 @@ export class OrdersPaymentService {
   }
 
   async payAgainGuest(orderId: string, phone: string, lang?: string) {
-    const order = await this.prisma.order.findUnique({
-      where: { id: orderId },
-    });
-
-    if (!order) {
+    if (!phone) {
       throw new NotFoundException(
         this.i18n.t(ORDER_MESSAGES.NOT_FOUND, { lang }),
       );
     }
-    if (order.shippingPhone !== phone) {
-      throw new BadRequestException(
-        this.i18n.t(ORDER_MESSAGES.PHONE_MISMATCH, { lang }),
+
+    const order = await this.prisma.order.findUnique({
+      where: { id: orderId },
+    });
+
+    if (!order || order.userId !== null || order.shippingPhone !== phone) {
+      throw new NotFoundException(
+        this.i18n.t(ORDER_MESSAGES.NOT_FOUND, { lang }),
       );
     }
 
@@ -57,21 +68,50 @@ export class OrdersPaymentService {
   }
 
   private async processPayAgain(order: Order, lang?: string) {
+    if (!requiresOnlinePayment(order)) {
+      throw new BadRequestException(
+        this.i18n.t(ORDER_MESSAGES.REPAY_NOT_SUPPORTED, { lang }),
+      );
+    }
+
     if (order.status === OrderStatus.PENDING_PAYMENT) {
-      const paymentExpiresAt = new Date(Date.now() + 30 * 60 * 1000);
-      const updatedOrder = await this.prisma.order.update({
-        where: { id: order.id },
+      if (order.paymentStatus !== PaymentStatus.PENDING) {
+        throw new BadRequestException(
+          this.i18n.t(ORDER_MESSAGES.REPAY_NOT_ALLOWED, { lang }),
+        );
+      }
+
+      const paymentExpiresAt = new Date(Date.now() + PAYMENT_HOLD_MS);
+      const updated = await this.prisma.order.updateMany({
+        where: {
+          id: order.id,
+          status: OrderStatus.PENDING_PAYMENT,
+          paymentStatus: PaymentStatus.PENDING,
+        },
         data: { paymentExpiresAt },
       });
-      return updatedOrder;
+
+      if (updated.count === 0) {
+        throw new BadRequestException(
+          this.i18n.t(ORDER_MESSAGES.PAYMENT_JUST_EXPIRED, { lang }),
+        );
+      }
+
+      return this.prisma.order.findUnique({ where: { id: order.id } });
     }
 
     if (order.status === OrderStatus.CANCELLED) {
-      const paymentExpiresAt = new Date(Date.now() + 30 * 60 * 1000);
+      if (!canReopenCancelledOrder(order)) {
+        throw new BadRequestException(
+          this.i18n.t(ORDER_MESSAGES.REPAY_NOT_ALLOWED, { lang }),
+        );
+      }
 
-      const updatedOrder = await this.prisma.$transaction(async (tx) => {
+      const paymentExpiresAt = new Date(Date.now() + PAYMENT_HOLD_MS);
+
+      return this.prisma.$transaction(async (tx) => {
         const claimResult = await tx.order.updateMany({
-          where: { id: order.id, status: OrderStatus.CANCELLED },
+          where: buildReopenCancelledWhere(order.id),
           data: {
             status: OrderStatus.PENDING_PAYMENT,
             paymentExpiresAt,
@@ -80,22 +120,28 @@ export class OrdersPaymentService {
 
         if (claimResult.count === 0) {
           throw new BadRequestException(
-            this.i18n.t(ORDER_MESSAGES.INVALID_STATUS, { lang }),
+            this.i18n.t(ORDER_MESSAGES.REPAY_NOT_ALLOWED, { lang }),
           );
         }
 
         const orderItems = await tx.orderItem.findMany({
           where: { orderId: order.id },
         });
+
+        if (orderItems.some((item) => item.productDiscountId !== null)) {
+          throw new BadRequestException(
+            this.i18n.t(ORDER_MESSAGES.REPAY_NOT_ALLOWED, { lang }),
+          );
+        }
+
         for (const item of orderItems) {
           const updatedProduct = await tx.product.updateMany({
             where: {
               id: item.productId,
+              isActive: true,
               stock: { gte: item.quantity },
             },
-            data: {
-              stock: { decrement: item.quantity },
-            },
+            data: { stock: { decrement: item.quantity } },
           });
 
           if (updatedProduct.count === 0) {
@@ -105,15 +151,13 @@ export class OrdersPaymentService {
           }
         }
 
-        return await tx.order.findUnique({ where: { id: order.id } });
+        return tx.order.findUnique({ where: { id: order.id } });
       });
-
-      return updatedOrder;
-    } else {
-      throw new BadRequestException(
-        this.i18n.t(ORDER_MESSAGES.INVALID_STATUS, { lang }),
-      );
     }
+
+    throw new BadRequestException(
+      this.i18n.t(ORDER_MESSAGES.REPAY_NOT_ALLOWED, { lang }),
+    );
   }
 
   async refundOrder(orderId: string, adminId: string, lang?: string) {
@@ -121,11 +165,11 @@ export class OrdersPaymentService {
       where: {
         id: orderId,
         status: OrderStatus.RETURNED,
-        refundStatus: { notIn: ['PROCESSING', 'COMPLETED'] },
+        refundStatus: {
+          notIn: [RefundStatus.PROCESSING, RefundStatus.COMPLETED],
+        },
       },
-      data: {
-        refundStatus: 'PROCESSING',
-      },
+      data: { refundStatus: RefundStatus.PROCESSING },
     });
 
     if (claimResult.count === 0) {
@@ -135,38 +179,36 @@ export class OrdersPaymentService {
     }
 
     try {
-      let isSuccess = false;
       const orderToRefund = await this.prisma.order.findUnique({
         where: { id: orderId },
       });
 
-      if (orderToRefund?.paymentMethod === 'VNPAY') {
-        isSuccess = await this.vnPayService.refund(
-          orderId,
-          Number(orderToRefund.totalAmount),
-          orderToRefund.paymentGatewayTxnId!,
-          orderToRefund.paymentGatewayPayDate!,
-          lang,
-        );
-      } else {
-        isSuccess = true; // COD, STRIPE etc. mock or actual implementation
-      }
+      const isSuccess =
+        orderToRefund?.paymentMethod === 'VNPAY'
+          ? await this.vnPayService.refund(
+              orderId,
+              Number(orderToRefund.totalAmount),
+              orderToRefund.paymentGatewayTxnId!,
+              orderToRefund.paymentGatewayPayDate!,
+              lang,
+            )
+          : true;
 
       if (isSuccess) {
         await this.prisma.$transaction(async (tx) => {
           const updated = await tx.order.updateMany({
-            where: { id: orderId, refundStatus: 'PROCESSING' },
+            where: { id: orderId, refundStatus: RefundStatus.PROCESSING },
             data: {
               status: OrderStatus.REFUNDED,
-              refundStatus: 'COMPLETED',
+              refundStatus: RefundStatus.COMPLETED,
             },
           });
 
           if (updated.count === 0) {
             await appendAuditTrail(tx, orderId, {
-              action: 'REFUND_STATE_DESYNC',
+              action: PAYMENT_AUDIT_ACTIONS.REFUND_STATE_DESYNC,
               adminId,
-              reason: 'Tiền đã được provider xử lý nhưng DB mất cờ PROCESSING',
+              reason: REFUND_AUDIT_REASONS.STATE_DESYNC,
             });
             console.error(`[CRITICAL] REFUND_STATE_DESYNC cho đơn ${orderId}`);
             return;
@@ -190,11 +232,10 @@ export class OrdersPaymentService {
         where: { id: orderId },
         data: { refundStatus: null },
       });
-      const errorMsg = (error as Error).message;
       throw new BadRequestException(
         this.i18n.t(ORDER_MESSAGES.REFUND_FAILED, {
           lang,
-          args: { reason: errorMsg },
+          args: { reason: (error as Error).message },
         }),
       );
     }
@@ -215,7 +256,7 @@ export class OrdersPaymentService {
     const order = await this.prisma.order.findUnique({
       where: { id: orderId },
     });
-    if (!order || order.refundStatus !== 'PROCESSING') {
+    if (!order || order.refundStatus !== RefundStatus.PROCESSING) {
       throw new BadRequestException(
         this.i18n.t(ORDER_MESSAGES.INVALID_STATUS, { lang }),
       );
@@ -228,7 +269,7 @@ export class OrdersPaymentService {
       });
 
       await appendAuditTrail(tx, orderId, {
-        action: 'FORCE_RESET_REFUND',
+        action: PAYMENT_AUDIT_ACTIONS.FORCE_RESET_REFUND,
         adminId,
         reason,
       });

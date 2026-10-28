@@ -1,11 +1,22 @@
 import { useQuery } from '@tanstack/react-query';
-import { productService, ProductQueryParams } from '@/services/product-service';
+import {
+  productService,
+  ProductQueryParams,
+  AdminProductQueryParams,
+} from '@/services/product-service';
 import { queryKeys } from './query-keys';
 
 export function useProducts(params?: ProductQueryParams) {
   return useQuery({
     queryKey: params ? [...queryKeys.products.all, params] : queryKeys.products.all,
     queryFn: () => productService.getAll(params),
+  });
+}
+
+export function useAdminProducts(params?: AdminProductQueryParams) {
+  return useQuery({
+    queryKey: ['admin-products', params],
+    queryFn: () => productService.getAdminProducts(params),
   });
 }
 

@@ -14,6 +14,7 @@ import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { UserRole } from '@prisma/client';
 import { WishlistService } from './wishlist.service';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
 interface RequestWithUser extends Request {
   user: {
@@ -23,6 +24,8 @@ interface RequestWithUser extends Request {
   };
 }
 
+@ApiTags('Wishlist')
+@ApiBearerAuth()
 @Controller('wishlist')
 @UseGuards(AuthGuard('jwt'), RolesGuard)
 @Roles(

@@ -3,8 +3,9 @@
 import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { Review, reviewService } from '@/services/review-service';
+import { getApiErrorMessage } from '@/utils/get-api-error-message';
 import { useAuthStore } from '@/store/useAuthStore';
-import { Star, MessageCircle, AlertCircle } from 'lucide-react';
+import { Star, MessageCircle, AlertCircle } from '@/components/base/icons';
 
 interface ProductReviewsProps {
   productId: string;
@@ -55,9 +56,8 @@ export function ProductReviews({ productId }: ProductReviewsProps) {
       setTitle('');
       setContent('');
       fetchReviews(1);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } catch (err: any) {
-      setSubmitError(err.response?.data?.message || t('errorSubmit'));
+    } catch (err: unknown) {
+      setSubmitError(getApiErrorMessage(err) || t('errorSubmit'));
     } finally {
       setIsSubmitting(false);
     }
