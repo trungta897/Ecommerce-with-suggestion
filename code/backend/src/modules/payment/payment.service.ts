@@ -1,14 +1,25 @@
-import { Injectable, Logger } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service';
 import { Order, OrderStatus, PaymentStatus } from '@prisma/client';
 import { VnPayService } from './vnpay.service';
 import { ReturnQueryFromVNPay } from 'vnpay';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { I18nService } from 'nestjs-i18n';
 import { appendAuditTrail } from '../../common/utils/audit-trail.util';
+import { ORDER_MESSAGES } from '../../common/constants/order-message.constant';
 import {
   PAYMENT_AUDIT_ACTIONS,
   REFUND_AUDIT_REASONS,
 } from '../../common/constants/order.constant';
+import {
+  buildPayableWhere,
+  isPayableNow,
+} from '../orders/order-payment.policy';
 
 const SUPERSEDED_TXN_REF_REGEX = /^[0-9a-fA-F]{32}\d+$/;
 
@@ -20,7 +31,94 @@ export class PaymentService {
     private readonly prisma: PrismaService,
     private readonly vnPayService: VnPayService,
     private readonly eventEmitter: EventEmitter2,
+    private readonly i18n: I18nService,
   ) {}
+
+  async createVnPayOrderForUser(
+    orderId: string,
+    userId: string,
+    ipAddr: string,
+    lang: string,
+  ) {
+    const order = await this.prisma.order.findUnique({
+      where: { id: orderId },
+    });
+
+    if (!order || order.userId !== userId) {
+      throw new NotFoundException(
+        this.i18n.t(ORDER_MESSAGES.NOT_FOUND, { lang }),
+      );
+    }
+
+    return this.createPaymentLinkForOrder(order, ipAddr, lang);
+  }
+
+  async createVnPayOrderForGuest(
+    orderId: string,
+    phone: string | undefined,
+    ipAddr: string,
+    lang: string,
+  ) {
+    if (!phone) {
+      throw new NotFoundException(
+        this.i18n.t(ORDER_MESSAGES.NOT_FOUND, { lang }),
+      );
+    }
+
+    const order = await this.prisma.order.findUnique({
+      where: { id: orderId },
+    });
+
+    if (!order || order.userId !== null || order.shippingPhone !== phone) {
+      throw new NotFoundException(
+        this.i18n.t(ORDER_MESSAGES.NOT_FOUND, { lang }),
+      );
+    }
+
+    return this.createPaymentLinkForOrder(order, ipAddr, lang);
+  }
+
+  private async createPaymentLinkForOrder(
+    order: Order,
+    ipAddr: string,
+    lang: string,
+  ) {
+    const now = new Date();
+    if (!isPayableNow(order, now)) {
+      throw new BadRequestException(
+        this.i18n.t(ORDER_MESSAGES.PAYMENT_WINDOW_CLOSED, { lang }),
+      );
+    }
+
+    // Format: 32 hex chars (orderId without hyphens) + 13 digits (timestamp) = 45 alphanumeric chars
+    const appTransId = `${order.id.replace(/-/g, '')}${Date.now()}`;
+
+    const updated = await this.prisma.order.updateMany({
+      where: buildPayableWhere(order.id, now),
+      data: { paymentGatewayTxnId: appTransId },
+    });
+
+    if (updated.count === 0) {
+      throw new BadRequestException(
+        this.i18n.t(ORDER_MESSAGES.PAYMENT_WINDOW_CLOSED, { lang }),
+      );
+    }
+
+    const amountToPayVnd = Math.round(
+      order.isDepositPayment
+        ? Number(order.depositAmount)
+        : Number(order.totalAmount),
+    );
+
+    const paymentUrl = this.vnPayService.createPaymentUrl(
+      order.id,
+      amountToPayVnd,
+      ipAddr,
+      appTransId,
+    );
+
+    return { orderUrl: paymentUrl };
+  }
 
   private async resolveOrderFromTxnRef(txnRef: string): Promise<Order | null> {
     const byCurrentTxnId = await this.prisma.order.findFirst({

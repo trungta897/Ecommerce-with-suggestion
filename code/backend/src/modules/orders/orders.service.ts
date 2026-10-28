@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
-import { OrderStatus, Prisma, ActivityType } from '@prisma/client';
+import { OrderStatus, Prisma } from '@prisma/client';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import {
   DEPOSIT_AMOUNT_VND,
@@ -210,20 +210,14 @@ export class OrdersService {
       return newOrder;
     });
 
-    // 8. Post-Transaction: Log PURCHASE activity
+    // 8. Post-Transaction: Emit order.created event for async activity logging
     if (cartItems.length > 0) {
-      try {
-        await this.prisma.userActivityLog.createMany({
-          data: cartItems.map((item) => ({
-            userId: userId || undefined,
-            sessionId: createOrderDto.sessionId || undefined,
-            productId: item.productId,
-            action: ActivityType.PURCHASE,
-          })),
-        });
-      } catch (err) {
-        console.error('Failed to log purchase activity:', err);
-      }
+      this.eventEmitter.emit('order.created', {
+        orderId: order.id,
+        userId: userId || undefined,
+        sessionId: createOrderDto.sessionId || undefined,
+        productIds: cartItems.map((item) => item.productId),
+      });
     }
 
     return order;

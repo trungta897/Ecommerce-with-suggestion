@@ -1,17 +1,16 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import {
-  Product,
-  OrderStatus,
-  VoucherScope,
-  Voucher,
-  Prisma,
-} from '@prisma/client';
+import { Product, VoucherScope, Voucher, Prisma } from '@prisma/client';
 import { I18nService } from 'nestjs-i18n';
 import { PrismaService } from '../../database/prisma.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { ORDER_MESSAGES } from '../../common/constants/order-message.constant';
 import { VOUCHER_MESSAGES } from '../../common/constants/voucher-message.constant';
-import { PROMOTION_MESSAGES } from '../../common/constants/promotion-message.constant';
+import {
+  claimFlashSaleQuotaTx,
+  claimInventoryTx,
+  claimVipPointsTx,
+  claimVoucherTx,
+} from './order-claims.helper';
 
 export interface CartItemWithProduct {
   productId: string;
@@ -37,8 +36,6 @@ export class OrdersCheckoutService {
     private readonly i18n: I18nService,
   ) {}
 
-  // ==================== PRE-TRANSACTION (Read-only / Validation) ====================
-
   async resolveCartItems(
     userId: string | null,
     createOrderDto: CreateOrderDto,
@@ -47,19 +44,16 @@ export class OrdersCheckoutService {
     let cartItems: CartItemWithProduct[] = [];
 
     if (userId) {
-      const dbCartItems = await this.prisma.cartItem.findMany({
+      cartItems = await this.prisma.cartItem.findMany({
         where: { userId },
         include: { product: true },
       });
-      cartItems = dbCartItems;
     } else {
-      // Guest Checkout - items must be in DTO
       if (!createOrderDto.items || createOrderDto.items.length === 0) {
         throw new BadRequestException(
           this.i18n.t(ORDER_MESSAGES.CART_EMPTY, { lang }),
         );
       }
-      // Fetch product details for guest items in a single batch query
       const productIds = createOrderDto.items.map((i) => i.productId);
       const products = await this.prisma.product.findMany({
         where: { id: { in: productIds } },
@@ -90,7 +84,6 @@ export class OrdersCheckoutService {
       );
     }
 
-    // Guard: Prevent purchasing inactive/discontinued products
     for (const item of cartItems) {
       if (!item.product.isActive) {
         throw new BadRequestException(
@@ -112,7 +105,6 @@ export class OrdersCheckoutService {
     const now = new Date();
     const productIds = cartItems.map((item) => item.productId);
 
-    // Batch query all active discounts for the products in cart
     const activeDiscounts = await this.prisma.productDiscount.findMany({
       where: {
         productId: { in: productIds },
@@ -123,7 +115,6 @@ export class OrdersCheckoutService {
       orderBy: { startDate: 'asc' },
     });
 
-    // Map each productId to its earliest active discount
     const discountMap = new Map<string, (typeof activeDiscounts)[0]>();
     for (const discount of activeDiscounts) {
       if (!discountMap.has(discount.productId)) {
@@ -145,7 +136,6 @@ export class OrdersCheckoutService {
       }
 
       const activeDiscount = discountMap.get(item.productId);
-
       let effectivePrice = item.product.discountPrice
         ? Number(item.product.discountPrice)
         : Number(item.product.price);
@@ -211,9 +201,9 @@ export class OrdersCheckoutService {
       );
     }
 
-    let eligibleSubtotal = subtotal;
+    let eligibleItems = itemsWithDiscount;
     if (voucher.scope === VoucherScope.CATEGORY && voucher.categoryId) {
-      const eligibleItems = itemsWithDiscount.filter(
+      eligibleItems = itemsWithDiscount.filter(
         (item) => item.product.categoryId === voucher.categoryId,
       );
       if (eligibleItems.length === 0) {
@@ -221,25 +211,8 @@ export class OrdersCheckoutService {
           this.i18n.t(VOUCHER_MESSAGES.CATEGORY_NOT_MATCHED, { lang }),
         );
       }
-
-      // Anti-Stacking Rule: Chặn voucher PERCENTAGE trên sản phẩm đang Flash Sale
-      if (voucher.type === 'PERCENTAGE') {
-        const hasFlashSale = eligibleItems.some(
-          (item) => item.productDiscountId !== null,
-        );
-        if (hasFlashSale) {
-          throw new BadRequestException(
-            this.i18n.t(VOUCHER_MESSAGES.FLASH_SALE_CONFLICT, { lang }),
-          );
-        }
-      }
-
-      eligibleSubtotal = eligibleItems.reduce(
-        (sum, item) => sum + item.effectivePrice * item.quantity,
-        0,
-      );
     } else if (voucher.scope === VoucherScope.PRODUCT && voucher.productId) {
-      const eligibleItems = itemsWithDiscount.filter(
+      eligibleItems = itemsWithDiscount.filter(
         (item) => item.productId === voucher.productId,
       );
       if (eligibleItems.length === 0) {
@@ -247,24 +220,22 @@ export class OrdersCheckoutService {
           this.i18n.t(VOUCHER_MESSAGES.PRODUCT_NOT_MATCHED, { lang }),
         );
       }
+    }
 
-      // Anti-Stacking Rule: Chặn voucher PERCENTAGE trên sản phẩm đang Flash Sale
-      if (voucher.type === 'PERCENTAGE') {
-        const hasFlashSale = eligibleItems.some(
-          (item) => item.productDiscountId !== null,
-        );
-        if (hasFlashSale) {
-          throw new BadRequestException(
-            this.i18n.t(VOUCHER_MESSAGES.FLASH_SALE_CONFLICT, { lang }),
-          );
-        }
-      }
-
-      eligibleSubtotal = eligibleItems.reduce(
-        (sum, item) => sum + item.effectivePrice * item.quantity,
-        0,
+    // Anti-Stacking Rule: Chặn voucher PERCENTAGE trên sản phẩm đang Flash Sale (cả CART, CATEGORY, PRODUCT)
+    if (
+      voucher.type === 'PERCENTAGE' &&
+      eligibleItems.some((item) => item.productDiscountId !== null)
+    ) {
+      throw new BadRequestException(
+        this.i18n.t(VOUCHER_MESSAGES.FLASH_SALE_CONFLICT, { lang }),
       );
     }
+
+    const eligibleSubtotal = eligibleItems.reduce(
+      (sum, item) => sum + item.effectivePrice * item.quantity,
+      0,
+    );
 
     let discountAmount = 0;
     if (voucher.type === 'FREE_SHIPPING') {
@@ -311,33 +282,12 @@ export class OrdersCheckoutService {
     }
   }
 
-  // ==================== TRANSACTION ATOMIC CLAIMS ====================
-
   async claimInventory(
     tx: Prisma.TransactionClient,
     items: ItemWithDiscount[],
     lang?: string,
   ): Promise<void> {
-    for (const item of items) {
-      const updatedProduct = await tx.product.updateMany({
-        where: {
-          id: item.productId,
-          stock: { gte: item.quantity },
-        },
-        data: {
-          stock: { decrement: item.quantity },
-        },
-      });
-
-      if (updatedProduct.count === 0) {
-        throw new BadRequestException(
-          this.i18n.t(ORDER_MESSAGES.FLASH_SALE_STOCK_RACE, {
-            lang,
-            args: { name: item.product.name },
-          }),
-        );
-      }
-    }
+    return claimInventoryTx(tx, this.i18n, items, lang);
   }
 
   async claimFlashSaleQuota(
@@ -346,25 +296,7 @@ export class OrdersCheckoutService {
     now: Date,
     lang?: string,
   ): Promise<void> {
-    for (const item of items) {
-      if (item.productDiscountId) {
-        const claimedDiscount = await tx.$executeRaw`
-          UPDATE product_discounts
-          SET flashSaleSold = flashSaleSold + ${item.quantity}
-          WHERE id = ${item.productDiscountId}
-            AND isActive = true
-            AND startDate <= ${now}
-            AND endDate >= ${now}
-            AND flashSaleSold + ${item.quantity} <= flashSaleQty
-        `;
-
-        if (claimedDiscount === 0) {
-          throw new BadRequestException(
-            this.i18n.t(PROMOTION_MESSAGES.FLASH_SALE_INSUFFICIENT, { lang }),
-          );
-        }
-      }
-    }
+    return claimFlashSaleQuotaTx(tx, this.i18n, items, now, lang);
   }
 
   async claimVipPoints(
@@ -373,20 +305,7 @@ export class OrdersCheckoutService {
     usedVipPoints: number,
     lang?: string,
   ): Promise<void> {
-    const updatedUser = await tx.user.updateMany({
-      where: {
-        id: userId,
-        vipPoints: { gte: usedVipPoints },
-      },
-      data: {
-        vipPoints: { decrement: usedVipPoints },
-      },
-    });
-    if (updatedUser.count === 0) {
-      throw new BadRequestException(
-        this.i18n.t(ORDER_MESSAGES.INSUFFICIENT_VIP_POINTS, { lang }),
-      );
-    }
+    return claimVipPointsTx(tx, this.i18n, userId, usedVipPoints, lang);
   }
 
   async claimVoucher(
@@ -397,56 +316,14 @@ export class OrdersCheckoutService {
     perUserLimit: number = 1,
     lang?: string,
   ): Promise<void> {
-    const claimed = await tx.$executeRaw`
-      UPDATE vouchers
-      SET usedCount = usedCount + 1
-      WHERE id = ${voucherId}
-        AND isActive = true
-        AND startDate <= NOW()
-        AND endDate >= NOW()
-        AND (usageLimit IS NULL OR usedCount + 1 <= usageLimit)
-    `;
-
-    if (claimed === 0) {
-      throw new BadRequestException(
-        this.i18n.t(VOUCHER_MESSAGES.SYSTEM_LIMIT_REACHED, { lang }),
-      );
-    }
-
-    const nonCancelledStatuses = {
-      notIn: [
-        OrderStatus.CANCELLED,
-        OrderStatus.RETURN_REJECTED,
-        OrderStatus.RETURNED,
-        OrderStatus.REFUNDED,
-      ],
-    };
-
-    let usedCountForUser = 0;
-    if (userId) {
-      usedCountForUser = await tx.userVoucherUsage.count({
-        where: {
-          voucherId,
-          userId,
-          order: { status: nonCancelledStatuses },
-        },
-      });
-    } else if (shippingPhone) {
-      usedCountForUser = await tx.userVoucherUsage.count({
-        where: {
-          voucherId,
-          order: {
-            shippingPhone,
-            status: nonCancelledStatuses,
-          },
-        },
-      });
-    }
-
-    if (usedCountForUser >= perUserLimit) {
-      throw new BadRequestException(
-        this.i18n.t(VOUCHER_MESSAGES.USER_LIMIT_REACHED, { lang }),
-      );
-    }
+    return claimVoucherTx(
+      tx,
+      this.i18n,
+      voucherId,
+      userId,
+      shippingPhone,
+      perUserLimit,
+      lang,
+    );
   }
 }

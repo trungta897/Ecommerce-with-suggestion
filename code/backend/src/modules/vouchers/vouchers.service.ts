@@ -10,6 +10,12 @@ import { VOUCHER_MESSAGES } from '../../common/constants/voucher-message.constan
 import { ValidateVoucherDto } from './dto/validate-voucher.dto';
 import { CreateVoucherDto } from './dto/create-voucher.dto';
 import { UpdateVoucherDto } from './dto/update-voucher.dto';
+import {
+  createVoucherHelper,
+  findAllVouchersHelper,
+  getVoucherUsagesHelper,
+  updateVoucherHelper,
+} from './vouchers-admin.helper';
 
 @Injectable()
 export class VouchersService {
@@ -17,6 +23,29 @@ export class VouchersService {
     private readonly prisma: PrismaService,
     private readonly i18n: I18nService,
   ) {}
+
+  async validateVoucherQuery(
+    code: string | undefined,
+    subtotalStr: string | undefined,
+    phone: string | undefined,
+    userId?: string,
+    lang?: string,
+  ) {
+    if (!code || !subtotalStr) {
+      throw new BadRequestException(
+        this.i18n.t(VOUCHER_MESSAGES.REQUIRED_FIELDS, { lang }),
+      );
+    }
+
+    const subtotal = Number(subtotalStr);
+    if (isNaN(subtotal) || subtotal < 0) {
+      throw new BadRequestException(
+        this.i18n.t(VOUCHER_MESSAGES.INVALID_SUBTOTAL, { lang }),
+      );
+    }
+
+    return this.validateVoucher({ code, subtotal, phone }, userId, lang);
+  }
 
   async validateVoucher(
     dto: ValidateVoucherDto,
@@ -65,7 +94,6 @@ export class VouchersService {
       }
     }
 
-    // Check perUserLimit: User vs Guest
     let usedCountForUser = 0;
     const nonCancelledStatuses = {
       notIn: [
@@ -81,9 +109,7 @@ export class VouchersService {
         where: {
           voucherId: voucher.id,
           userId,
-          order: {
-            status: nonCancelledStatuses,
-          },
+          order: { status: nonCancelledStatuses },
         },
       });
     } else if (phone) {
@@ -113,8 +139,8 @@ export class VouchersService {
       );
     }
 
-    // Scope-based Discount Calculation
     let eligibleSubtotal = subtotal;
+    let eligibleProductIds = (items || []).map((i) => i.productId);
 
     if (voucher.scope === VoucherScope.CATEGORY && voucher.categoryId) {
       if (!items || items.length === 0) {
@@ -123,10 +149,9 @@ export class VouchersService {
         );
       }
 
-      const productIds = items.map((i) => i.productId);
       const matchingProducts = await this.prisma.product.findMany({
         where: {
-          id: { in: productIds },
+          id: { in: eligibleProductIds },
           categoryId: voucher.categoryId,
         },
         select: { id: true },
@@ -143,29 +168,11 @@ export class VouchersService {
         );
       }
 
+      eligibleProductIds = eligibleItems.map((i) => i.productId);
       eligibleSubtotal = eligibleItems.reduce(
         (sum, item) => sum + Number(item.price) * item.quantity,
         0,
       );
-
-      // Anti-Stacking Rule: Chặn voucher PERCENTAGE trên sản phẩm đang Flash Sale
-      if (voucher.type === 'PERCENTAGE') {
-        const activeFlashSale = await this.prisma.productDiscount.findFirst({
-          where: {
-            productId: { in: eligibleItems.map((i) => i.productId) },
-            isActive: true,
-            startDate: { lte: now },
-            endDate: { gte: now },
-          },
-          orderBy: { startDate: 'asc' },
-        });
-
-        if (activeFlashSale) {
-          throw new BadRequestException(
-            this.i18n.t(VOUCHER_MESSAGES.FLASH_SALE_CONFLICT, { lang }),
-          );
-        }
-      }
     } else if (voucher.scope === VoucherScope.PRODUCT && voucher.productId) {
       if (!items || items.length === 0) {
         throw new BadRequestException(
@@ -183,28 +190,29 @@ export class VouchersService {
         );
       }
 
+      eligibleProductIds = [voucher.productId];
       eligibleSubtotal = eligibleItems.reduce(
         (sum, item) => sum + Number(item.price) * item.quantity,
         0,
       );
+    }
 
-      // Anti-Stacking Rule: Chặn voucher PERCENTAGE trên sản phẩm đang Flash Sale
-      if (voucher.type === 'PERCENTAGE') {
-        const activeFlashSale = await this.prisma.productDiscount.findFirst({
-          where: {
-            productId: voucher.productId,
-            isActive: true,
-            startDate: { lte: now },
-            endDate: { gte: now },
-          },
-          orderBy: { startDate: 'asc' },
-        });
+    // Anti-Stacking Rule: Chặn voucher PERCENTAGE trên sản phẩm đang Flash Sale (cả CART, CATEGORY, PRODUCT)
+    if (voucher.type === 'PERCENTAGE' && eligibleProductIds.length > 0) {
+      const activeFlashSale = await this.prisma.productDiscount.findFirst({
+        where: {
+          productId: { in: eligibleProductIds },
+          isActive: true,
+          startDate: { lte: now },
+          endDate: { gte: now },
+        },
+        orderBy: { startDate: 'asc' },
+      });
 
-        if (activeFlashSale) {
-          throw new BadRequestException(
-            this.i18n.t(VOUCHER_MESSAGES.FLASH_SALE_CONFLICT, { lang }),
-          );
-        }
+      if (activeFlashSale) {
+        throw new BadRequestException(
+          this.i18n.t(VOUCHER_MESSAGES.FLASH_SALE_CONFLICT, { lang }),
+        );
       }
     }
 
@@ -219,7 +227,7 @@ export class VouchersService {
     } else if (voucher.type === 'FIXED_AMOUNT') {
       discountAmount = Math.min(Number(voucher.value), eligibleSubtotal);
     } else if (voucher.type === 'FREE_SHIPPING') {
-      discountAmount = 0; // The frontend will handle free shipping
+      discountAmount = 0;
     }
 
     return {
@@ -270,71 +278,11 @@ export class VouchersService {
   }
 
   async getVoucherUsages(voucherId: string, page = 1, limit = 10) {
-    const skip = (page - 1) * limit;
-
-    const [usages, total] = await Promise.all([
-      this.prisma.userVoucherUsage.findMany({
-        where: { voucherId },
-        include: {
-          user: {
-            select: {
-              id: true,
-              fullName: true,
-              email: true,
-              phone: true,
-            },
-          },
-          order: {
-            select: {
-              id: true,
-              totalAmount: true,
-              status: true,
-              shippingPhone: true,
-              shippingName: true,
-              createdAt: true,
-            },
-          },
-        },
-        orderBy: { usedAt: 'desc' },
-        skip,
-        take: limit,
-      }),
-      this.prisma.userVoucherUsage.count({ where: { voucherId } }),
-    ]);
-
-    return {
-      data: usages,
-      meta: { total, page, limit, totalPages: Math.ceil(total / limit) },
-    };
+    return getVoucherUsagesHelper(this.prisma, voucherId, page, limit);
   }
 
   async findAll(page = 1, limit = 10, search?: string) {
-    const skip = (page - 1) * limit;
-    const where: Prisma.VoucherWhereInput = search
-      ? {
-          code: { contains: search },
-        }
-      : {};
-
-    const [data, total] = await Promise.all([
-      this.prisma.voucher.findMany({
-        where,
-        include: {
-          category: { select: { id: true, name: true } },
-          product: { select: { id: true, name: true } },
-          _count: { select: { usages: true } },
-        },
-        skip,
-        take: limit,
-        orderBy: { createdAt: 'desc' },
-      }),
-      this.prisma.voucher.count({ where }),
-    ]);
-
-    return {
-      data,
-      meta: { total, page, limit, totalPages: Math.ceil(total / limit) },
-    };
+    return findAllVouchersHelper(this.prisma, page, limit, search);
   }
 
   async findOne(id: string, lang?: string) {
@@ -354,32 +302,11 @@ export class VouchersService {
   }
 
   async create(dto: CreateVoucherDto) {
-    const { startDate, endDate, ...rest } = dto;
-    return this.prisma.voucher.create({
-      data: {
-        ...rest,
-        startDate: new Date(startDate),
-        endDate: new Date(endDate),
-      },
-    });
+    return createVoucherHelper(this.prisma, dto);
   }
 
   async update(id: string, dto: UpdateVoucherDto) {
-    const { startDate, endDate, ...rest } = dto;
-    const updateData: Prisma.VoucherUpdateInput = {
-      ...rest,
-    };
-    if (startDate) {
-      updateData.startDate = new Date(startDate);
-    }
-    if (endDate) {
-      updateData.endDate = new Date(endDate);
-    }
-
-    return this.prisma.voucher.update({
-      where: { id },
-      data: updateData,
-    });
+    return updateVoucherHelper(this.prisma, id, dto);
   }
 
   async toggleStatus(id: string, lang?: string) {

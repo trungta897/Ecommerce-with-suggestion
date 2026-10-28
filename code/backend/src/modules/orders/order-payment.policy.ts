@@ -52,7 +52,21 @@ export function buildPayableWhere(
   };
 }
 
-export function canReopenCancelledOrder(order: Order): boolean {
+export type OrderReopenCheckTarget = Pick<
+  Order,
+  | 'status'
+  | 'paymentExpiresAt'
+  | 'paymentStatus'
+  | 'voucherId'
+  | 'paymentMethod'
+  | 'isDepositPayment'
+> & {
+  vipDiscountAmount: Prisma.Decimal | number;
+};
+
+export function canReopenCancelledOrder(
+  order: OrderReopenCheckTarget,
+): boolean {
   return (
     order.status === OrderStatus.CANCELLED &&
     Boolean(order.paymentExpiresAt) &&

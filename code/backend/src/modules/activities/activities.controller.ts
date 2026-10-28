@@ -11,7 +11,9 @@ import type { Request } from 'express';
 import { JwtService } from '@nestjs/jwt';
 import { ActivitiesService } from './activities.service';
 import { LogActivityDto } from './dto/log-activity.dto';
+import { ApiTags } from '@nestjs/swagger';
 
+@ApiTags('Activities')
 @Controller('activities')
 export class ActivitiesController {
   constructor(

@@ -10,7 +10,24 @@ import { StorageService } from '../storage/storage.service';
 import { RedisService } from '../redis/redis.service';
 import { I18nService } from 'nestjs-i18n';
 import 'multer';
-import { Prisma } from '@prisma/client';
+import { Category, Prisma, Product } from '@prisma/client';
+import { DEFAULT_LANG } from '../../common/constants/order.constant';
+import {
+  DEFAULT_HOME_SECTION_SLUGS,
+  findAllAdminProductsHelper,
+  getHomeSectionsHelper,
+  type HomeSectionResult,
+} from './products-home.helper';
+
+export interface PaginatedProductsResult {
+  data: Array<Product & { category: Category | null }>;
+  metadata: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
+}
 
 @Injectable()
 export class ProductsService {
@@ -18,7 +35,7 @@ export class ProductsService {
     private readonly prisma: PrismaService,
     private readonly storage: StorageService,
     private readonly redis: RedisService,
-    private i18n: I18nService,
+    private readonly i18n: I18nService,
   ) {}
 
   async findAll(
@@ -31,7 +48,7 @@ export class ProductsService {
     maxPrice?: string,
     minRating?: string,
     sort?: string,
-  ) {
+  ): Promise<PaginatedProductsResult> {
     const skip = (page - 1) * limit;
     const where: Prisma.ProductWhereInput = includeInactive
       ? {}
@@ -87,14 +104,11 @@ export class ProductsService {
     if (!skipCache) {
       const cachedData = await this.redis.get(cacheKey);
       if (cachedData) {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-return
-        return JSON.parse(cachedData);
+        return JSON.parse(cachedData) as PaginatedProductsResult;
       }
     }
 
     const [data, total] = await Promise.all([
-      // [EAGER LOADING] Sử dụng include để lấy kèm category, tránh lỗi N+1 Query
-      // [PAGINATION] Cơ chế phân trang được áp dụng thông qua skip và take
       this.prisma.product.findMany({
         where,
         include: {
@@ -107,7 +121,7 @@ export class ProductsService {
       this.prisma.product.count({ where }),
     ]);
 
-    const result = {
+    const result: PaginatedProductsResult = {
       data,
       metadata: {
         total,
@@ -118,7 +132,7 @@ export class ProductsService {
     };
 
     if (!skipCache) {
-      await this.redis.set(cacheKey, JSON.stringify(result), 300); // cache for 5 minutes
+      await this.redis.set(cacheKey, JSON.stringify(result), 300);
     }
 
     return result;
@@ -132,69 +146,18 @@ export class ProductsService {
     status?: string,
     stockStatus?: string,
   ) {
-    const skip = (page - 1) * limit;
-    const where: Prisma.ProductWhereInput = {};
-
-    if (status === 'active') {
-      where.isActive = true;
-    } else if (status === 'inactive') {
-      where.isActive = false;
-    }
-
-    if (stockStatus === 'in_stock') {
-      where.stock = { gt: 0 };
-    } else if (stockStatus === 'out_of_stock') {
-      where.stock = { lte: 0 };
-    }
-
-    if (categorySlug && categorySlug !== 'all') {
-      where.category = { slug: categorySlug };
-    }
-
-    if (q) {
-      const keywords = q
-        .trim()
-        .split(/\s+/)
-        .filter((w) => w.length > 0);
-
-      if (keywords.length > 0) {
-        where.AND = keywords.map((kw) => ({
-          OR: [
-            { name: { contains: kw } },
-            { brand: { contains: kw } },
-            { description: { contains: kw } },
-          ],
-        }));
-      }
-    }
-
-    const [data, total] = await Promise.all([
-      this.prisma.product.findMany({
-        where,
-        skip,
-        take: Number(limit),
-        orderBy: { createdAt: 'desc' },
-        include: {
-          category: {
-            select: { id: true, name: true, slug: true },
-          },
-        },
-      }),
-      this.prisma.product.count({ where }),
-    ]);
-
-    return {
-      data,
-      metadata: {
-        total,
-        page: Number(page),
-        limit: Number(limit),
-        totalPages: Math.ceil(total / limit),
-      },
-    };
+    return findAllAdminProductsHelper(
+      this.prisma,
+      page,
+      limit,
+      categorySlug,
+      q,
+      status,
+      stockStatus,
+    );
   }
 
-  async findById(id: string, lang: string = 'vi') {
+  async findById(id: string, lang: string = DEFAULT_LANG) {
     const product = await this.prisma.product.findUnique({
       where: { id },
       include: { category: true },
@@ -205,7 +168,7 @@ export class ProductsService {
     return product;
   }
 
-  async findBySlug(slug: string, lang: string = 'vi') {
+  async findBySlug(slug: string, lang: string = DEFAULT_LANG) {
     const product = await this.prisma.product.findUnique({
       where: { slug },
       include: { category: true },
@@ -216,7 +179,7 @@ export class ProductsService {
     return product;
   }
 
-  async create(dto: CreateProductDto, lang: string = 'vi') {
+  async create(dto: CreateProductDto, lang: string = DEFAULT_LANG) {
     const existing = await this.prisma.product.findUnique({
       where: { slug: dto.slug },
     });
@@ -237,7 +200,7 @@ export class ProductsService {
     return result;
   }
 
-  async update(id: string, dto: UpdateProductDto, lang: string = 'vi') {
+  async update(id: string, dto: UpdateProductDto, lang: string = DEFAULT_LANG) {
     const existingProduct = await this.findById(id, lang);
     if (dto.slug) {
       const existing = await this.prisma.product.findUnique({
@@ -262,7 +225,7 @@ export class ProductsService {
     return result;
   }
 
-  async remove(id: string, lang: string = 'vi') {
+  async remove(id: string, lang: string = DEFAULT_LANG) {
     const existingProduct = await this.findById(id, lang);
     const result = await this.prisma.product.update({
       where: { id: existingProduct.id },
@@ -274,77 +237,15 @@ export class ProductsService {
   }
 
   async getHomeSections(
-    slugs: string[] = [
-      'laptop',
-      'man-hinh',
-      'may-tinh-de-ban',
-      'o-cung',
-      'vga',
-      'ram',
-    ],
+    slugs: string[] = DEFAULT_HOME_SECTION_SLUGS,
     limitPerCategory: number = 8,
-  ) {
-    const cacheKey = `products:home-sections:${slugs.join(',')}:${limitPerCategory}`;
-    const cached = await this.redis.get(cacheKey);
-    if (cached) {
-      try {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-return
-        return JSON.parse(cached);
-      } catch {
-        // invalid json, proceed
-      }
-    }
-
-    const sections = await Promise.all(
-      slugs.map(async (slug) => {
-        const category = await this.prisma.category.findUnique({
-          where: { slug },
-          include: {
-            children: {
-              select: { id: true, slug: true },
-            },
-          },
-        });
-
-        if (!category) {
-          return {
-            slug,
-            name: slug,
-            products: [],
-          };
-        }
-
-        const categoryIds = [
-          category.id,
-          ...category.children.map((c) => c.id),
-        ];
-
-        const products = await this.prisma.product.findMany({
-          where: {
-            categoryId: { in: categoryIds },
-            isActive: true,
-          },
-          include: {
-            category: true,
-          },
-          orderBy: {
-            soldCount: 'desc',
-          },
-          take: Number(limitPerCategory),
-        });
-
-        return {
-          slug: category.slug,
-          name: category.name,
-          products,
-        };
-      }),
+  ): Promise<HomeSectionResult[]> {
+    return getHomeSectionsHelper(
+      this.prisma,
+      this.redis,
+      slugs,
+      limitPerCategory,
     );
-
-    // Cache home sections for 120 seconds
-    await this.redis.set(cacheKey, JSON.stringify(sections), 120);
-
-    return sections;
   }
 
   async uploadImage(file: Express.Multer.File): Promise<string> {
