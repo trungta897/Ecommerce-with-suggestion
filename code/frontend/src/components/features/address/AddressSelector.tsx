@@ -49,27 +49,26 @@ export const AddressSelector: React.FC<AddressSelectorProps> = ({
   const [isListOpen, setIsListOpen] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Filtered lists matching name or mergedFrom
   const filteredProvinces = useMemo(() => {
     const query = searchQuery.toLowerCase().trim();
     if (!query) return provinces;
-    return provinces.filter((p) => {
-      const matchName =
-        p.fullName.toLowerCase().includes(query) || p.name.toLowerCase().includes(query);
-      const matchMerged = p.mergedFrom ? p.mergedFrom.toLowerCase().includes(query) : false;
-      return matchName || matchMerged;
-    });
+    return provinces.filter(
+      (p) =>
+        p.fullName.toLowerCase().includes(query) ||
+        p.name.toLowerCase().includes(query) ||
+        (p.mergedFrom ? p.mergedFrom.toLowerCase().includes(query) : false)
+    );
   }, [provinces, searchQuery]);
 
   const filteredWards = useMemo(() => {
     const query = searchQuery.toLowerCase().trim();
     if (!query) return wards;
-    return wards.filter((w) => {
-      const matchName =
-        w.fullName.toLowerCase().includes(query) || w.name.toLowerCase().includes(query);
-      const matchMerged = w.mergedFrom ? w.mergedFrom.toLowerCase().includes(query) : false;
-      return matchName || matchMerged;
-    });
+    return wards.filter(
+      (w) =>
+        w.fullName.toLowerCase().includes(query) ||
+        w.name.toLowerCase().includes(query) ||
+        (w.mergedFrom ? w.mergedFrom.toLowerCase().includes(query) : false)
+    );
   }, [wards, searchQuery]);
 
   const onAddressChangeRef = useRef(onAddressChange);
@@ -77,14 +76,11 @@ export const AddressSelector: React.FC<AddressSelectorProps> = ({
     onAddressChangeRef.current = onAddressChange;
   }, [onAddressChange]);
 
-  // Compute Full Address & Notify parent
   useEffect(() => {
     if (onAddressChangeRef.current) {
-      const parts: string[] = [];
-      if (street.trim()) parts.push(street.trim());
-      if (selectedWard) parts.push(selectedWard.fullName);
-      if (selectedProvince) parts.push(selectedProvince.fullName);
-
+      const parts = [street.trim(), selectedWard?.fullName, selectedProvince?.fullName].filter(
+        Boolean
+      ) as string[];
       const fullAddr = parts.join(', ');
       onAddressChangeRef.current(fullAddr || initialAddress, {
         provinceName: selectedProvince?.fullName || '',
@@ -110,14 +106,15 @@ export const AddressSelector: React.FC<AddressSelectorProps> = ({
     setIsListOpen(false);
   };
 
+  const isCurrentStepLoading = activeStep === 'province' ? loadingProvinces : loadingWards;
+  const currentItems = activeStep === 'province' ? filteredProvinces : filteredWards;
+  const currentSelectedId = activeStep === 'province' ? selectedProvince?.id : selectedWard?.id;
+
   return (
     <div className="w-full space-y-4">
-      {/* 2-STEP LOCATION SELECTOR CARD */}
       <div className="border border-gray-200 rounded-2xl bg-white shadow-sm overflow-hidden">
-        {/* STEP HEADER NAVIGATION */}
         <div className="p-4 bg-gray-50/70 border-b border-gray-100">
           <div className="relative flex flex-col gap-3">
-            {/* Step 1: Province */}
             <div
               onClick={() => {
                 if (disabled) return;
@@ -134,11 +131,9 @@ export const AddressSelector: React.FC<AddressSelectorProps> = ({
               <div className="flex flex-col items-center mt-0.5">
                 <div
                   className={`w-3.5 h-3.5 rounded-full ring-4 transition-all ${
-                    selectedProvince
+                    selectedProvince || activeStep === 'province'
                       ? 'bg-blue-600 ring-blue-100'
-                      : activeStep === 'province'
-                        ? 'bg-blue-600 ring-blue-100'
-                        : 'bg-gray-300 ring-gray-100'
+                      : 'bg-gray-300 ring-gray-100'
                   }`}
                 />
                 <div className="w-0.5 h-6 bg-gray-200 mt-1" />
@@ -155,7 +150,6 @@ export const AddressSelector: React.FC<AddressSelectorProps> = ({
               </div>
             </div>
 
-            {/* Step 2: Ward */}
             <div
               onClick={() => {
                 if (disabled || !selectedProvince) return;
@@ -174,11 +168,9 @@ export const AddressSelector: React.FC<AddressSelectorProps> = ({
               <div className="flex flex-col items-center mt-0.5">
                 <div
                   className={`w-3.5 h-3.5 rounded-full ring-4 transition-all ${
-                    selectedWard
+                    selectedWard || activeStep === 'ward'
                       ? 'bg-blue-600 ring-blue-100'
-                      : activeStep === 'ward'
-                        ? 'bg-blue-600 ring-blue-100'
-                        : 'bg-gray-300 ring-gray-100'
+                      : 'bg-gray-300 ring-gray-100'
                   }`}
                 />
               </div>
@@ -194,7 +186,6 @@ export const AddressSelector: React.FC<AddressSelectorProps> = ({
           </div>
         </div>
 
-        {/* SEARCH BAR & LIST ACCORDION */}
         <div className="p-3">
           <div className="relative flex items-center">
             <input
@@ -222,59 +213,27 @@ export const AddressSelector: React.FC<AddressSelectorProps> = ({
             </div>
           </div>
 
-          {/* LIST ITEMS */}
           {isListOpen && (
             <div className="mt-2.5 max-h-64 overflow-y-auto divide-y divide-gray-100 rounded-xl border border-gray-100 bg-white">
-              {activeStep === 'province' ? (
-                loadingProvinces ? (
-                  <div className="py-8 flex flex-col items-center justify-center text-gray-400 gap-2">
-                    <Loader2 className="w-5 h-5 animate-spin text-blue-600" />
-                    <span className="text-xs">{t('loading')}</span>
-                  </div>
-                ) : filteredProvinces.length === 0 ? (
-                  <div className="py-8 text-center text-xs text-gray-400">{t('noResults')}</div>
-                ) : (
-                  filteredProvinces.map((p) => {
-                    const isSelected = selectedProvince?.id === p.id;
-                    return (
-                      <button
-                        key={p.id}
-                        type="button"
-                        onClick={() => handleSelectProvince(p)}
-                        className={`w-full px-4 py-3 text-left transition-colors flex items-center justify-between ${
-                          isSelected
-                            ? 'bg-blue-50/80 text-blue-700'
-                            : 'hover:bg-gray-50/80 text-gray-900'
-                        }`}
-                      >
-                        <div className="flex-1 min-w-0 pr-2">
-                          <div className="text-sm font-medium leading-snug">{p.fullName}</div>
-                          {p.mergedFrom && (
-                            <div className="text-xs text-gray-400 font-normal leading-normal mt-0.5">
-                              {p.mergedFrom}
-                            </div>
-                          )}
-                        </div>
-                        {isSelected && <Check className="w-4 h-4 text-blue-600 flex-shrink-0" />}
-                      </button>
-                    );
-                  })
-                )
-              ) : loadingWards ? (
+              {isCurrentStepLoading ? (
                 <div className="py-8 flex flex-col items-center justify-center text-gray-400 gap-2">
                   <Loader2 className="w-5 h-5 animate-spin text-blue-600" />
                   <span className="text-xs">{t('loading')}</span>
                 </div>
-              ) : filteredWards.length === 0 ? (
+              ) : currentItems.length === 0 ? (
                 <div className="py-8 text-center text-xs text-gray-400">{t('noResults')}</div>
               ) : (
-                filteredWards.map((w) => {
-                  const isSelected = selectedWard?.id === w.id;
+                currentItems.map((item) => {
+                  const isSelected = currentSelectedId === item.id;
                   return (
                     <button
-                      key={w.id}
+                      key={item.id}
                       type="button"
-                      onClick={() => handleSelectWard(w)}
+                      onClick={() =>
+                        activeStep === 'province'
+                          ? handleSelectProvince(item)
+                          : handleSelectWard(item as WardItem)
+                      }
                       className={`w-full px-4 py-3 text-left transition-colors flex items-center justify-between ${
                         isSelected
                           ? 'bg-blue-50/80 text-blue-700'
@@ -282,10 +241,10 @@ export const AddressSelector: React.FC<AddressSelectorProps> = ({
                       }`}
                     >
                       <div className="flex-1 min-w-0 pr-2">
-                        <div className="text-sm font-medium leading-snug">{w.fullName}</div>
-                        {w.mergedFrom && (
+                        <div className="text-sm font-medium leading-snug">{item.fullName}</div>
+                        {item.mergedFrom && (
                           <div className="text-xs text-gray-400 font-normal leading-normal mt-0.5">
-                            {w.mergedFrom}
+                            {item.mergedFrom}
                           </div>
                         )}
                       </div>
@@ -299,7 +258,6 @@ export const AddressSelector: React.FC<AddressSelectorProps> = ({
         </div>
       </div>
 
-      {/* STREET / DETAILED ADDRESS INPUT */}
       <div>
         <label className="block text-xs font-semibold text-gray-700 mb-1">{t('street')} *</label>
         <input
@@ -315,7 +273,6 @@ export const AddressSelector: React.FC<AddressSelectorProps> = ({
         {error && <p className="mt-1.5 text-xs font-medium text-red-500">{error}</p>}
       </div>
 
-      {/* FULL ADDRESS PREVIEW BOX */}
       {(selectedProvince || initialAddress) && (
         <div className="flex items-start p-3 bg-gray-50 border border-gray-200 rounded-xl text-xs text-gray-600 shadow-inner">
           <MapPin className="w-4 h-4 text-blue-600 flex-shrink-0 mr-2 mt-0.5" />

@@ -44,7 +44,6 @@ export function VoucherFormModal({
 
   useEffect(() => {
     if (isOpen) {
-      // Load categories & popular products for selection
       categoryService
         .getAll()
         .then((data) => setCategories(data || []))
@@ -57,41 +56,23 @@ export function VoucherFormModal({
   }, [isOpen]);
 
   useEffect(() => {
-    if (editingVoucher) {
-      setCode(editingVoucher.code);
-      setType(editingVoucher.type);
-      setScope(editingVoucher.scope || 'CART');
-      setValue(Number(editingVoucher.value));
-      setMaxDiscount(editingVoucher.maxDiscount ? Number(editingVoucher.maxDiscount) : '');
-      setMinOrderValue(Number(editingVoucher.minOrderValue) || 0);
-      setUsageLimit(editingVoucher.usageLimit ? Number(editingVoucher.usageLimit) : '');
-      setPerUserLimit(editingVoucher.perUserLimit || 1);
-      setIsPublic(editingVoucher.isPublic ?? true);
-      setCategoryId(editingVoucher.categoryId || '');
-      setProductId(editingVoucher.productId || '');
-      setStartDate(
-        editingVoucher.startDate
-          ? new Date(editingVoucher.startDate).toISOString().slice(0, 16)
-          : ''
-      );
-      setEndDate(
-        editingVoucher.endDate ? new Date(editingVoucher.endDate).toISOString().slice(0, 16) : ''
-      );
-    } else {
-      setCode('');
-      setType('PERCENTAGE');
-      setScope('CART');
-      setValue(0);
-      setMaxDiscount('');
-      setMinOrderValue(0);
-      setUsageLimit('');
-      setPerUserLimit(1);
-      setIsPublic(true);
-      setCategoryId('');
-      setProductId('');
-      setStartDate('');
-      setEndDate('');
-    }
+    setCode(editingVoucher?.code || '');
+    setType(editingVoucher?.type || 'PERCENTAGE');
+    setScope(editingVoucher?.scope || 'CART');
+    setValue(editingVoucher ? Number(editingVoucher.value) : 0);
+    setMaxDiscount(editingVoucher?.maxDiscount ? Number(editingVoucher.maxDiscount) : '');
+    setMinOrderValue(editingVoucher ? Number(editingVoucher.minOrderValue) || 0 : 0);
+    setUsageLimit(editingVoucher?.usageLimit ? Number(editingVoucher.usageLimit) : '');
+    setPerUserLimit(editingVoucher?.perUserLimit || 1);
+    setIsPublic(editingVoucher?.isPublic ?? true);
+    setCategoryId(editingVoucher?.categoryId || '');
+    setProductId(editingVoucher?.productId || '');
+    setStartDate(
+      editingVoucher?.startDate ? new Date(editingVoucher.startDate).toISOString().slice(0, 16) : ''
+    );
+    setEndDate(
+      editingVoucher?.endDate ? new Date(editingVoucher.endDate).toISOString().slice(0, 16) : ''
+    );
   }, [editingVoucher, isOpen]);
 
   if (!isOpen) return null;
