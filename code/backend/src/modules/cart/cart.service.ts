@@ -9,7 +9,8 @@ import { AddToCartDto } from './dto/add-to-cart.dto';
 import { UpdateCartDto } from './dto/update-cart.dto';
 import { MergeCartDto } from './dto/merge-cart.dto';
 import { RedisService } from '../redis/redis.service';
-import { Product } from '@prisma/client';
+import { ActivityType, Product } from '@prisma/client';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 export interface CartItemWithProduct {
   userId: string;
@@ -31,6 +32,7 @@ export class CartService {
     private prisma: PrismaService,
     private i18n: I18nService,
     private redisService: RedisService,
+    private eventEmitter: EventEmitter2,
   ) {}
 
   private async warmupRedis(userId: string): Promise<Record<string, string>> {
@@ -146,6 +148,12 @@ export class CartService {
     );
     await this.redisService.sadd('cart_updates', userId);
 
+    this.eventEmitter.emit('activity.log', {
+      userId,
+      productId: dto.productId,
+      action: ActivityType.ADD_TO_CART,
+    });
+
     return { userId, productId: dto.productId, quantity: newQuantity };
   }
 
@@ -202,6 +210,13 @@ export class CartService {
     const cartKey = `cart:${userId}`;
     await this.redisService.hdel(cartKey, productId);
     await this.redisService.sadd('cart_updates', userId);
+
+    this.eventEmitter.emit('activity.log', {
+      userId,
+      productId,
+      action: ActivityType.REMOVE_FROM_CART,
+    });
+
     return { success: true };
   }
 

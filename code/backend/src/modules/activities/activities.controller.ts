@@ -38,8 +38,8 @@ export class ActivitiesController {
       }
 
       if (token) {
-        const decoded = this.jwtService.decode<{ sub?: string }>(token);
-        return decoded?.sub || null;
+        const verified = this.jwtService.verify<{ sub?: string }>(token);
+        return verified?.sub || null;
       }
     } catch {
       return null;
