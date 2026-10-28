@@ -80,3 +80,11 @@
   - [x] Tái cấu trúc 8 file cũ vượt 300 dòng (`orders-checkout.service.ts`, `activities.service.ts`, `vouchers.service.ts`, `products.service.ts`, `ProductForm.tsx`, `products/[id]/page.tsx`, `AddressSelector.tsx`, `VoucherFormModal.tsx`) đưa 100% file xử lý logic trong toàn dự án về `< 300` dòng.
   - [x] Bổ sung bộ Unit Tests cốt lõi (`order-payment.policy.spec.ts`, `payment.service.spec.ts`), thiết lập GitHub Actions CI (`.github/workflows/ci.yml`) và đồng bộ `project_plan.md`, `erd.md`, `sequence_vnpay_ipn.md`.
 
+- [x] **13. Nâng Cấp Hệ Thống Gợi Ý Sản Phẩm Lai (Real-time Folding-in Hybrid, Bảo Mật JWT & Đồng Bộ Xếp Hạng AI)**
+  - [x] Nâng cấp `ml/service/models/recommender.py` và `ml/service/api/recommend.py`: Kết hợp thực tế 3 nguồn điểm số (`50% SVD Latent Factors + 35% TF-IDF Cosine Similarity + 15% Bayesian Popular Prior`) dựa trên danh sách `items` (`sourceExternalId`) và `weights` thời gian thực, xóa bỏ hoàn toàn bẫy Cold-Start của UUID MySQL.
+  - [x] Khắc phục lỗ hổng bảo mật `REC-03` tại `ActivitiesController.extractUserId`: Chuyển từ `jwtService.decode` sang `jwtService.verify` chống giả mạo token.
+  - [x] Bảo toàn thứ tự xếp hạng `score` từ ML Service (`rankAndHydrateMlProducts`), mở rộng tập ứng viên (`limit * 8`, tối đa 50) để lọc khớp với sản phẩm `isActive: true` trong MySQL và quy đổi điểm `aiScore` (`75%–99%`) hiển thị trên `ProductCard` & trang Chi tiết sản phẩm.
+  - [x] Hoàn thiện Pub/Sub `@OnEvent('activity.log')` tại `ActivitiesService`, phát sự kiện `ADD_TO_CART` / `REMOVE_FROM_CART` từ `CartService`, chuẩn hóa `activityService.logActivity` kèm JWT trên Frontend và tự động xóa cache `REC:CACHE:*` khi có hành vi mới.
+  - [x] Bổ sung Unit Tests `activities.service.spec.ts` kiểm chứng xác thực JWT, xếp hạng AI `aiScore` và làm mới cache Pub/Sub.
+
+
