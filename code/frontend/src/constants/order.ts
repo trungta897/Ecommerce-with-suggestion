@@ -2,6 +2,8 @@ import { OrderStatus } from '@/types/order';
 
 export const RETURN_MAX_EVIDENCE_FILES = 5;
 export const RETURN_MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+export const DEPOSIT_THRESHOLD_VND = 200_000;
+export const DEPOSIT_AMOUNT_VND = 50_000;
 
 export const ORDER_STATUS_LABEL_KEY: Record<OrderStatus, string> = {
   [OrderStatus.PENDING]: 'pending',

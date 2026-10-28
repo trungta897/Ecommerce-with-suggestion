@@ -4,6 +4,7 @@ import { BaseModal, BaseButton } from '@/components/base';
 import { orderService } from '@/services/order-service';
 import { useToast } from '@/providers/toast-provider';
 import { RETURN_MAX_EVIDENCE_FILES, RETURN_MAX_FILE_SIZE } from '@/constants/order';
+import { getApiErrorMessage } from '@/utils/get-api-error-message';
 
 interface ReturnModalProps {
   isOpen: boolean;
@@ -31,6 +32,7 @@ export const ReturnModal: React.FC<ReturnModalProps> = ({
   onSuccess,
 }) => {
   const t = useTranslations('order');
+  const tCommon = useTranslations('common');
   const toast = useToast();
   const [reason, setReason] = useState(RETURN_REASONS[0]);
   const [note, setNote] = useState('');
@@ -78,9 +80,8 @@ export const ReturnModal: React.FC<ReturnModalProps> = ({
       toast.success(t('returnSuccess'));
       onSuccess();
       onClose();
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to request return');
+    } catch (error: unknown) {
+      toast.error(getApiErrorMessage(error) ?? t('returnRequestError'));
     } finally {
       setLoading(false);
     }
@@ -149,7 +150,7 @@ export const ReturnModal: React.FC<ReturnModalProps> = ({
                     onClick={() => removeFile(i)}
                     className="text-red-500 hover:text-red-700 text-sm font-medium"
                   >
-                    Xóa
+                    {tCommon('delete')}
                   </button>
                 </div>
               ))}
@@ -159,7 +160,7 @@ export const ReturnModal: React.FC<ReturnModalProps> = ({
 
         <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200 dark:border-gray-700">
           <BaseButton type="button" variant="outline" onClick={onClose} disabled={loading}>
-            Hủy
+            {tCommon('cancel')}
           </BaseButton>
           <BaseButton type="submit" variant="default" isLoading={loading}>
             {t('submitReturn')}

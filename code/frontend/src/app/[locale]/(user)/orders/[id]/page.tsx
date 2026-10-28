@@ -16,6 +16,9 @@ import {
 import { orderService } from '@/services/order-service';
 import { Order, OrderStatus } from '@/types/order';
 import { ORDER_STATUS_COLORS, ORDER_STATUS_LABEL_KEY, isOrderStatus } from '@/constants/order';
+import { useRepayOrder } from '@/hooks/use-repay-order';
+import { canRepayOrder } from '@/utils/order-payment';
+import { getApiErrorMessage } from '@/utils/get-api-error-message';
 import toast from 'react-hot-toast';
 
 export default function OrderDetailPage({ params }: { params: { id: string } }) {
@@ -36,11 +39,15 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
       setOrder(data);
     } catch (err: unknown) {
       console.error(err);
-      toast.error(t('orderNotFoundToast'));
+      toast.error(getApiErrorMessage(err) ?? t('orderNotFoundToast'));
     } finally {
       setLoading(false);
     }
   }, [params.id, t]);
+
+  const { isRepaying, handleRepay } = useRepayOrder({
+    onRefetch: fetchOrder,
+  });
 
   useEffect(() => {
     fetchOrder();
@@ -88,21 +95,9 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
       setShowCancelModal(false);
       fetchOrder();
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
-      toast.error(msg || t('cancelError'));
+      toast.error(getApiErrorMessage(err) ?? t('cancelError'));
     } finally {
       setCancelling(false);
-    }
-  };
-
-  const handlePayAgain = async () => {
-    try {
-      await orderService.payAgain(params.id);
-      toast.success(t('redirectingToGateway'));
-      fetchOrder();
-    } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
-      toast.error(msg || t('repayError'));
     }
   };
 
@@ -128,15 +123,19 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
     );
   }
 
-  const formattedDate = new Date(
-    (order as unknown as { createdAt: string }).createdAt || Date.now()
-  ).toLocaleDateString('vi-VN', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
+  const formattedDate = new Date(order.createdAt || Date.now()).toLocaleDateString(
+    locale === 'vi' ? 'vi-VN' : 'en-US',
+    {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+    }
+  );
+
+  const canRepay = canRepayOrder(order);
+  const statusUpper = String(order.status || '').toUpperCase();
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -196,23 +195,23 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
 
       {/* Action Buttons */}
       <div className="flex flex-wrap gap-3 justify-end">
-        {order.status === ('PENDING_PAYMENT' as OrderStatus) && (
-          <BaseButton onClick={handlePayAgain} variant="default">
-            {t('payNow')}
+        {canRepay && (
+          <BaseButton onClick={() => handleRepay(order.id)} disabled={isRepaying} variant="default">
+            {isRepaying
+              ? t('repaying')
+              : statusUpper === OrderStatus.CANCELLED
+                ? t('payAgain')
+                : t('payNow')}
           </BaseButton>
         )}
 
-        {(order.status === OrderStatus.PENDING ||
-          order.status === OrderStatus.PENDING_PAYMENT ||
-          order.status === ('pending' as OrderStatus) ||
-          order.status === ('pending_payment' as OrderStatus)) && (
+        {(statusUpper === OrderStatus.PENDING || statusUpper === OrderStatus.PENDING_PAYMENT) && (
           <BaseButton variant="destructive" onClick={() => setShowCancelModal(true)}>
             {t('cancelOrder')}
           </BaseButton>
         )}
 
-        {(order.status === OrderStatus.COMPLETED ||
-          order.status === ('completed' as OrderStatus)) && (
+        {statusUpper === OrderStatus.COMPLETED && (
           <BaseButton variant="outline" onClick={() => setIsReturnModalOpen(true)}>
             {t('returnOrder')}
           </BaseButton>

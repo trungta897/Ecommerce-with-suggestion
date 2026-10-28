@@ -2,6 +2,7 @@
 
 import { useLocale, useTranslations } from 'next-intl';
 import { formatPrice } from '@/utils/format';
+import { DEPOSIT_AMOUNT_VND } from '@/constants/order';
 
 interface OrderSummarySidebarProps {
   subtotal: number;
@@ -58,7 +59,7 @@ export function OrderSummarySidebar({
         {isDepositRequired && (
           <div className="flex items-center justify-between mt-3 p-3 bg-orange-50 border border-orange-200 rounded-xl text-orange-700 text-xs">
             <span className="font-semibold">{t('depositRequired')}</span>
-            <span className="font-bold text-sm">{formatPrice(2, locale)}</span>
+            <span className="font-bold text-sm">{formatPrice(DEPOSIT_AMOUNT_VND, locale)}</span>
           </div>
         )}
       </div>

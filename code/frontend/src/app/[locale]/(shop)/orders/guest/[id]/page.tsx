@@ -15,6 +15,8 @@ import {
 import { orderService } from '@/services/order-service';
 import { Order } from '@/types/order';
 import { ORDER_STATUS_COLORS, ORDER_STATUS_LABEL_KEY, isOrderStatus } from '@/constants/order';
+import { useRepayOrder } from '@/hooks/use-repay-order';
+import { getApiErrorMessage } from '@/utils/get-api-error-message';
 import toast from 'react-hot-toast';
 
 export default function GuestOrderDetailPage({ params }: { params: { id: string } }) {
@@ -44,12 +46,16 @@ export default function GuestOrderDetailPage({ params }: { params: { id: string 
         setTrackingToken(data.trackingToken);
       }
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
-      toast.error(msg || t('orderNotFoundToast'));
+      toast.error(getApiErrorMessage(err) ?? t('orderNotFoundToast'));
     } finally {
       setLoading(false);
     }
   }, [params.id, phone, t]);
+
+  const { isRepaying, handleRepay } = useRepayOrder({
+    guestPhone: phone,
+    onRefetch: fetchOrder,
+  });
 
   useEffect(() => {
     fetchOrder();
@@ -88,18 +94,6 @@ export default function GuestOrderDetailPage({ params }: { params: { id: string 
       eventSource.close();
     };
   }, [trackingToken, order?.id, params.id, fetchOrder, t]);
-
-  const handlePayAgain = async () => {
-    if (!phone) return;
-    try {
-      await orderService.payAgainGuest(params.id, phone);
-      toast.success(t('redirectingPayment'));
-      fetchOrder();
-    } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
-      toast.error(msg || t('repayError'));
-    }
-  };
 
   if (loading) {
     return (
@@ -174,7 +168,8 @@ export default function GuestOrderDetailPage({ params }: { params: { id: string 
           order={order}
           locale={locale}
           showPayAgainButton={true}
-          onPayAgain={handlePayAgain}
+          isRepaying={isRepaying}
+          onPayAgain={() => handleRepay(order.id)}
         />
       </div>
 

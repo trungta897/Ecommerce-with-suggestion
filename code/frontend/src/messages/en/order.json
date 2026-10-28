@@ -85,5 +85,12 @@
   "tryLookupAgain": "Try Looking Up Again",
   "orderNotFoundToast": "Order information not found",
   "productDefault": "Product",
-  "writeReview": "Write a Review"
+  "writeReview": "Write a Review",
+  "stockClaimedVnPayUrlFailed": "Order reservation was extended, but the VNPay gateway could not be opened. Please click Pay Again.",
+  "repaying": "Redirecting to gateway...",
+  "rateLimitError": "Too many attempts. Please wait a moment and try again.",
+  "noReasonProvided": "No reason provided",
+  "returnRejectedReasonLabel": "Return rejection reason",
+  "depositAmountLabel": "Upfront deposit amount",
+  "returnRequestError": "Failed to submit return request"
 }

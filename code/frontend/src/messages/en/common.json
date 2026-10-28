@@ -41,6 +41,7 @@
   "error": "An error occurred. Please try again.",
   "loading": "Processing...",
   "cancel": "Cancel",
+  "delete": "Delete",
   "confirm": "Confirm",
   "save": "Save",
   "close": "Close",

@@ -1,5 +1,5 @@
 import { apiClient } from '@/lib/api-client';
-import { Order, OrderStatus } from '@/types/order';
+import { CreateOrderPayload, Order, OrderStatus } from '@/types/order';
 import { getOrCreateSessionId } from '@/utils/session';
 
 export interface ReturnEligibilityResponse {
@@ -18,17 +18,7 @@ export interface RejectReturnDto {
   rejectReason: string;
 }
 
-export interface CreateOrderDto {
-  shippingName: string;
-  shippingAddress: string;
-  shippingPhone: string;
-  deliveryMethod?: string;
-  paymentMethod: string;
-  voucherId?: string;
-  email?: string;
-  items?: { productId: string; quantity: number }[];
-  sessionId?: string;
-}
+export type CreateOrderDto = CreateOrderPayload;
 
 export interface GuestOrderLookupResponse extends Order {
   trackingToken?: string;

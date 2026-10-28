@@ -8,7 +8,6 @@ import { BaseButton } from '@/components/base';
 import { useCart } from '@/hooks/use-cart';
 import { useEffect, Suspense } from 'react';
 import { formatPrice } from '@/utils/format';
-import { USD_TO_VND_RATE } from '@/constants/currency';
 
 function CallbackContent() {
   const t = useTranslations('checkout');
@@ -29,7 +28,6 @@ function CallbackContent() {
 
   // Amount in VNPay is multiplied by 100 in VND
   const amountVnd = rawAmount ? Number(rawAmount) / 100 : 0;
-  const amountUsd = amountVnd / USD_TO_VND_RATE;
 
   useEffect(() => {
     if (isSuccess) {
@@ -52,7 +50,7 @@ function CallbackContent() {
             <div className="flex justify-between items-center text-xs text-ink-2 border-b border-gray-200 pb-2">
               <span className="font-semibold">{t('transactionDetails')}</span>
               <span className="inline-flex items-center gap-1 text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full font-medium border border-emerald-200">
-                <CheckCircle2 className="w-3 h-3" /> Thành công
+                <CheckCircle2 className="w-3 h-3" /> {t('paymentSuccessBadge')}
               </span>
             </div>
 
@@ -60,7 +58,7 @@ function CallbackContent() {
               <div className="flex justify-between items-center">
                 <span className="text-ink-2">{t('amountPaid')}:</span>
                 <span className="font-bold text-base text-primary">
-                  {formatPrice(amountUsd, locale)}
+                  {formatPrice(amountVnd, locale)}
                 </span>
               </div>
             )}

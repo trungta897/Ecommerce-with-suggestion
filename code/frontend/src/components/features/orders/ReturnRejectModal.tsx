@@ -3,6 +3,7 @@ import { useTranslations } from 'next-intl';
 import { BaseModal, BaseButton } from '@/components/base';
 import { orderService } from '@/services/order-service';
 import { useToast } from '@/providers/toast-provider';
+import { getApiErrorMessage } from '@/utils/get-api-error-message';
 
 interface ReturnRejectModalProps {
   isOpen: boolean;
@@ -36,9 +37,8 @@ export const ReturnRejectModal: React.FC<ReturnRejectModalProps> = ({
       toast.success(tOrder('rejectSuccess'));
       onSuccess();
       onClose();
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || tOrder('rejectError'));
+    } catch (error: unknown) {
+      toast.error(getApiErrorMessage(error) ?? tOrder('rejectError'));
     } finally {
       setLoading(false);
     }
