@@ -6,8 +6,8 @@ Sơ đồ ERD thể hiện cấu trúc cơ sở dữ liệu của hệ thống, 
 erDiagram
     users {
         string id PK
-        varchar email "Unique, Not Null"
-        varchar password_hash
+        varchar email "Unique, Nullable"
+        varchar password_hash "Nullable"
         varchar full_name
         varchar phone "Unique, Nullable"
         enum role "customer, employee, admin, super_admin"
@@ -53,11 +53,10 @@ erDiagram
         string id PK
         string product_id FK
         decimal discount_percent "0-100"
-        decimal discounted_price "Snapshot sale price"
-        decimal original_price "Display snapshot price"
+        decimal discount_price "Snapshot sale price (VND)"
         timestamp start_date
         timestamp end_date
-        int flash_sale_qty "Nullable: Giới hạn suất sale"
+        int flash_sale_qty "Giới hạn suất sale"
         int flash_sale_sold "Default 0 (Atomic Claim)"
         boolean is_active "Default TRUE"
     }
@@ -73,7 +72,7 @@ erDiagram
         decimal min_order_value
         decimal max_discount "Nullable"
         int usage_limit "Nullable"
-        int per_user_limit "Nullable"
+        int per_user_limit "Default 1"
         int used_count "Default 0"
         timestamp start_date
         timestamp end_date
@@ -83,7 +82,7 @@ erDiagram
 
     user_voucher_usage {
         string id PK
-        string user_id FK
+        string user_id FK "Nullable for Guest"
         string voucher_id FK
         string order_id FK
         timestamp used_at
@@ -105,15 +104,28 @@ erDiagram
         decimal discount_amount
         decimal shipping_fee
         decimal total_amount
+        boolean is_deposit_payment "Default FALSE"
+        decimal deposit_amount "Nullable (50.000 VND)"
+        enum delivery_method "standard, express, pickup"
+        timestamp pickup_time "Nullable"
         varchar shipping_name
         varchar shipping_phone
         varchar shipping_address
         enum payment_method "vnpay, cod, stripe"
         enum payment_status "pending, partially_paid, completed, failed, refunded"
-        timestamp payment_expires_at
+        timestamp payment_expires_at "Nullable (30m hold)"
+        varchar payment_gateway_txn_id "Nullable (45-char vnp_TxnRef)"
+        varchar payment_gateway_trans_no "Nullable"
+        varchar payment_gateway_pay_date "Nullable"
+        boolean is_orphaned_payment "Default FALSE"
+        enum refund_status "none, processing, completed, failed"
+        json audit_trail "Nullable"
         int earned_vip_points
         int used_vip_points
         decimal vip_discount_amount
+        timestamp completed_at "Nullable"
+        enum return_reason "Nullable"
+        text return_reject_reason "Nullable"
     }
 
     order_items {
@@ -123,7 +135,6 @@ erDiagram
         string product_discount_id FK "Nullable"
         int quantity
         decimal unit_price
-        decimal original_price "Audit trail"
         decimal subtotal
     }
 

@@ -73,3 +73,10 @@
   - [x] Frontend Hook `useRepayOrder` & Phân loại lỗi (`repay-error.ts`, `order-payment.ts`): Phân loại 3 nhóm lỗi (`RATE_LIMIT`, `TRANSIENT`, `CLIENT`), chống double-click bằng `useRef`, khôi phục trạng thái nút từ `bfcache` (`pageshow`), fallback điều hướng về chi tiết đơn khi tạo link lỗi ở Checkout.
   - [x] Chuẩn hóa i18n, Audit Constants, Type Safety & Giới hạn < 300 dòng: i18n hóa toàn bộ exception tại `orders-return.service.ts` và chuỗi UI tại `checkout/page.tsx`, `ReturnModal.tsx`, `checkout/callback/page.tsx`; chuẩn hóa `PAYMENT_AUDIT_ACTIONS`/`REFUND_AUDIT_REASONS`, `CreateOrderPayload`, `SkippedCartItem`; rút gọn `checkout/page.tsx` và `orders-return.service.ts` xuống dưới 300 dòng.
 
+- [x] **12. Chuẩn Hóa Kiến Trúc Theo Audit & Grapuco (Swagger CLI Plugin, Unit Tests, CI Pipeline, HTTP Security Headers & Toàn Bộ Repo < 300 Dòng)**
+  - [x] Tách biệt hoàn toàn `PrismaService` và logic tạo link thanh toán khỏi `payment.controller.ts` sang `payment.service.ts` (15/15 Controllers đạt chuẩn SRP).
+  - [x] Bảo mật HTTP Headers (`X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy`, ẩn `x-powered-by`) tại `main.ts` và bật `@nestjs/swagger` CLI Plugin + `@ApiTags`/`@ApiBearerAuth` cho toàn bộ 15 Controllers.
+  - [x] Khắc phục triệt để các phát hiện Audit `CQ-01` → `CQ-04`: bổ sung kiểm tra chống cộng dồn Flash Sale cho voucher `PERCENTAGE` phạm vi `CART`; chuyển ghi log `PURCHASE` sang Pub/Sub `order.created`; xóa `catch (err: any)` cuối cùng tại `ProductReviews.tsx`; tách `activity.constant.ts`.
+  - [x] Tái cấu trúc 8 file cũ vượt 300 dòng (`orders-checkout.service.ts`, `activities.service.ts`, `vouchers.service.ts`, `products.service.ts`, `ProductForm.tsx`, `products/[id]/page.tsx`, `AddressSelector.tsx`, `VoucherFormModal.tsx`) đưa 100% file xử lý logic trong toàn dự án về `< 300` dòng.
+  - [x] Bổ sung bộ Unit Tests cốt lõi (`order-payment.policy.spec.ts`, `payment.service.spec.ts`), thiết lập GitHub Actions CI (`.github/workflows/ci.yml`) và đồng bộ `project_plan.md`, `erd.md`, `sequence_vnpay_ipn.md`.
+
