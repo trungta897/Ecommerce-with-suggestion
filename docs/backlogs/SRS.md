@@ -278,7 +278,7 @@ stateDiagram-v2
     refunded --> [*]
     completed --> [*]
 ```
-*Ghi chú: `pending_payment` chỉ áp dụng cho đơn VNPay trong lúc chờ thanh toán; đơn COD đi thẳng vào `pending` (chờ Admin duyệt) vì không cần cổng thanh toán. Đơn ở `pending_payment` quá thời gian giữ đơn (mục 3.6.3) sẽ tự chuyển `cancelled` và nhả `stock` đã giữ.*
+*Ghi chú: `pending_payment` áp dụng cho đơn VNPay hoặc đơn COD bắt buộc đặt cọc trực tuyến (mục 3.6.7) trong lúc chờ thanh toán; đơn COD thuần (không phải đặt cọc) đi thẳng vào `pending` (chờ Admin duyệt) vì không cần cổng thanh toán. Đơn ở `pending_payment` quá thời gian giữ đơn (mục 3.6.3) sẽ tự chuyển `cancelled` và nhả `stock` đã giữ.*
 
 #### 3.6.2. Mã giảm giá (Voucher)
 Có thể cấu hình giảm theo phần trăm (%) hoặc trừ một khoản tiền cố định. Mỗi voucher có điều kiện đi kèm (như mức giá đơn hàng tối thiểu, giới hạn tổng số lần sử dụng `usage_limit`). Ngoài giới hạn toàn hệ thống, **mỗi user chỉ được áp dụng 1 voucher cụ thể tối đa 1 lần** (theo dõi qua bảng `user_voucher_usage`, mục 4.2) để tránh lạm dụng.
@@ -299,9 +299,9 @@ Sử dụng kiến trúc đa kênh, hệ thống tiếp nhận Webhook từ đ�
 - **Điểm âm / Nợ điểm (`vipPointsDebt`):** Nếu khách hàng trả hàng (`returned`) nhưng điểm thưởng từ đơn đó đã bị sử dụng cho đơn khác, hệ thống sẽ đưa tài khoản vào trạng thái nợ điểm, trừ bù vào các giao dịch mua hàng tương lai.
 - **Thời điểm hoàn điểm (`pointsCreditedAt`):** Lưu trữ chính xác thời gian điểm được hệ thống cộng vào ví.
 
-#### 3.6.7. Cơ chế Thanh toán & Đặt cọc
-- Cho phép khách hàng đặt cọc trước một phần (lưu vào `depositAmount`) để đảm bảo đơn hàng.
-- Khi đó cờ `isDepositPayment` = true, trạng thái thanh toán sẽ là `partially_paid` thay vì pending hoặc completed.
+#### 3.6.7. Cơ chế Thanh toán, Đặt cọc & Thanh toán lại (Repay)
+- Mọi đơn hàng có tạm tính (`subtotal`) dưới ngưỡng **200.000 VNĐ** (bao gồm cả giao tận nơi lẫn nhận tại cửa hàng `PICKUP`) bắt buộc phải đặt cọc trước **50.000 VNĐ** qua cổng thanh toán trực tuyến (lưu vào `depositAmount`, cờ `isDepositPayment = true`).
+- Đơn yêu cầu thanh toán trực tuyến (`paymentMethod = VNPAY` hoặc `isDepositPayment = true`) khởi tạo ở trạng thái `pending_payment` với hạn giữ đơn 30 phút (`paymentExpiresAt`). Sau khi IPN báo thành công, đơn chuyển sang `pending` với `paymentStatus` là `completed` (thanh toán toàn bộ) hoặc `partially_paid` (đặt cọc). Hỗ trợ thanh toán lại (`pay-again`) gia hạn 30 phút khi đơn ở `pending_payment`, hoặc mở lại đơn `cancelled` chỉ khi bị hủy tự động do hết hạn (`paymentExpiresAt !== null`), chưa có tiền về (`paymentStatus === pending`), không chứa ưu đãi đã hoàn trả và sản phẩm còn `isActive = true`. (Known Limitation: các đơn cũ đã bị User/Admin hủy trước thời điểm áp dụng xóa `paymentExpiresAt` khi hủy thủ công vẫn còn giữ `paymentExpiresAt` trong DB).
 
 #### 3.6.8. Cơ chế An toàn Hoàn tiền (Refund Safeguards)
 Đảm bảo tính toàn vẹn tài chính khi hoàn tiền:
