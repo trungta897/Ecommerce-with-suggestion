@@ -12,6 +12,7 @@ import { RequestReturnDto } from './dto/request-return.dto';
 import { RejectReturnDto } from './dto/reject-return.dto';
 import { v4 as uuidv4 } from 'uuid';
 import {
+  PAYMENT_AUDIT_ACTIONS,
   RETURN_ELIGIBLE_DAYS,
   RETURN_MAX_EVIDENCE_FILES,
   RETURN_MAX_FILE_SIZE,
@@ -19,6 +20,9 @@ import {
 } from '../../common/constants/order.constant';
 import { ORDER_MESSAGES } from '../../common/constants/order-message.constant';
 import { I18nService } from 'nestjs-i18n';
+
+const BYTES_PER_MB = 1024 * 1024;
+const MS_PER_DAY = 86_400_000;
 
 @Injectable()
 export class OrdersReturnService {
@@ -28,6 +32,67 @@ export class OrdersReturnService {
     private readonly eventEmitter: EventEmitter2,
     private readonly i18n: I18nService,
   ) {}
+
+  private validateEvidenceFiles(
+    files: Express.Multer.File[],
+    existingCount: number,
+    lang?: string,
+  ): void {
+    if (existingCount + files.length > RETURN_MAX_EVIDENCE_FILES) {
+      throw new BadRequestException(
+        this.i18n.t(ORDER_MESSAGES.MAX_EVIDENCE_FILES, {
+          lang,
+          args: { max: RETURN_MAX_EVIDENCE_FILES },
+        }),
+      );
+    }
+
+    const maxMb = Math.round(RETURN_MAX_FILE_SIZE / BYTES_PER_MB);
+    for (const file of files) {
+      if (file.size > RETURN_MAX_FILE_SIZE) {
+        throw new BadRequestException(
+          this.i18n.t(ORDER_MESSAGES.MAX_EVIDENCE_FILE_SIZE, {
+            lang,
+            args: { maxMb },
+          }),
+        );
+      }
+      if (!RETURN_ALLOWED_MIME_TYPES.includes(file.mimetype)) {
+        throw new BadRequestException(
+          this.i18n.t(ORDER_MESSAGES.INVALID_FILE_FORMAT, { lang }),
+        );
+      }
+    }
+  }
+
+  private async uploadEvidenceBuffers(
+    orderId: string,
+    files?: Express.Multer.File[],
+  ): Promise<{ urls: string[]; uploadedCount: number; failedCount: number }> {
+    const urls: string[] = [];
+    let uploadedCount = 0;
+    let failedCount = 0;
+
+    if (!files || files.length === 0) {
+      return { urls, uploadedCount, failedCount };
+    }
+
+    for (const file of files) {
+      try {
+        const url = await this.storage.uploadFile(
+          `returns/${orderId}`,
+          uuidv4(),
+          file.buffer,
+        );
+        urls.push(url);
+        uploadedCount++;
+      } catch {
+        failedCount++;
+      }
+    }
+
+    return { urls, uploadedCount, failedCount };
+  }
 
   async checkReturnEligibility(userId: string, orderId: string, lang?: string) {
     const order = await this.prisma.order.findUnique({
@@ -52,24 +117,27 @@ export class OrdersReturnService {
     if (!order.completedAt) {
       return {
         eligible: false,
-        reason: 'Đơn hàng thiếu thông tin thời điểm hoàn thành',
+        reason: this.i18n.t(ORDER_MESSAGES.MISSING_COMPLETED_AT, { lang }),
       };
     }
 
-    const now = new Date().getTime();
-    const completed = new Date(order.completedAt).getTime();
-    const daysSince = Math.floor((now - completed) / 86400000);
-    const eligible = daysSince <= RETURN_ELIGIBLE_DAYS;
-
-    if (!eligible) {
+    const daysSince = Math.floor(
+      (Date.now() - new Date(order.completedAt).getTime()) / MS_PER_DAY,
+    );
+    if (daysSince > RETURN_ELIGIBLE_DAYS) {
       return {
         eligible: false,
-        reason: 'Đã quá thời hạn 14 ngày để yêu cầu trả hàng',
+        reason: this.i18n.t(ORDER_MESSAGES.RETURN_WINDOW_EXPIRED, {
+          lang,
+          args: { days: RETURN_ELIGIBLE_DAYS },
+        }),
       };
     }
 
-    const daysLeft = Math.max(0, RETURN_ELIGIBLE_DAYS - daysSince);
-    return { eligible: true, daysLeft };
+    return {
+      eligible: true,
+      daysLeft: Math.max(0, RETURN_ELIGIBLE_DAYS - daysSince),
+    };
   }
 
   async requestReturn(
@@ -89,23 +157,7 @@ export class OrdersReturnService {
     }
 
     if (files && files.length > 0) {
-      if (files.length > RETURN_MAX_EVIDENCE_FILES) {
-        throw new BadRequestException(
-          `Tối đa ${RETURN_MAX_EVIDENCE_FILES} file chứng minh`,
-        );
-      }
-      for (const file of files) {
-        if (file.size > RETURN_MAX_FILE_SIZE) {
-          throw new BadRequestException(
-            'File chứng minh vượt quá dung lượng cho phép (10MB)',
-          );
-        }
-        if (!RETURN_ALLOWED_MIME_TYPES.includes(file.mimetype)) {
-          throw new BadRequestException(
-            this.i18n.t(ORDER_MESSAGES.INVALID_FILE_FORMAT, { lang }),
-          );
-        }
-      }
+      this.validateEvidenceFiles(files, 0, lang);
     }
 
     const updated = await this.prisma.order.updateMany({
@@ -124,38 +176,20 @@ export class OrdersReturnService {
       );
     }
 
-    let uploadedCount = 0;
-    let failedCount = 0;
-    const urls: string[] = [];
+    const { urls, uploadedCount, failedCount } =
+      await this.uploadEvidenceBuffers(orderId, files);
 
-    if (files && files.length > 0) {
-      for (const file of files) {
-        try {
-          const url = await this.storage.uploadFile(
-            `returns/${orderId}`,
-            uuidv4(),
-            file.buffer,
-          );
-          urls.push(url);
-          uploadedCount++;
-        } catch {
-          failedCount++;
-        }
-      }
-
-      if (urls.length > 0) {
-        await this.prisma.order.update({
-          where: { id: orderId },
-          data: { returnEvidenceUrls: urls },
-        });
-      }
+    if (urls.length > 0) {
+      await this.prisma.order.update({
+        where: { id: orderId },
+        data: { returnEvidenceUrls: urls },
+      });
     }
 
     const updatedOrder = await this.prisma.order.findUnique({
       where: { id: orderId },
     });
     this.eventEmitter.emit('order.return.requested', updatedOrder);
-
     return { order: updatedOrder, uploadedCount, failedCount };
   }
 
@@ -178,7 +212,6 @@ export class OrdersReturnService {
         this.i18n.t(ORDER_MESSAGES.INVALID_STATUS, { lang }),
       );
     }
-
     if (!files || files.length === 0) {
       throw new BadRequestException(
         this.i18n.t(ORDER_MESSAGES.MISSING_EVIDENCE, { lang }),
@@ -186,50 +219,18 @@ export class OrdersReturnService {
     }
 
     const existingUrls = (order.returnEvidenceUrls as string[]) || [];
-    if (existingUrls.length + files.length > RETURN_MAX_EVIDENCE_FILES) {
-      throw new BadRequestException(
-        `Tổng số file chứng minh không được vượt quá ${RETURN_MAX_EVIDENCE_FILES}`,
-      );
-    }
-
-    for (const file of files) {
-      if (file.size > RETURN_MAX_FILE_SIZE) {
-        throw new BadRequestException(
-          'File chứng minh vượt quá dung lượng cho phép (10MB)',
-        );
-      }
-      if (!RETURN_ALLOWED_MIME_TYPES.includes(file.mimetype)) {
-        throw new BadRequestException(
-          this.i18n.t(ORDER_MESSAGES.INVALID_FILE_FORMAT, { lang }),
-        );
-      }
-    }
-
-    let uploadedCount = 0;
-    const urls: string[] = [];
-
-    for (const file of files) {
-      try {
-        const url = await this.storage.uploadFile(
-          `returns/${orderId}`,
-          uuidv4(),
-          file.buffer,
-        );
-        urls.push(url);
-        uploadedCount++;
-      } catch {
-        // Skip
-      }
-    }
-
-    let newOrder = order;
-    if (urls.length > 0) {
-      const newUrls = [...existingUrls, ...urls];
-      newOrder = await this.prisma.order.update({
-        where: { id: orderId },
-        data: { returnEvidenceUrls: newUrls },
-      });
-    }
+    this.validateEvidenceFiles(files, existingUrls.length, lang);
+    const { urls, uploadedCount } = await this.uploadEvidenceBuffers(
+      orderId,
+      files,
+    );
+    const newOrder =
+      urls.length > 0
+        ? await this.prisma.order.update({
+            where: { id: orderId },
+            data: { returnEvidenceUrls: [...existingUrls, ...urls] },
+          })
+        : order;
 
     return {
       order: newOrder,
@@ -242,29 +243,22 @@ export class OrdersReturnService {
     await this.prisma.$transaction(async (tx) => {
       const updated = await tx.order.updateMany({
         where: { id: orderId, status: OrderStatus.RETURN_REQUESTED },
-        data: {
-          status: OrderStatus.RETURNED,
-          returnResolvedAt: new Date(),
-        },
+        data: { status: OrderStatus.RETURNED, returnResolvedAt: new Date() },
       });
-
       if (updated.count === 0) {
         throw new BadRequestException(
           this.i18n.t(ORDER_MESSAGES.INVALID_STATUS, { lang }),
         );
       }
-
       await appendAuditTrail(tx, orderId, {
-        action: 'RETURN_APPROVED',
+        action: PAYMENT_AUDIT_ACTIONS.RETURN_APPROVED,
         adminId,
       });
     });
-
-    const updatedOrder = await this.prisma.order.findUnique({
-      where: { id: orderId },
-    });
-    this.eventEmitter.emit('order.return.approved', updatedOrder);
-
+    this.eventEmitter.emit(
+      'order.return.approved',
+      await this.prisma.order.findUnique({ where: { id: orderId } }),
+    );
     return { success: true };
   }
 
@@ -283,25 +277,21 @@ export class OrdersReturnService {
           returnResolvedAt: new Date(),
         },
       });
-
       if (updated.count === 0) {
         throw new BadRequestException(
           this.i18n.t(ORDER_MESSAGES.INVALID_STATUS, { lang }),
         );
       }
-
       await appendAuditTrail(tx, orderId, {
-        action: 'RETURN_REJECTED',
+        action: PAYMENT_AUDIT_ACTIONS.RETURN_REJECTED,
         adminId,
         reason: dto.rejectReason,
       });
     });
-
-    const updatedOrder = await this.prisma.order.findUnique({
-      where: { id: orderId },
-    });
-    this.eventEmitter.emit('order.return.rejected', updatedOrder);
-
+    this.eventEmitter.emit(
+      'order.return.rejected',
+      await this.prisma.order.findUnique({ where: { id: orderId } }),
+    );
     return { success: true };
   }
 }

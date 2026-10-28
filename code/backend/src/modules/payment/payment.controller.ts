@@ -7,15 +7,23 @@ import {
   Post,
   Req,
   Query,
+  UseGuards,
 } from '@nestjs/common';
 import type { Request as ExpressRequest } from 'express';
+import { AuthGuard } from '@nestjs/passport';
+import { Throttle } from '@nestjs/throttler';
 import { PaymentService } from './payment.service';
 import { PrismaService } from '../../database/prisma.service';
 import { VnPayService } from './vnpay.service';
 import type { ReturnQueryFromVNPay } from 'vnpay';
-import { OrderStatus, PaymentStatus } from '@prisma/client';
+import type { Order } from '@prisma/client';
 import { I18nLang, I18nService } from 'nestjs-i18n';
 import { ORDER_MESSAGES } from '../../common/constants/order-message.constant';
+import { DEFAULT_LANG } from '../../common/constants/order.constant';
+import {
+  buildPayableWhere,
+  isPayableNow,
+} from '../orders/order-payment.policy';
 
 @Controller('payment')
 export class PaymentController {
@@ -26,64 +34,79 @@ export class PaymentController {
     private readonly i18n: I18nService,
   ) {}
 
+  @UseGuards(AuthGuard('jwt'))
   @Post('vnpay/create/:orderId')
   async createVnPayOrder(
-    @Req() req: ExpressRequest,
+    @Req() req: ExpressRequest & { user: { id: string } },
     @Param('orderId') orderId: string,
-    @Body('phone') phone?: string,
-    @I18nLang() lang: string = 'vi',
+    @I18nLang() lang: string = DEFAULT_LANG,
   ) {
     const order = await this.prisma.order.findUnique({
       where: { id: orderId },
     });
 
-    if (!order) {
+    if (!order || order.userId !== req.user.id) {
       throw new NotFoundException(
         this.i18n.t(ORDER_MESSAGES.NOT_FOUND, { lang }),
       );
     }
 
-    // Verify order eligibility for payment
-    if (
-      order.paymentStatus === PaymentStatus.COMPLETED ||
-      order.paymentStatus === PaymentStatus.PARTIALLY_PAID ||
-      (order.status !== OrderStatus.PENDING_PAYMENT &&
-        order.status !== OrderStatus.PENDING)
-    ) {
-      throw new BadRequestException(
-        this.i18n.t(ORDER_MESSAGES.INVALID_STATUS, { lang }),
+    return this.createPaymentLinkForOrder(order, req, lang);
+  }
+
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
+  @Post('vnpay/create/guest/:orderId')
+  async createGuestVnPayOrder(
+    @Req() req: ExpressRequest,
+    @Param('orderId') orderId: string,
+    @Body('phone') phone?: string,
+    @I18nLang() lang: string = DEFAULT_LANG,
+  ) {
+    if (!phone) {
+      throw new NotFoundException(
+        this.i18n.t(ORDER_MESSAGES.NOT_FOUND, { lang }),
       );
     }
 
-    // Verify guest phone if provided or if guest order
-    if (order.shippingPhone && phone && order.shippingPhone !== phone) {
-      throw new BadRequestException(
-        this.i18n.t(ORDER_MESSAGES.PHONE_MISMATCH, { lang }),
+    const order = await this.prisma.order.findUnique({
+      where: { id: orderId },
+    });
+
+    if (!order || order.userId !== null || order.shippingPhone !== phone) {
+      throw new NotFoundException(
+        this.i18n.t(ORDER_MESSAGES.NOT_FOUND, { lang }),
       );
     }
 
-    // Format: orderId_timestamp -> unique mỗi lần gọi
-    const appTransId = `${orderId.replace(/-/g, '').slice(0, 8)}_${Date.now().toString().slice(-5)}`;
+    return this.createPaymentLinkForOrder(order, req, lang);
+  }
 
-    // Atomic Update DB lưu appTransId với điều kiện trạng thái chưa hoàn tất
+  private async createPaymentLinkForOrder(
+    order: Order,
+    req: ExpressRequest,
+    lang: string,
+  ) {
+    const now = new Date();
+    if (!isPayableNow(order, now)) {
+      throw new BadRequestException(
+        this.i18n.t(ORDER_MESSAGES.PAYMENT_WINDOW_CLOSED, { lang }),
+      );
+    }
+
+    // Format: 32 hex chars (orderId without hyphens) + 13 digits (timestamp) = 45 alphanumeric chars
+    const appTransId = `${order.id.replace(/-/g, '')}${Date.now()}`;
+
     const updated = await this.prisma.order.updateMany({
-      where: {
-        id: orderId,
-        paymentStatus: {
-          notIn: [PaymentStatus.COMPLETED, PaymentStatus.PARTIALLY_PAID],
-        },
-        status: { in: [OrderStatus.PENDING_PAYMENT, OrderStatus.PENDING] },
-      },
+      where: buildPayableWhere(order.id, now),
       data: { paymentGatewayTxnId: appTransId },
     });
 
     if (updated.count === 0) {
       throw new BadRequestException(
-        this.i18n.t(ORDER_MESSAGES.INVALID_STATUS, { lang }),
+        this.i18n.t(ORDER_MESSAGES.PAYMENT_WINDOW_CLOSED, { lang }),
       );
     }
 
-    // Dynamic resolution of client IP from headers/socket
     const forwarded = req.headers['x-forwarded-for'];
     const ipAddr =
       (typeof forwarded === 'string'
@@ -92,7 +115,6 @@ export class PaymentController {
           ? forwarded[0]?.trim()
           : req.socket?.remoteAddress) || '127.0.0.1';
 
-    // Total Amount / deposit Amount in VND for VNPay
     const amountToPayVnd = Math.round(
       order.isDepositPayment
         ? Number(order.depositAmount)
@@ -100,7 +122,7 @@ export class PaymentController {
     );
 
     const paymentUrl = this.vnPayService.createPaymentUrl(
-      orderId,
+      order.id,
       amountToPayVnd,
       ipAddr,
       appTransId,
@@ -115,7 +137,7 @@ export class PaymentController {
   }
 
   @Post('webhook/stripe')
-  handleStripeWebhook(@Body() data: any) {
+  handleStripeWebhook(@Body() data: unknown) {
     return this.paymentService.handleStripeWebhook(data);
   }
 }

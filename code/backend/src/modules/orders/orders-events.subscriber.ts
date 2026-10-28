@@ -2,8 +2,10 @@ import { Injectable, Logger } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
 import { MailService } from '../mail/mail.service';
 import type { Order } from '@prisma/client';
-
+import { I18nService } from 'nestjs-i18n';
 import { PrismaService } from '../../database/prisma.service';
+import { ORDER_MESSAGES } from '../../common/constants/order-message.constant';
+import { DEFAULT_LANG } from '../../common/constants/order.constant';
 
 @Injectable()
 export class OrdersEventsSubscriber {
@@ -12,6 +14,7 @@ export class OrdersEventsSubscriber {
   constructor(
     private readonly mailService: MailService,
     private readonly prisma: PrismaService,
+    private readonly i18n: I18nService,
   ) {}
 
   @OnEvent('order.return.approved')
@@ -43,10 +46,15 @@ export class OrdersEventsSubscriber {
           where: { id: order.userId },
         });
         if (user && user.email) {
+          const fallbackReason = String(
+            this.i18n.t(ORDER_MESSAGES.NO_REASON_PROVIDED, {
+              lang: DEFAULT_LANG,
+            }),
+          );
           await this.mailService.sendReturnRejectedEmail(
             user.email,
             order.id,
-            order.returnRejectReason || 'Không có lý do',
+            order.returnRejectReason || fallbackReason,
           );
         }
       }

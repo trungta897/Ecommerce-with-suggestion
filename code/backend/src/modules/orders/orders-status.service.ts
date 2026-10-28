@@ -23,17 +23,24 @@ export class OrdersStatusService {
     userId?: string,
     isStaff: boolean = false,
     lang?: string,
+    options?: { expiredBefore?: Date },
   ) {
     const updated = await this.prisma.$transaction(async (tx) => {
       // 1. Atomic Claim with status condition
       const updateResult = await tx.order.updateMany({
         where: {
           id: orderId,
-          status: { in: [OrderStatus.PENDING, OrderStatus.PENDING_PAYMENT] },
+          status: options?.expiredBefore
+            ? OrderStatus.PENDING_PAYMENT
+            : { in: [OrderStatus.PENDING, OrderStatus.PENDING_PAYMENT] },
+          ...(options?.expiredBefore
+            ? { paymentExpiresAt: { lt: options.expiredBefore } }
+            : {}),
           ...(userId && !isStaff ? { userId } : {}),
         },
         data: {
           status: OrderStatus.CANCELLED,
+          ...(options?.expiredBefore ? {} : { paymentExpiresAt: null }),
         },
       });
 

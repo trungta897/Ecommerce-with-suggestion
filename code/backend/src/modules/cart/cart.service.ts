@@ -20,6 +20,11 @@ export interface CartItemWithProduct {
   product: Product;
 }
 
+export interface SkippedCartItem {
+  productId: string;
+  reason: 'OUT_OF_STOCK' | 'INACTIVE';
+}
+
 @Injectable()
 export class CartService {
   constructor(
@@ -210,8 +215,8 @@ export class CartService {
   async mergeCart(
     userId: string,
     dto: MergeCartDto,
-  ): Promise<{ success: boolean; skippedItems: any[] }> {
-    const skippedItems: { productId: string; reason: string }[] = [];
+  ): Promise<{ success: boolean; skippedItems: SkippedCartItem[] }> {
+    const skippedItems: SkippedCartItem[] = [];
     const productIds = dto.items.map((item) => item.productId);
     const products = await this.prisma.product.findMany({
       where: { id: { in: productIds } },
@@ -226,18 +231,14 @@ export class CartService {
     for (const item of dto.items) {
       const product = productMap.get(item.productId);
 
-      if (!product) {
-        skippedItems.push({ productId: item.productId, reason: 'not_found' });
-        continue;
-      }
-      if (!product.isActive) {
-        skippedItems.push({ productId: item.productId, reason: 'inactive' });
+      if (!product || !product.isActive) {
+        skippedItems.push({ productId: item.productId, reason: 'INACTIVE' });
         continue;
       }
       if (product.stock <= 0) {
         skippedItems.push({
           productId: item.productId,
-          reason: 'out_of_stock',
+          reason: 'OUT_OF_STOCK',
         });
         continue;
       }

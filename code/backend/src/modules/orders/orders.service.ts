@@ -2,13 +2,14 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
-import {
-  PaymentMethod,
-  OrderStatus,
-  Prisma,
-  ActivityType,
-} from '@prisma/client';
+import { OrderStatus, Prisma, ActivityType } from '@prisma/client';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import {
+  DEPOSIT_AMOUNT_VND,
+  DEPOSIT_THRESHOLD_VND,
+  PAYMENT_HOLD_MS,
+} from '../../common/constants/order.constant';
+import { requiresOnlinePayment } from './order-payment.policy';
 import { OrdersShippingService } from './orders-shipping.service';
 import { OrdersCheckoutService } from './orders-checkout.service';
 import { OrdersQueryService } from './orders-query.service';
@@ -97,25 +98,26 @@ export class OrdersService {
       subtotal + shippingFee - discountAmount - vipDiscountAmount,
     );
 
-    let isDepositPayment = false;
-    let depositAmount: number | null = null;
-    if (createOrderDto.deliveryMethod !== 'PICKUP' && subtotal < 200000) {
-      isDepositPayment = true;
-      depositAmount = 50000;
-    }
+    const isDepositPayment = subtotal < DEPOSIT_THRESHOLD_VND;
+    const depositAmount: number | null = isDepositPayment
+      ? DEPOSIT_AMOUNT_VND
+      : null;
 
     // 6. Validate Pickup Time
     if (createOrderDto.deliveryMethod === 'PICKUP') {
       this.checkoutService.validatePickupTime(createOrderDto.pickupTime, lang);
     }
 
-    let paymentExpiresAt: Date | null = null;
-    if (
-      createOrderDto.paymentMethod !== PaymentMethod.COD ||
-      isDepositPayment
-    ) {
-      paymentExpiresAt = new Date(Date.now() + 30 * 60 * 1000); // 30 mins
-    }
+    const needsOnlinePayment = requiresOnlinePayment({
+      paymentMethod: createOrderDto.paymentMethod,
+      isDepositPayment,
+    });
+    const initialStatus = needsOnlinePayment
+      ? OrderStatus.PENDING_PAYMENT
+      : OrderStatus.PENDING;
+    const paymentExpiresAt: Date | null = needsOnlinePayment
+      ? new Date(now.getTime() + PAYMENT_HOLD_MS)
+      : null;
 
     const earnedVipPoints = Math.floor(totalAmount / 1000);
 
@@ -155,7 +157,7 @@ export class OrdersService {
       }
 
       const orderData: Prisma.OrderUncheckedCreateInput = {
-        status: OrderStatus.PENDING_PAYMENT,
+        status: initialStatus,
         subtotal,
         shippingFee,
         discountAmount,
@@ -268,8 +270,15 @@ export class OrdersService {
     userId?: string,
     isStaff: boolean = false,
     lang?: string,
+    options?: { expiredBefore?: Date },
   ) {
-    return this.statusService.cancelOrder(orderId, userId, isStaff, lang);
+    return this.statusService.cancelOrder(
+      orderId,
+      userId,
+      isStaff,
+      lang,
+      options,
+    );
   }
 
   async updateOrderStatus(

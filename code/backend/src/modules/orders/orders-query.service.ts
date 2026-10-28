@@ -20,8 +20,8 @@ export class OrdersQueryService {
 
   async getGuestOrderById(orderId: string, phone: string, lang?: string) {
     if (!phone) {
-      throw new BadRequestException(
-        this.i18n.t(ORDER_MESSAGES.MISSING_PHONE, { lang }),
+      throw new NotFoundException(
+        this.i18n.t(ORDER_MESSAGES.NOT_FOUND, { lang }),
       );
     }
 
@@ -36,15 +36,9 @@ export class OrdersQueryService {
       },
     });
 
-    if (!order) {
+    if (!order || order.userId !== null || order.shippingPhone !== phone) {
       throw new NotFoundException(
         this.i18n.t(ORDER_MESSAGES.NOT_FOUND, { lang }),
-      );
-    }
-
-    if (order.shippingPhone !== phone) {
-      throw new BadRequestException(
-        this.i18n.t(ORDER_MESSAGES.AUTH_MISMATCH, { lang }),
       );
     }
 

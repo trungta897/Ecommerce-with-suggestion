@@ -33,7 +33,13 @@ export class OrdersCronService {
 
     for (const order of expiredOrders) {
       try {
-        await this.ordersService.cancelOrder(order.id, undefined, true);
+        await this.ordersService.cancelOrder(
+          order.id,
+          undefined,
+          true,
+          undefined,
+          { expiredBefore: now },
+        );
         this.logger.log(`Order ${order.id} cancelled due to payment timeout`);
       } catch (error: unknown) {
         if (error instanceof BadRequestException) {
