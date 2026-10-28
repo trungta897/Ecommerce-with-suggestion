@@ -4,6 +4,7 @@ import { useTranslations } from 'next-intl';
 import { useQuery } from '@tanstack/react-query';
 import { Sparkles } from '@/components/base/icons';
 import { activityService } from '@/services/activity-service';
+import { getOrCreateSessionId } from '@/utils/session';
 import ProductCard from '@/components/features/product/ProductCard';
 
 interface ProfileRecommendationsSectionProps {
@@ -15,7 +16,11 @@ export function ProfileRecommendationsSection({ userId }: ProfileRecommendations
 
   const { data: recommendations, isLoading: isRecsLoading } = useQuery({
     queryKey: ['profile-recommendations', userId],
-    queryFn: () => activityService.getRecommendations({ limit: 4 }),
+    queryFn: () =>
+      activityService.getRecommendations({
+        sessionId: getOrCreateSessionId(),
+        limit: 4,
+      }),
     enabled: !!userId,
   });
 

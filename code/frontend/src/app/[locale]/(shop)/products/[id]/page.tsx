@@ -14,6 +14,7 @@ import { useToast } from '@/providers/toast-provider';
 import { formatPrice } from '@/utils/format';
 import { useRecentlyViewedStore } from '@/store/useRecentlyViewedStore';
 import { getOrCreateSessionId } from '@/utils/session';
+import { activityService } from '@/services/activity-service';
 import { RecentlyViewedSlider } from '@/components/features/product/RecentlyViewedSlider';
 import { RecommendedProducts } from '@/components/features/product/RecommendedProducts';
 
@@ -34,17 +35,13 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
     if (product && product.id) {
       addRecentlyViewed(product);
       const sessionId = getOrCreateSessionId();
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-      fetch(`${apiUrl}/activities/log`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({
+      activityService
+        .logActivity({
           action: 'VIEW',
           productId: product.id,
           sessionId,
-        }),
-      }).catch(() => {});
+        })
+        .catch(() => {});
     }
   }, [product, addRecentlyViewed]);
 
