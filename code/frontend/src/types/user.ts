@@ -16,6 +16,8 @@ export interface User {
   isActive?: boolean;
   isVerified: boolean;
   vipPoints?: number;
+  loyaltyPoints?: number;
+  vipTier?: 'BRONZE' | 'SILVER' | 'GOLD' | 'PLATINUM';
   createdAt?: string;
   updatedAt?: string;
 }

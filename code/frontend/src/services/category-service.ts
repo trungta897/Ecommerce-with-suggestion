@@ -7,6 +7,11 @@ export const categoryService = {
     return data;
   },
 
+  getAdminAll: async (): Promise<Category[]> => {
+    const { data } = await apiClient.get('/categories/admin');
+    return data;
+  },
+
   getById: async (id: string): Promise<Category> => {
     const { data } = await apiClient.get(`/categories/${id}`);
     return data;

@@ -20,8 +20,7 @@ export function useSearchHistory() {
           const validHistory = parsed
             .filter(
               (item): item is string =>
-                typeof item === 'string' &&
-                item.trim().length >= SEARCH_MIN_QUERY_LENGTH
+                typeof item === 'string' && item.trim().length >= SEARCH_MIN_QUERY_LENGTH
             )
             .slice(0, SEARCH_HISTORY_MAX_ITEMS);
           setHistory(validHistory);
@@ -47,9 +46,7 @@ export function useSearchHistory() {
       const trimmed = query.trim();
       if (trimmed.length < SEARCH_MIN_QUERY_LENGTH) return;
 
-      const filtered = history.filter(
-        (item) => item.toLowerCase() !== trimmed.toLowerCase()
-      );
+      const filtered = history.filter((item) => item.toLowerCase() !== trimmed.toLowerCase());
       const updated = [trimmed, ...filtered].slice(0, SEARCH_HISTORY_MAX_ITEMS);
       saveHistory(updated);
     },

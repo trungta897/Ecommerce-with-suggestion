@@ -69,7 +69,7 @@ export default function OrderHistoryPage() {
       {loading ? (
         <div className="flex flex-col items-center justify-center py-16 text-ink-2">
           <Loader2 className="w-8 h-8 animate-spin text-primary mb-3" />
-          <p className="text-sm">Đang tải danh sách đơn hàng...</p>
+          <p className="text-sm">{t('loadingOrdersList')}</p>
         </div>
       ) : filteredOrders.length === 0 ? (
         <div className="bg-white border border-rule rounded-xl p-12 text-center">
@@ -77,12 +77,12 @@ export default function OrderHistoryPage() {
             <Package className="w-8 h-8 text-ink-2" />
           </div>
           <p className="font-semibold text-ink text-lg mb-1">{t('noOrders')}</p>
-          <p className="text-sm text-ink-2 mb-6">Khám phá các sản phẩm và tiến hành mua sắm ngay</p>
+          <p className="text-sm text-ink-2 mb-6">{t('emptyOrdersHint')}</p>
           <Link
             href="/"
             className="inline-flex items-center justify-center px-6 py-2.5 rounded-lg bg-primary text-white font-medium hover:bg-primary/90 transition-colors"
           >
-            Mua sắm ngay
+            {t('shopNow')}
           </Link>
         </div>
       ) : (
@@ -144,17 +144,17 @@ export default function OrderHistoryPage() {
                 onClick={() => setPage((p) => p - 1)}
                 className="px-4 py-2 text-sm font-medium rounded-lg bg-paper-2 text-ink-2 disabled:opacity-50 hover:bg-primary/10 hover:text-primary transition-colors"
               >
-                Trước
+                {t('prevPage')}
               </button>
               <span className="px-4 py-2 text-sm font-semibold text-ink">
-                Trang {page} / {totalPages}
+                {t('pageInfo', { page, totalPages })}
               </span>
               <button
                 disabled={page >= totalPages}
                 onClick={() => setPage((p) => p + 1)}
                 className="px-4 py-2 text-sm font-medium rounded-lg bg-paper-2 text-ink-2 disabled:opacity-50 hover:bg-primary/10 hover:text-primary transition-colors"
               >
-                Sau
+                {t('nextPage')}
               </button>
             </div>
           )}

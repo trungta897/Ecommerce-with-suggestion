@@ -62,5 +62,8 @@
     "changePasswordInfo": "The password change feature is sending a verification code to your email.",
     "securityTitle": "Security"
   },
-  "loading": "Loading..."
+  "loading": "Loading...",
+  "vipTierLabel": "Membership Tier",
+  "loyaltyPointsLabel": "{points} loyalty points",
+  "viewAllOrders": "View all orders"
 }

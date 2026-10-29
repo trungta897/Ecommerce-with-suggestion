@@ -57,7 +57,7 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
   useEffect(() => {
     if (!order?.id) return;
 
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
     const eventSource = new EventSource(`${apiUrl}/orders/${params.id}/tracking`, {
       withCredentials: true,
     });

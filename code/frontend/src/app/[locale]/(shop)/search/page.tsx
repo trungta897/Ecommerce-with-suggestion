@@ -34,11 +34,8 @@ export default function SearchPage() {
 
   useEffect(() => {
     setLocalMinPrice(minPriceParam);
-  }, [minPriceParam]);
-
-  useEffect(() => {
     setLocalMaxPrice(maxPriceParam);
-  }, [maxPriceParam]);
+  }, [minPriceParam, maxPriceParam]);
 
   const { data: response, isLoading } = useProducts({
     q: q || undefined,
@@ -56,16 +53,10 @@ export default function SearchPage() {
   const updateFilters = (updates: Record<string, string | null>) => {
     const params = new URLSearchParams(searchParams.toString());
     Object.entries(updates).forEach(([key, val]) => {
-      if (val === null || val === '') {
-        params.delete(key);
-      } else {
-        params.set(key, val);
-      }
+      if (val === null || val === '') params.delete(key);
+      else params.set(key, val);
     });
-    // Reset page to 1 on filter changes unless page was explicitly updated
-    if (!('page' in updates)) {
-      params.set('page', '1');
-    }
+    if (!('page' in updates)) params.set('page', '1');
     router.push(`${pathname}?${params.toString()}`);
   };
 
@@ -78,8 +69,7 @@ export default function SearchPage() {
   };
 
   const handleRatingChange = (ratingVal: string) => {
-    const nextRating = minRatingParam === ratingVal ? null : ratingVal;
-    updateFilters({ minRating: nextRating });
+    updateFilters({ minRating: minRatingParam === ratingVal ? null : ratingVal });
   };
 
   const handleSortChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -92,16 +82,12 @@ export default function SearchPage() {
     router.push(q ? `${pathname}?q=${encodeURIComponent(q)}` : pathname);
   };
 
-  const hasActiveFilters = !!(
-    minPriceParam ||
-    maxPriceParam ||
-    minRatingParam ||
-    (sortParam && sortParam !== 'newest')
+  const hasActiveFilters = Boolean(
+    minPriceParam || maxPriceParam || minRatingParam || (sortParam && sortParam !== 'newest')
   );
 
   const renderFilterContent = () => (
     <div className="space-y-6">
-      {/* Header filter title */}
       <div className="flex items-center justify-between">
         <h3 className="font-bold text-ink flex items-center gap-2">
           <FilterIcon className="w-4 h-4 text-primary" />
@@ -117,10 +103,7 @@ export default function SearchPage() {
           </button>
         )}
       </div>
-
       <hr className="border-rule" />
-
-      {/* Price Range Filter */}
       <div>
         <h4 className="font-semibold text-sm text-ink mb-3">{t('filterPrice')}</h4>
         <form onSubmit={handleApplyPrice} className="space-y-3">
@@ -151,10 +134,7 @@ export default function SearchPage() {
           </button>
         </form>
       </div>
-
       <hr className="border-rule" />
-
-      {/* Rating Filter */}
       <div>
         <h4 className="font-semibold text-sm text-ink mb-3">{t('filterRating')}</h4>
         <div className="space-y-1.5">

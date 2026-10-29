@@ -25,7 +25,7 @@ export default function AdminCategoriesPage() {
   const fetchCategories = useCallback(async () => {
     try {
       setLoading(true);
-      const data = await categoryService.getAll();
+      const data = await categoryService.getAdminAll();
       setCategories(data);
     } catch (error) {
       console.error('Failed to fetch categories', error);

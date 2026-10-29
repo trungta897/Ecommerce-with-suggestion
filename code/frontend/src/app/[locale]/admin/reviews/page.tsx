@@ -14,6 +14,7 @@ export default function AdminReviewsPage() {
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [searchQuery, setSearchQuery] = useState('');
   const [error, setError] = useState('');
 
   const fetchReviews = useCallback(
@@ -55,7 +56,12 @@ export default function AdminReviewsPage() {
       <div className="flex gap-3 mb-6">
         <div className="relative flex-1 max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-2" />
-          <BaseInput placeholder={t('searchPlaceholder')} className="pl-10" />
+          <BaseInput
+            placeholder={t('searchPlaceholder')}
+            className="pl-10"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
         </div>
       </div>
 
@@ -89,62 +95,75 @@ export default function AdminReviewsPage() {
                   </td>
                 </tr>
               ) : (
-                reviews.map((review) => (
-                  <tr
-                    key={review.id}
-                    className="border-b border-rule last:border-0 hover:bg-paper-2 transition-colors"
-                  >
-                    <td className="px-5 py-3 font-medium text-ink max-w-[160px] truncate">
-                      {review.product?.name}
-                    </td>
-                    <td className="px-5 py-3 text-ink-2">
-                      <div>{review.user?.fullName}</div>
-                      <div className="text-xs text-gray-500">{review.user?.phone}</div>
-                    </td>
-                    <td className="px-5 py-3">
-                      <div className="flex items-center gap-0.5">
-                        {[1, 2, 3, 4, 5].map((s) => (
-                          <Star
-                            key={s}
-                            className={`w-3.5 h-3.5 ${
-                              s <= review.rating
-                                ? 'fill-yellow-400 text-yellow-400'
-                                : 'text-gray-300'
-                            }`}
-                          />
-                        ))}
-                      </div>
-                    </td>
-                    <td className="px-5 py-3 text-ink-2 max-w-[250px] truncate">
-                      {review.title && <div className="font-medium text-black">{review.title}</div>}
-                      {review.content}
-                    </td>
-                    <td className="px-5 py-3">
-                      <span
-                        className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
-                          review.status === 'VISIBLE'
-                            ? 'bg-green-100 text-green-800'
-                            : 'bg-gray-100 text-gray-800'
-                        }`}
-                      >
-                        {review.status === 'VISIBLE' ? t('visible') : t('hidden')}
-                      </span>
-                    </td>
-                    <td className="px-5 py-3">
-                      <button
-                        onClick={() => handleToggle(review.id)}
-                        className="p-1.5 rounded-lg hover:bg-paper-2 text-ink-2 hover:text-orange-500 transition-colors"
-                        title={review.status === 'VISIBLE' ? t('hideReview') : t('showReview')}
-                      >
-                        {review.status === 'VISIBLE' ? (
-                          <EyeOff className="w-4 h-4" />
-                        ) : (
-                          <Eye className="w-4 h-4" />
+                reviews
+                  .filter((r) => {
+                    if (!searchQuery.trim()) return true;
+                    const q = searchQuery.toLowerCase();
+                    return (
+                      r.product?.name?.toLowerCase().includes(q) ||
+                      r.user?.fullName?.toLowerCase().includes(q) ||
+                      r.title?.toLowerCase().includes(q) ||
+                      r.content?.toLowerCase().includes(q)
+                    );
+                  })
+                  .map((review) => (
+                    <tr
+                      key={review.id}
+                      className="border-b border-rule last:border-0 hover:bg-paper-2 transition-colors"
+                    >
+                      <td className="px-5 py-3 font-medium text-ink max-w-[160px] truncate">
+                        {review.product?.name}
+                      </td>
+                      <td className="px-5 py-3 text-ink-2">
+                        <div>{review.user?.fullName}</div>
+                        <div className="text-xs text-gray-500">{review.user?.phone}</div>
+                      </td>
+                      <td className="px-5 py-3">
+                        <div className="flex items-center gap-0.5">
+                          {[1, 2, 3, 4, 5].map((s) => (
+                            <Star
+                              key={s}
+                              className={`w-3.5 h-3.5 ${
+                                s <= review.rating
+                                  ? 'fill-yellow-400 text-yellow-400'
+                                  : 'text-gray-300'
+                              }`}
+                            />
+                          ))}
+                        </div>
+                      </td>
+                      <td className="px-5 py-3 text-ink-2 max-w-[250px] truncate">
+                        {review.title && (
+                          <div className="font-medium text-black">{review.title}</div>
                         )}
-                      </button>
-                    </td>
-                  </tr>
-                ))
+                        {review.content}
+                      </td>
+                      <td className="px-5 py-3">
+                        <span
+                          className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
+                            review.status === 'VISIBLE'
+                              ? 'bg-green-100 text-green-800'
+                              : 'bg-gray-100 text-gray-800'
+                          }`}
+                        >
+                          {review.status === 'VISIBLE' ? t('visible') : t('hidden')}
+                        </span>
+                      </td>
+                      <td className="px-5 py-3">
+                        <button
+                          onClick={() => handleToggle(review.id)}
+                          className="p-1.5 rounded-lg hover:bg-paper-2 text-ink-2 hover:text-orange-500 transition-colors"
+                          title={review.status === 'VISIBLE' ? t('hideReview') : t('showReview')}
+                        >
+                          {review.status === 'VISIBLE' ? (
+                            <EyeOff className="w-4 h-4" />
+                          ) : (
+                            <Eye className="w-4 h-4" />
+                          )}
+                        </button>
+                      </td>
+                    </tr>
+                  ))
               )}
             </tbody>
           </table>

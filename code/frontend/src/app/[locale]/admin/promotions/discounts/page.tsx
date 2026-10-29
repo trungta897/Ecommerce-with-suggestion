@@ -107,7 +107,6 @@ export default function AdminDiscountsPage() {
     setSaving(true);
     setErrorMsg(null);
     setSuccessMsg(null);
-
     try {
       const payload: CreateDiscountInput = {
         ...formData,
@@ -116,7 +115,6 @@ export default function AdminDiscountsPage() {
         startDate: new Date(formData.startDate).toISOString(),
         endDate: new Date(formData.endDate).toISOString(),
       };
-
       if (editingDiscount) {
         await promotionService.updateDiscount(editingDiscount.id, payload);
         setSuccessMsg(t('update_success'));
@@ -124,12 +122,10 @@ export default function AdminDiscountsPage() {
         await promotionService.createDiscount(payload);
         setSuccessMsg(t('create_success'));
       }
-
       setIsModalOpen(false);
       fetchDiscounts();
     } catch (err: unknown) {
-      const msg = getApiErrorMessage(err) || t('save_error');
-      setErrorMsg(msg);
+      setErrorMsg(getApiErrorMessage(err) || t('save_error'));
     } finally {
       setSaving(false);
     }
@@ -142,14 +138,12 @@ export default function AdminDiscountsPage() {
       setSuccessMsg(t('delete_success'));
       fetchDiscounts();
     } catch (err: unknown) {
-      const message = getApiErrorMessage(err) || t('delete_error');
-      setErrorMsg(message);
+      setErrorMsg(getApiErrorMessage(err) || t('delete_error'));
     }
   };
 
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6">
-      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-rule shadow-sm">
         <div className="flex items-center gap-3">
           <div className="p-3 bg-red-50 text-red-600 rounded-xl">
@@ -169,7 +163,6 @@ export default function AdminDiscountsPage() {
         </button>
       </div>
 
-      {/* Alerts */}
       {errorMsg && (
         <div className="flex items-center gap-2 p-4 bg-red-50 text-red-700 border border-red-200 rounded-xl text-sm">
           <AlertCircle className="w-5 h-5 flex-shrink-0" />
@@ -183,7 +176,6 @@ export default function AdminDiscountsPage() {
         </div>
       )}
 
-      {/* Table */}
       <div className="bg-white border border-rule rounded-2xl shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
@@ -221,7 +213,11 @@ export default function AdminDiscountsPage() {
                     discount.isActive &&
                     new Date(discount.startDate) <= now &&
                     new Date(discount.endDate) >= now;
-
+                  const statusClass = isOngoing
+                    ? 'bg-green-100 text-green-700 border border-green-200'
+                    : discount.isActive
+                      ? 'bg-blue-50 text-blue-700'
+                      : 'bg-gray-100 text-gray-500';
                   return (
                     <tr key={discount.id} className="hover:bg-paper-1/50 transition-colors">
                       <td className="p-4 font-medium max-w-xs truncate">
@@ -229,7 +225,7 @@ export default function AdminDiscountsPage() {
                       </td>
                       <td className="p-4 text-ink-3">
                         {discount.product?.price
-                          ? Number(discount.product.price).toLocaleString('vi-VN') + 'đ'
+                          ? `${Number(discount.product.price).toLocaleString('vi-VN')}đ`
                           : '-'}
                       </td>
                       <td className="p-4 font-bold text-red-600">
@@ -250,13 +246,7 @@ export default function AdminDiscountsPage() {
                       </td>
                       <td className="p-4">
                         <span
-                          className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
-                            isOngoing
-                              ? 'bg-green-100 text-green-700 border border-green-200'
-                              : discount.isActive
-                                ? 'bg-blue-50 text-blue-700'
-                                : 'bg-gray-100 text-gray-500'
-                          }`}
+                          className={`px-2.5 py-1 rounded-full text-xs font-semibold ${statusClass}`}
                         >
                           {isOngoing
                             ? t('ongoing')
