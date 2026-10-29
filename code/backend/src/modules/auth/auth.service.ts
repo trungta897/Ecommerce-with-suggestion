@@ -5,6 +5,7 @@ import { LoginDto } from './dto/login.dto';
 import { VerifyEmailDto } from './dto/verify-email.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
+import { SetStaffPasswordDto } from './dto/set-staff-password.dto';
 import { BcryptHelper } from '../../common/utils/bcrypt.util';
 import { JwtService } from '@nestjs/jwt';
 import { I18nContext, I18nService } from 'nestjs-i18n';
@@ -27,21 +28,15 @@ export class AuthService {
 
   async register(dto: RegisterDto) {
     const lang = I18nContext.current()?.lang;
-
-    // Check if user exists
     const existingUser = await this.prisma.user.findUnique({
       where: { email: dto.email },
     });
 
     if (existingUser) {
-      const msg = this.i18n.t('auth.USER_EXISTS', { lang });
-      throw new BadRequestException(msg);
+      throw new BadRequestException(this.i18n.t('auth.USER_EXISTS', { lang }));
     }
 
-    // Hash password
     const passwordHash = await BcryptHelper.hashPassword(dto.password);
-
-    // Create user
     const newUser = await this.prisma.user.create({
       data: {
         email: dto.email,
@@ -52,7 +47,7 @@ export class AuthService {
     });
 
     const otp = this.generateOtp();
-    await this.redisService.set(`OTP:REGISTER:${dto.email}`, otp, 300); // 5 mins
+    await this.redisService.set(`OTP:REGISTER:${dto.email}`, otp, 300);
     await this.mailService.sendOtpEmail(dto.email, otp, 'register');
 
     return {
@@ -78,7 +73,7 @@ export class AuthService {
 
     if (savedOtp !== dto.otp) {
       await this.redisService.incr(failKey);
-      await this.redisService.set(failKey, '1', 300); // Wait, incr doesn't set TTL if it exists, but let's just keep it simple. Actually, we should set EX if not exists.
+      await this.redisService.set(failKey, '1', 300);
       throw new BadRequestException(this.i18n.t('auth.OTP_INVALID', { lang }));
     }
 
@@ -139,55 +134,98 @@ export class AuthService {
     return { message: this.i18n.t('auth.RESET_SUCCESS', { lang }) };
   }
 
+  private async mergeGuestActivities(
+    sessionId: string | undefined,
+    userId: string,
+  ) {
+    if (!sessionId) return;
+    await this.prisma.userActivityLog
+      .updateMany({ where: { sessionId, userId: null }, data: { userId } })
+      .catch(() => {});
+  }
+
+  async setStaffPassword(dto: SetStaffPasswordDto) {
+    const lang = I18nContext.current()?.lang || 'vi';
+    let payload: { sub?: string; email?: string; type?: string };
+    try {
+      payload = this.jwtService.verify<{
+        sub?: string;
+        email?: string;
+        type?: string;
+      }>(dto.token);
+    } catch {
+      throw new BadRequestException(
+        this.i18n.t('auth.SESSION_EXPIRED', { lang }),
+      );
+    }
+
+    if (!payload?.sub || payload.type !== 'STAFF_INVITE') {
+      throw new BadRequestException(
+        this.i18n.t('auth.SESSION_EXPIRED', { lang }),
+      );
+    }
+
+    const user = await this.prisma.user.findUnique({
+      where: { id: payload.sub },
+    });
+    if (!user || user.passwordSetAt || user.passwordHash) {
+      throw new BadRequestException(
+        this.i18n.t('auth.SESSION_EXPIRED', { lang }),
+      );
+    }
+
+    const passwordHash = await BcryptHelper.hashPassword(dto.newPassword);
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: {
+        passwordHash,
+        passwordSetAt: new Date(),
+        isVerified: true,
+        isActive: true,
+      },
+    });
+
+    return { message: this.i18n.t('auth.RESET_SUCCESS', { lang }) };
+  }
+
   async login(dto: LoginDto) {
     const lang = I18nContext.current()?.lang;
-
-    // Find user
     const user = await this.prisma.user.findUnique({
       where: { email: dto.email },
     });
-
     if (!user) {
-      const msg = this.i18n.t('auth.USER_NOT_FOUND', { lang });
-      throw new BadRequestException(msg);
+      throw new BadRequestException(
+        this.i18n.t('auth.USER_NOT_FOUND', { lang }),
+      );
     }
-
+    if (user.isActive === false) {
+      throw new BadRequestException(this.i18n.t('auth.PHONE_LOCKED', { lang }));
+    }
     if (!user.isVerified) {
       throw new BadRequestException(
         this.i18n.t('auth.UNVERIFIED_ACCOUNT', { lang }),
       );
     }
-
     if (!user.passwordHash) {
       throw new BadRequestException(this.i18n.t('auth.GOOGLE_ONLY', { lang }));
     }
 
-    // Compare password
     const isPasswordValid = await BcryptHelper.comparePassword(
       dto.password,
       user.passwordHash,
     );
-
     if (!isPasswordValid) {
-      const msg = this.i18n.t('auth.INVALID_PASSWORD', { lang });
-      throw new BadRequestException(msg);
+      throw new BadRequestException(
+        this.i18n.t('auth.INVALID_PASSWORD', { lang }),
+      );
     }
 
-    // Merge guest activity logs if sessionId provided
-    if (dto.sessionId) {
-      try {
-        await this.prisma.userActivityLog.updateMany({
-          where: { sessionId: dto.sessionId, userId: null },
-          data: { userId: user.id },
-        });
-      } catch (err) {
-        console.error('Failed to merge activity logs on login:', err);
-      }
-    }
-
-    // Generate JWT
-    const payload = { sub: user.id, email: user.email, role: user.role };
-    const accessToken = this.jwtService.sign(payload);
+    await this.mergeGuestActivities(dto.sessionId, user.id);
+    const accessToken = this.jwtService.sign({
+      sub: user.id,
+      email: user.email,
+      role: user.role,
+    });
 
     return {
       accessToken,
@@ -202,35 +240,21 @@ export class AuthService {
 
   logout(): { message: string } {
     const lang = I18nContext.current()?.lang || 'vi';
-    return {
-      message: this.i18n.t('auth.LOGOUT_SUCCESS', { lang }),
-    };
+    return { message: this.i18n.t('auth.LOGOUT_SUCCESS', { lang }) };
   }
 
   async requestPhoneOtp(phone: string) {
     const lang = I18nContext.current()?.lang || 'vi';
-
-    // Check if user is blocked or something if we want, but for now we just send OTP
-    const user = await this.prisma.user.findUnique({
-      where: { phone },
-    });
-
+    const user = await this.prisma.user.findUnique({ where: { phone } });
     if (user && !user.isActive) {
       throw new BadRequestException(this.i18n.t('auth.PHONE_LOCKED', { lang }));
     }
 
     const otp = this.generateOtp();
-    await this.redisService.set(`OTP:PHONE:${phone}`, otp, 300); // 5 mins
+    await this.redisService.set(`OTP:PHONE:${phone}`, otp, 300);
     await this.redisService.del(`OTP:FAIL_PHONE:${phone}`);
 
-    // TODO: Actually call SMS API here
-    // For now, mock it with console log
-    console.log(`[MOCK SMS] Gửi mã OTP ${otp} đến số điện thoại ${phone}`);
-
-    return {
-      message: this.i18n.t('auth.PHONE_OTP_SENT', { lang }),
-      phone,
-    };
+    return { message: this.i18n.t('auth.PHONE_OTP_SENT', { lang }), phone };
   }
 
   async verifyPhoneOtp(phone: string, otp: string, sessionId?: string) {
@@ -254,57 +278,38 @@ export class AuthService {
 
     if (savedOtp !== otp) {
       const isNewKey = await this.redisService.setNx(failKey, '1', 900);
-      if (!isNewKey) {
-        await this.redisService.incr(failKey);
-      }
+      if (!isNewKey) await this.redisService.incr(failKey);
       throw new BadRequestException(
         this.i18n.t('auth.PHONE_OTP_INVALID', { lang }),
       );
     }
 
-    // OTP is valid. Now find or create user.
-    let user = await this.prisma.user.findUnique({
-      where: { phone },
-    });
-
+    let user = await this.prisma.user.findUnique({ where: { phone } });
     if (!user) {
-      // Create new customer
       user = await this.prisma.user.create({
         data: {
           phone,
-          email: `${phone}@placeholder.local`, // Mock email since it is @unique in schema
+          email: `${phone}@placeholder.local`,
           fullName: 'Customer',
-          passwordHash: '', // No password
+          passwordHash: '',
           isVerified: true,
           role: 'CUSTOMER',
         },
       });
+    } else if (user.isActive === false) {
+      throw new BadRequestException(this.i18n.t('auth.PHONE_LOCKED', { lang }));
     }
 
-    // Clear OTP
     await this.redisService.del(redisKey);
     await this.redisService.del(failKey);
+    await this.mergeGuestActivities(sessionId, user.id);
 
-    // Merge guest activity logs if sessionId provided
-    if (sessionId) {
-      try {
-        await this.prisma.userActivityLog.updateMany({
-          where: { sessionId, userId: null },
-          data: { userId: user.id },
-        });
-      } catch (err) {
-        console.error('Failed to merge activity logs on verifyPhoneOtp:', err);
-      }
-    }
-
-    // Generate JWT
-    const payload = {
+    const accessToken = this.jwtService.sign({
       sub: user.id,
       email: user.email,
       phone: user.phone,
       role: user.role,
-    };
-    const accessToken = this.jwtService.sign(payload);
+    });
 
     return {
       accessToken,

@@ -120,6 +120,21 @@ export class OrdersController {
     );
   }
 
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN, UserRole.EMPLOYEE)
+  @Get('admin')
+  async getAdminOrders(
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('status') status?: string,
+  ) {
+    return this.ordersService.getAdminOrders(
+      Number(page) || 1,
+      Number(limit) || 10,
+      status,
+    );
+  }
+
   @UseGuards(AuthGuard('jwt'))
   @Get(':id')
   async getOrderById(
@@ -157,21 +172,6 @@ export class OrdersController {
       this.ordersService.getEventEmitter(),
       `order.updated.${orderId}`,
     ).pipe(map((payload) => ({ data: payload }) as MessageEvent));
-  }
-
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN, UserRole.EMPLOYEE)
-  @Get('admin')
-  async getAdminOrders(
-    @Query('page') page?: string,
-    @Query('limit') limit?: string,
-    @Query('status') status?: string,
-  ) {
-    return this.ordersService.getAdminOrders(
-      Number(page) || 1,
-      Number(limit) || 10,
-      status,
-    );
   }
 
   @UseGuards(AuthGuard('jwt'), RolesGuard)

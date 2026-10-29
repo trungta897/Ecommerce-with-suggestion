@@ -7,7 +7,6 @@ import {
   Body,
   Param,
   UseGuards,
-  Query,
   Headers,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
@@ -25,9 +24,15 @@ export class CategoriesController {
   constructor(private readonly categoriesService: CategoriesService) {}
 
   @Get()
-  findAll(@Query('all') all?: string) {
-    const includeInactive = all === 'true';
-    return this.categoriesService.findAll(includeInactive);
+  findAll() {
+    return this.categoriesService.findAll(false);
+  }
+
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN, UserRole.EMPLOYEE)
+  @Get('admin')
+  findAllAdmin() {
+    return this.categoriesService.findAll(true);
   }
 
   @Get(':id')

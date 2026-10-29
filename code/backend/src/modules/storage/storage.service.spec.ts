@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { StorageService } from './storage.service';
+import { StorageConfig } from './storage.config';
 
 jest.mock('cloudinary', () => {
   return {
@@ -18,7 +19,17 @@ describe('StorageService', () => {
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [StorageService],
+      providers: [
+        StorageService,
+        {
+          provide: StorageConfig,
+          useValue: {
+            cloudinaryCloudName: 'test-cloud',
+            cloudinaryApiKey: 'test-key',
+            cloudinaryApiSecret: 'test-secret',
+          },
+        },
+      ],
     }).compile();
 
     service = module.get<StorageService>(StorageService);
