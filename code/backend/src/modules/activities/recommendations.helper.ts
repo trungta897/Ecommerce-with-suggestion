@@ -1,10 +1,17 @@
-import { Category, Prisma, Product } from '@prisma/client';
+import {
+  ActivityType,
+  Category,
+  OrderStatus,
+  Prisma,
+  Product,
+} from '@prisma/client';
 import { PrismaService } from '../../database/prisma.service';
 import {
   ACTIVITY_ACTION_WEIGHTS,
   CURRENT_PRODUCT_SEED_WEIGHT,
   RECOMMENDATIONS_LIMIT,
 } from '../../common/constants/activity.constant';
+import { buildQuotaBalancedRecommendations } from './recommendations-quota.helper';
 
 export type ProductWithCategory = Product & {
   category: Category | null;
@@ -72,6 +79,33 @@ export async function collectSeedExternalItems(
     }
   }
 
+  if (userId && prisma.orderItem?.findMany) {
+    const purchased = await prisma.orderItem
+      .findMany({
+        where: {
+          order: { userId, status: { not: OrderStatus.CANCELLED } },
+        },
+        orderBy: { order: { createdAt: 'desc' } },
+        take: 10,
+        include: {
+          product: {
+            select: { id: true, sourceExternalId: true, isActive: true },
+          },
+        },
+      })
+      .catch(() => []);
+
+    for (const item of purchased) {
+      if (!item.product || !item.product.isActive) continue;
+      const extId = item.product.sourceExternalId || item.product.id;
+      const prev = weightMap.get(extId) || 0;
+      weightMap.set(
+        extId,
+        Math.min(15, prev + ACTIVITY_ACTION_WEIGHTS[ActivityType.PURCHASE]),
+      );
+    }
+  }
+
   const entries = Array.from(weightMap.entries()).slice(0, 8);
   return {
     itemIds: entries.map(([id]) => id),
@@ -129,46 +163,24 @@ export async function fetchDbFallbackRecommendations(
   limit: number = RECOMMENDATIONS_LIMIT,
 ): Promise<ProductWithCategory[]> {
   const seedProductIds: string[] = [];
-  const seedCategoryIds: string[] = [];
-
-  if (currentProductId) {
-    seedProductIds.push(currentProductId);
-    const currentProd = await prisma.product.findUnique({
-      where: { id: currentProductId },
-      select: { categoryId: true },
-    });
-    if (currentProd?.categoryId) {
-      seedCategoryIds.push(currentProd.categoryId);
-    }
-  }
+  if (currentProductId) seedProductIds.push(currentProductId);
 
   if (userId || sessionId) {
     const orConditions: Prisma.UserActivityLogWhereInput[] = [];
     if (userId) orConditions.push({ userId });
     if (sessionId) orConditions.push({ sessionId });
 
-    const recentActivities = await prisma.userActivityLog.findMany({
-      where: { OR: orConditions },
-      orderBy: { createdAt: 'desc' },
-      take: 10,
-      include: {
-        product: {
-          select: { id: true, categoryId: true },
-        },
-      },
-    });
+    const recentActivities =
+      (await prisma.userActivityLog.findMany({
+        where: { OR: orConditions },
+        orderBy: { createdAt: 'desc' },
+        take: 10,
+        select: { productId: true },
+      })) || [];
 
     for (const act of recentActivities) {
-      if (act.product) {
-        if (!seedProductIds.includes(act.product.id)) {
-          seedProductIds.push(act.product.id);
-        }
-        if (
-          act.product.categoryId &&
-          !seedCategoryIds.includes(act.product.categoryId)
-        ) {
-          seedCategoryIds.push(act.product.categoryId);
-        }
+      if (act.productId && !seedProductIds.includes(act.productId)) {
+        seedProductIds.push(act.productId);
       }
     }
   }
@@ -178,16 +190,10 @@ export async function fetchDbFallbackRecommendations(
 
   if (seedProductIds.length > 0) {
     const recRows = await prisma.productRecommendation.findMany({
-      where: {
-        productId: { in: seedProductIds },
-      },
+      where: { productId: { in: seedProductIds } },
       orderBy: { score: 'desc' },
       take: limit * 2,
-      include: {
-        recommended: {
-          include: { category: true },
-        },
-      },
+      include: { recommended: { include: { category: true } } },
     });
 
     for (const row of recRows) {
@@ -202,59 +208,26 @@ export async function fetchDbFallbackRecommendations(
           ...prod,
           aiScore: toAiScorePercentage(row.score, recommendedProductMap.size),
         });
-        if (recommendedProductMap.size >= limit) {
-          break;
-        }
       }
     }
   }
 
-  if (recommendedProductMap.size < limit && seedCategoryIds.length > 0) {
-    const categoryProducts = await prisma.product.findMany({
-      where: {
-        categoryId: { in: seedCategoryIds },
-        isActive: true,
-        id: {
-          notIn: Array.from(
-            new Set([
-              ...excludeIds,
-              ...Array.from(recommendedProductMap.keys()),
-            ]),
-          ),
-        },
-      },
-      orderBy: [
-        { soldCount: 'desc' },
-        { avgRating: 'desc' },
-        { viewCount: 'desc' },
-      ],
-      take: limit - recommendedProductMap.size,
-      include: {
-        category: true,
-      },
-    });
+  const orderedBalanced = await buildQuotaBalancedRecommendations(
+    prisma,
+    Array.from(recommendedProductMap.values()),
+    userId,
+    sessionId,
+    currentProductId,
+    limit,
+  );
 
-    for (const prod of categoryProducts) {
-      recommendedProductMap.set(prod.id, {
-        ...prod,
-        aiScore: toAiScorePercentage(
-          Number(prod.avgRating || 0),
-          recommendedProductMap.size,
-        ),
-      });
-    }
-  }
-
-  if (recommendedProductMap.size < limit) {
+  if (orderedBalanced.length < limit) {
     const fallbackProducts = await prisma.product.findMany({
       where: {
         isActive: true,
         id: {
           notIn: Array.from(
-            new Set([
-              ...excludeIds,
-              ...Array.from(recommendedProductMap.keys()),
-            ]),
+            new Set([...excludeIds, ...orderedBalanced.map((p) => p.id)]),
           ),
         },
       },
@@ -263,22 +236,20 @@ export async function fetchDbFallbackRecommendations(
         { soldCount: 'desc' },
         { viewCount: 'desc' },
       ],
-      take: limit - recommendedProductMap.size,
-      include: {
-        category: true,
-      },
+      take: limit - orderedBalanced.length,
+      include: { category: true },
     });
 
     for (const prod of fallbackProducts) {
-      recommendedProductMap.set(prod.id, {
+      orderedBalanced.push({
         ...prod,
         aiScore: toAiScorePercentage(
           Number(prod.avgRating || 0),
-          recommendedProductMap.size,
+          orderedBalanced.length,
         ),
       });
     }
   }
 
-  return Array.from(recommendedProductMap.values()).slice(0, limit);
+  return orderedBalanced.slice(0, limit);
 }

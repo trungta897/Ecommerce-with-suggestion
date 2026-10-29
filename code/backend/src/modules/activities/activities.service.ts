@@ -21,6 +21,7 @@ import {
   rankAndHydrateMlProducts,
   type ProductWithCategory,
 } from './recommendations.helper';
+import { buildQuotaBalancedRecommendations } from './recommendations-quota.helper';
 
 export interface ActivityEventPayload {
   userId?: string;
@@ -115,65 +116,46 @@ export class ActivitiesService {
     return { success: true };
   }
 
+  private buildActorConditions(userId?: string, sessionId?: string) {
+    const orConditions: Prisma.UserActivityLogWhereInput[] = [];
+    if (userId) orConditions.push({ userId });
+    if (sessionId) orConditions.push({ sessionId });
+    return orConditions;
+  }
+
   async getRecentlyViewed(
     userId?: string,
     sessionId?: string,
     limit: number = DEFAULT_ACTIVITY_LIMIT,
   ) {
-    if (!userId && !sessionId) {
-      return [];
-    }
-
-    const orConditions: Prisma.UserActivityLogWhereInput[] = [];
-    if (userId) orConditions.push({ userId });
-    if (sessionId) orConditions.push({ sessionId });
+    const orConditions = this.buildActorConditions(userId, sessionId);
+    if (orConditions.length === 0) return [];
 
     const recentLogs = await this.prisma.userActivityLog.findMany({
-      where: {
-        action: ActivityType.VIEW,
-        OR: orConditions,
-      },
+      where: { action: ActivityType.VIEW, OR: orConditions },
       orderBy: { createdAt: 'desc' },
       take: limit * 4,
-      include: {
-        product: {
-          include: {
-            category: true,
-          },
-        },
-      },
+      include: { product: { include: { category: true } } },
     });
 
     const seenIds = new Set<string>();
     const products: ProductWithCategory[] = [];
-
     for (const log of recentLogs) {
       if (log.product && log.product.isActive && !seenIds.has(log.productId)) {
         seenIds.add(log.productId);
         products.push(log.product);
-        if (products.length >= limit) {
-          break;
-        }
+        if (products.length >= limit) break;
       }
     }
-
     return products;
   }
 
   async clearRecentlyViewed(userId?: string, sessionId?: string) {
-    if (!userId && !sessionId) {
-      return { deletedCount: 0 };
-    }
-
-    const orConditions: Prisma.UserActivityLogWhereInput[] = [];
-    if (userId) orConditions.push({ userId });
-    if (sessionId) orConditions.push({ sessionId });
+    const orConditions = this.buildActorConditions(userId, sessionId);
+    if (orConditions.length === 0) return { deletedCount: 0 };
 
     const result = await this.prisma.userActivityLog.deleteMany({
-      where: {
-        action: ActivityType.VIEW,
-        OR: orConditions,
-      },
+      where: { action: ActivityType.VIEW, OR: orConditions },
     });
 
     await this.invalidateActorRecCache(userId, sessionId);
@@ -243,82 +225,70 @@ export class ActivitiesService {
 
         if (response.ok) {
           const mlData = (await response.json()) as {
-            items: Array<{ product_id: string; score: number }>;
-            algorithm?: string;
+            items?: Array<{ product_id: string; score: number }>;
           };
-
           if (mlData.items && mlData.items.length > 0) {
-            const externalOrInternalIds = mlData.items.map((i) => i.product_id);
+            const ids = mlData.items.map((i) => i.product_id);
             const dbProducts = await this.prisma.product.findMany({
               where: {
                 isActive: true,
-                OR: [
-                  { id: { in: externalOrInternalIds } },
-                  { sourceExternalId: { in: externalOrInternalIds } },
-                ],
+                OR: [{ id: { in: ids } }, { sourceExternalId: { in: ids } }],
               },
-              include: {
-                category: true,
-              },
+              include: { category: true },
             });
-
-            const ranked = rankAndHydrateMlProducts(
+            const rawCandidates = rankAndHydrateMlProducts(
               dbProducts,
               mlData.items,
               currentProductId,
+              candidateLimit,
+            );
+            const ranked = await buildQuotaBalancedRecommendations(
+              this.prisma,
+              rawCandidates,
+              userId,
+              sessionId,
+              currentProductId,
               limit,
             );
-
             if (ranked.length > 0) {
               if (ranked.length < limit) {
-                const fallbackMore = await fetchDbFallbackRecommendations(
+                const more = await fetchDbFallbackRecommendations(
                   this.prisma,
                   userId,
                   sessionId,
                   currentProductId,
                   limit,
                 );
-                const existingIds = new Set(ranked.map((p) => p.id));
-                for (const fb of fallbackMore) {
-                  if (!existingIds.has(fb.id)) {
+                const seen = new Set(ranked.map((p) => p.id));
+                for (const fb of more) {
+                  if (!seen.has(fb.id) && ranked.length < limit) {
                     ranked.push(fb);
-                    existingIds.add(fb.id);
-                    if (ranked.length >= limit) break;
+                    seen.add(fb.id);
                   }
                 }
               }
-
               await this.redisService
                 .set(cacheKey, JSON.stringify(ranked), HYBRID_CACHE_TTL_SECONDS)
                 .catch(() => {});
-
               return ranked;
             }
           }
         }
       }
     } catch (err) {
-      this.logger.warn(
-        `ML Service call failed or timed out (500ms). Falling back to DB recommendations. Reason: ${err}`,
-      );
+      this.logger.warn(`ML Service fallback triggered: ${err}`);
     }
 
-    const fallbackResults = await fetchDbFallbackRecommendations(
+    const fallback = await fetchDbFallbackRecommendations(
       this.prisma,
       userId,
       sessionId,
       currentProductId,
       limit,
     );
-
     await this.redisService
-      .set(
-        cacheKey,
-        JSON.stringify(fallbackResults),
-        FALLBACK_CACHE_TTL_SECONDS,
-      )
+      .set(cacheKey, JSON.stringify(fallback), FALLBACK_CACHE_TTL_SECONDS)
       .catch(() => {});
-
-    return fallbackResults;
+    return fallback;
   }
 }

@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable, BadRequestException, Logger } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
@@ -14,6 +14,8 @@ import { MailService } from '../mail/mail.service';
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     private prisma: PrismaService,
     private jwtService: JwtService,
@@ -253,6 +255,7 @@ export class AuthService {
     const otp = this.generateOtp();
     await this.redisService.set(`OTP:PHONE:${phone}`, otp, 300);
     await this.redisService.del(`OTP:FAIL_PHONE:${phone}`);
+    this.logger.log(`📱 [DEV OTP] Phone: ${phone} -> OTP: ${otp}`);
 
     return { message: this.i18n.t('auth.PHONE_OTP_SENT', { lang }), phone };
   }
