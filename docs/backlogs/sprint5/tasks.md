@@ -87,4 +87,13 @@
   - [x] Hoàn thiện Pub/Sub `@OnEvent('activity.log')` tại `ActivitiesService`, phát sự kiện `ADD_TO_CART` / `REMOVE_FROM_CART` từ `CartService`, chuẩn hóa `activityService.logActivity` kèm JWT trên Frontend và tự động xóa cache `REC:CACHE:*` khi có hành vi mới.
   - [x] Bổ sung Unit Tests `activities.service.spec.ts` kiểm chứng xác thực JWT, xếp hạng AI `aiScore` và làm mới cache Pub/Sub.
 
+- [x] **14. Hoàn Thiện Toàn Bộ Chức Năng User & Admin (Khắc Phục Route Order `/orders/admin`, Khóa Tài Khoản Login, Luồng Set-Password Nhân Viên, Admin Categories Ẩn/Hiện & Hồ Sơ VIP/Đơn Hàng)**
+  - [x] Khắc phục xung đột thứ tự route `ADM-01` tại `orders.controller.ts` (đưa `@Get('admin')` lên trước `@Get(':id')`).
+  - [x] Bảo mật đăng nhập `SEC-01` tại `auth.service.ts`: Chặn tài khoản bị khóa (`user.isActive === false`) ở cả Email/Password và Phone OTP.
+  - [x] Hoàn thiện luồng nhân viên thiết lập mật khẩu `ADM-02`: Bổ sung `POST /auth/set-password` (`SetStaffPasswordDto`) và trang `/[locale]/(auth)/set-password/page.tsx`.
+  - [x] Bổ sung endpoint bảo mật `GET /categories/admin` (`ADM-03`) và tích hợp `categoryService.getAdminAll()` để Admin xem và bật lại danh mục đã ẩn.
+  - [x] Hoàn thiện trang Hồ sơ người dùng `USR-01` & `USR-02`: Hiển thị hạng VIP (`vipTier`), điểm tích lũy (`loyaltyPoints`) và danh sách đơn hàng gần đây tại tab Đơn hàng (`/profile`).
+  - [x] Đồng bộ thanh tìm kiếm đánh giá Admin (`ADM-04`), chuẩn hóa i18n cho `/orders`, sửa port SSE fallback `8000` và đảm bảo 100% file logic `< 300` dòng.
+
+
 
