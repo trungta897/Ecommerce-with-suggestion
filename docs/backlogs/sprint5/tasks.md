@@ -95,5 +95,11 @@
   - [x] Hoàn thiện trang Hồ sơ người dùng `USR-01` & `USR-02`: Hiển thị hạng VIP (`vipTier`), điểm tích lũy (`loyaltyPoints`) và danh sách đơn hàng gần đây tại tab Đơn hàng (`/profile`).
   - [x] Đồng bộ thanh tìm kiếm đánh giá Admin (`ADM-04`), chuẩn hóa i18n cho `/orders`, sửa port SSE fallback `8000` và đảm bảo 100% file logic `< 300` dòng.
 
+- [x] **15. Sản Phẩm Cùng Danh Mục Trên Trang Chi Tiết & Cân Bằng Quota Gợi Ý (60–65% Cùng Loại / 35–40% Lịch Sử Hành Vi)**
+  - [x] Bổ sung component `RelatedCategoryProducts` hiển thị danh sách sản phẩm cùng danh mục trên trang Chi tiết sản phẩm (`/products/[id]`) và gỡ bỏ hoàn toàn chỉ số `% aiScore` trên cả `ProductCard` lẫn trang chi tiết.
+  - [x] Xây dựng bộ cân bằng Quota `buildQuotaBalancedRecommendations` (`recommendations-quota.helper.ts`, `SAME_CATEGORY_MAX_RATIO = 0.625`): Giới hạn tối đa `60%–65%` (5/8 sản phẩm) thuộc cùng danh mục trọng tâm và dành `35%–40%` (3/8 sản phẩm) cho lịch sử truy cập (`VIEW`), click (`CLICK`), tìm kiếm (`SEARCH`), thêm giỏ hàng (`ADD_TO_CART`) và mua hàng trước đó (`PURCHASE` / `OrderItem`).
+  - [x] Tích hợp ghi nhận sự kiện `CLICK` trên `ProductCard` và `SEARCH` trên trang tìm kiếm (`/search`), kèm Unit Test kiểm chứng tỷ lệ phân bổ `5/8` cùng loại và `3/8` lịch sử hành vi.
+
+
 
 

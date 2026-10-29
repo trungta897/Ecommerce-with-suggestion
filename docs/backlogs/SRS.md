@@ -167,10 +167,10 @@ flowchart TD
 | FR-09 | Trả hàng | Gửi yêu cầu trả hàng trong vòng 14 ngày sau khi đơn `Completed`. Bắt buộc chọn 1 trong 9 lý do hợp lệ (Lỗi NSX, Giao sai, Bể vỡ...). Admin có thể duyệt hoặc từ chối (`return_rejected`). Trạng thái `return_rejected` là trạng thái cuối (terminal), không thể yêu cầu trả hàng lại. | User (Ver) |
 | FR-10 | Realtime Tracking | Xem lịch sử đơn hàng, nhận SSE push trạng thái realtime. | User (Ver) |
 | FR-11 | Đánh giá Sản phẩm | Rate 1-5 sao và comment. *Chỉ đánh giá SP đã nhận hàng.* | User (Ver) |
-| FR-12 | Cá nhân hóa (RecSys) | Nhận danh sách gợi ý trên Home/Detail. | User (Ver) |
+| FR-12 | Cá nhân hóa (RecSys) | Nhận danh sách gợi ý trên Home/Detail/Profile theo tỷ lệ cân bằng: tối đa `60%–65%` sản phẩm cùng danh mục trọng tâm và `35%–40%` sản phẩm dựa trên lịch sử truy cập (`VIEW`), click (`CLICK`), tìm kiếm (`SEARCH`), thêm giỏ hàng (`ADD_TO_CART`) và mua hàng (`PURCHASE`) trước đó. | All, User (Ver) |
 | FR-13 | Tra cứu đơn hàng | Bắt buộc nhập **Mã đơn hàng + SĐT** (2 yếu tố) để tra cứu trạng thái đơn — không cho tra cứu chỉ bằng SĐT để tránh lộ thông tin đơn hàng của người khác. | Guest, User |
 | FR-14 | Quản lý Profile | Cập nhật thông tin cá nhân (Tên, Ảnh đại diện, Địa chỉ giao hàng mặc định), xem hạng thành viên VIP (`BRONZE`/`SILVER`/`GOLD`/`PLATINUM`), điểm tích lũy (`vipPoints`), danh sách đơn hàng gần đây, sản phẩm yêu thích và gợi ý AI cá nhân hóa. | User (Ver) |
-| FR-15 | Xem chi tiết sản phẩm | Hiển thị mô tả chi tiết, ảnh gallery, phân trang đánh giá và khu vực gợi ý sản phẩm. | All |
+| FR-15 | Xem chi tiết sản phẩm | Hiển thị mô tả chi tiết, ảnh gallery, phân trang đánh giá, khu vực Sản phẩm cùng danh mục (`RelatedCategoryProducts`), khu vực Gợi ý dành cho bạn (`RecommendedProducts`) và Sản phẩm vừa xem (`RecentlyViewedSlider`). | All |
 | FR-16 | Khuyến mãi & Flash Sale | Xem danh sách SP Flash Sale đếm ngược theo thời gian thực (Countdown), xem badge giá sale gạch ngang, thu thập và áp dụng Voucher giảm giá khi Checkout. Hỗ trợ anti-stacking tự động giữa Voucher % và Flash Sale. | All, User (Ver) |
 
 ### 3.3. Chức năng Quản trị viên
