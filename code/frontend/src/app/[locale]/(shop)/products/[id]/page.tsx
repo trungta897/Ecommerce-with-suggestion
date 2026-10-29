@@ -2,7 +2,7 @@
 
 import { useLocale, useTranslations } from 'next-intl';
 import { useProductBySlug } from '@/hooks/use-products';
-import { Star, Sparkles, ChevronRight } from '@/components/base/icons';
+import { Star, ChevronRight } from '@/components/base/icons';
 import { ProductReviews } from '@/components/features/product/ProductReviews';
 import { ProductPurchasePanel } from '@/components/features/product/ProductPurchasePanel';
 import { useCart } from '@/hooks/use-cart';
@@ -17,6 +17,7 @@ import { getOrCreateSessionId } from '@/utils/session';
 import { activityService } from '@/services/activity-service';
 import { RecentlyViewedSlider } from '@/components/features/product/RecentlyViewedSlider';
 import { RecommendedProducts } from '@/components/features/product/RecommendedProducts';
+import { RelatedCategoryProducts } from '@/components/features/product/RelatedCategoryProducts';
 
 export default function ProductDetailPage({ params }: { params: { id: string } }) {
   const locale = useLocale();
@@ -202,21 +203,6 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
             )}
           </div>
 
-          {product.aiScore && (
-            <div className="p-4 bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-100 rounded-xl">
-              <h3 className="font-semibold text-purple-700 flex items-center gap-2 text-sm">
-                <Sparkles className="w-4 h-4" />
-                {t('aiMatch')}: {product.aiScore}%
-              </h3>
-              <div className="w-full bg-purple-200 rounded-full h-2 mt-2">
-                <div
-                  className="bg-gradient-to-r from-purple-500 to-blue-500 h-2 rounded-full transition-all duration-500"
-                  style={{ width: `${product.aiScore}%` }}
-                />
-              </div>
-            </div>
-          )}
-
           <ProductPurchasePanel
             stock={product.stock}
             isOutOfStock={isOutOfStock}
@@ -265,6 +251,13 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
         </div>
       </div>
 
+      <RelatedCategoryProducts
+        categoryId={product.categoryId}
+        categorySlug={product.category?.slug}
+        categoryName={product.category?.name}
+        currentProductId={product.id}
+        className="mt-14"
+      />
       <RecommendedProducts currentProductId={product.id} className="mt-14" />
       <RecentlyViewedSlider excludeProductId={product.id} className="mt-12" />
     </div>

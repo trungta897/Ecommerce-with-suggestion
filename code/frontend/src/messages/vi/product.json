@@ -74,5 +74,8 @@
   "previous": "Trước",
   "next": "Sau",
   "errorSubmit": "Có lỗi xảy ra, vui lòng thử lại",
-  "newProduct": "Mới"
+  "newProduct": "Mới",
+  "relatedCategoryTitle": "Sản phẩm cùng danh mục",
+  "relatedCategorySubtitle": "Các sản phẩm khác thuộc danh mục {category}",
+  "viewMoreCategory": "Xem tất cả"
 }
