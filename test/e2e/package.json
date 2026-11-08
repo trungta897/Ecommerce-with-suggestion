@@ -1,0 +1,44 @@
+{
+  "name": "datn-e2e",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Automated UI & functional (E2E) tests for DATN using Playwright",
+  "scripts": {
+    "test": "playwright test --project=desktop-chromium --project=mobile-chromium",
+    "test:all": "playwright test",
+    "test:demo": "playwright test specs/demo --project=demo",
+    "test:roles": "playwright test --project=roles",
+    "test:roles:headed": "playwright test --project=roles --headed",
+    "test:lifecycle": "playwright test --project=lifecycle",
+    "test:lifecycle:headed": "playwright test --project=lifecycle --headed",
+    "test:guest": "playwright test --project=guest",
+    "test:guest:headed": "playwright test --project=guest --headed",
+    "test:customer": "playwright test --project=customer",
+    "test:customer:headed": "playwright test --project=customer --headed",
+    "test:employee": "playwright test --project=employee",
+    "test:employee:headed": "playwright test --project=employee --headed",
+    "test:admin": "playwright test --project=admin",
+    "test:admin:headed": "playwright test --project=admin --headed",
+    "test:smoke": "playwright test specs/smoke --project=desktop-chromium",
+    "test:functional": "playwright test specs/auth specs/shop specs/i18n --project=desktop-chromium",
+    "test:mobile": "playwright test --project=mobile-chromium",
+    "test:visual": "playwright test --project=visual --project=visual-mobile",
+    "test:update-snapshots": "playwright test --project=visual --project=visual-mobile --update-snapshots",
+    "test:ui": "playwright test --ui",
+    "test:headed": "playwright test --headed",
+    "report": "playwright show-report",
+    "codegen": "playwright codegen http://localhost:3000",
+    "install:browsers": "playwright install chromium",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.49.0",
+    "@types/node": "^20",
+    "dotenv": "^16.4.5",
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "@types/ioredis": "^4.28.10",
+    "ioredis": "^6.0.0"
+  }
+}

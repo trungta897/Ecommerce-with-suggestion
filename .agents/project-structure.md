@@ -19,6 +19,8 @@ Dự án này sử dụng cấu trúc thư mục quy chuẩn sau đây. Agent kh
 ├── .agents/                   # Thư mục chứa các Rule, Workflow và Skill của AI
 │
 ├── test/                      # Thư mục chứa các file Test case
+│   ├── e2e/                   # Test tự động giao diện & chức năng (Playwright) - xem test/e2e/README.md
+│   └── ml/                    # Test cho ML service (pytest)
 │
 ├── ml/                        # Thư mục chứa code Machine Learning (FastAPI, Jupyter, scripts)
 │   ├── scripts/               # Scripts phục vụ download data, training, seed database
