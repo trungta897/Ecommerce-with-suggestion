@@ -161,7 +161,7 @@ flowchart TD
 | FR-03 | Đăng nhập Admin/Nhân viên | Dành riêng cho luồng quản trị: Admin và Nhân viên đăng nhập bằng Email và Mật khẩu. | Admin, Employee |
 | FR-04 | Tìm kiếm & Lọc SP | Full-text search, lọc theo giá, category, rating. | All |
 | FR-05 | Quản lý Giỏ hàng | Thêm, xóa, cập nhật số lượng SP. Số lượng trong giỏ không được vượt quá tồn kho (`stock`) của sản phẩm tại thời điểm thao tác. | All (Local), User |
-| FR-06 | Checkout (Luồng Guest) | Guest chọn SP -> Điền form thông tin nhận hàng (Danh xưng, Tên, SĐT, Tỉnh/Huyện/Xã, Địa chỉ cụ thể) -> Hệ thống tạo đơn hàng trực tiếp không bắt buộc tạo tài khoản. Khách lưu đơn hàng với `userId = null`. Luồng Guest **CHỈ áp dụng thanh toán COD** (Thanh toán khi nhận hàng) để tối giản, tránh rủi ro thanh toán lỗi không thể retry. | All |
+| FR-06 | Checkout (Luồng Guest) | Guest chọn SP -> Điền form thông tin nhận hàng (Danh xưng, Tên, SĐT, Tỉnh/Huyện/Xã, Địa chỉ cụ thể) -> Hệ thống tạo đơn hàng trực tiếp không bắt buộc tạo tài khoản. Khách lưu đơn hàng với `userId = null`. Luồng Guest hỗ trợ cả **thanh toán COD** (hoặc đặt cọc 50.000đ qua VNPay nếu `subtotal < 200.000đ`) và **thanh toán trực tuyến VNPay**, kèm cơ chế thanh toán lại (`POST /payment/vnpay/create-guest/:orderId`) xác thực qua `phone`. | All |
 | FR-07 | Thanh toán & Nhận hàng | Khách hàng tuỳ chọn phương thức nhận hàng. Thanh toán VNPay (timeout 30 phút). COD sẽ tự động duyệt thành công dựa trên API Webhook đa kênh từ Shipper (GHN, SPX, Grab, Be...). | User (Ver) |
 | FR-08 | Hủy đơn hàng | Cho phép hủy đơn khi trạng thái là `Pending` hoặc `pending_payment`. | User (Ver) |
 | FR-09 | Trả hàng | Gửi yêu cầu trả hàng trong vòng 14 ngày sau khi đơn `Completed`. Bắt buộc chọn 1 trong 9 lý do hợp lệ (Lỗi NSX, Giao sai, Bể vỡ...). Admin có thể duyệt hoặc từ chối (`return_rejected`). Trạng thái `return_rejected` là trạng thái cuối (terminal), không thể yêu cầu trả hàng lại. | User (Ver) |
@@ -210,13 +210,13 @@ sequenceDiagram
     Guest->>Frontend: Thêm SP vào giỏ & Tiến hành Đặt hàng
     Guest->>Frontend: Điền form thông tin (Danh xưng, Tên, SĐT, Địa chỉ)
     Note over Guest, Frontend: KHÔNG yêu cầu Email, KHÔNG bắt buộc đăng nhập
-    Guest->>Frontend: Chọn hình thức thanh toán (Bắt buộc COD) & Đặt hàng
+    Guest->>Frontend: Chọn hình thức thanh toán (COD hoặc VNPay) & Đặt hàng
     Frontend->>Backend: Gửi yêu cầu Checkout (Guest Info & Cart Items)
     Backend->>Backend: Validate thông tin & Tồn kho
     Backend->>Backend: Lưu thông tin đơn hàng (Gắn cờ Guest / userId null)
-    Backend-->>Frontend: Trả về OrderID (Thành công)
-    Frontend-->>Guest: Hiển thị trang thành công kèm Mã đơn hàng
-    Note over Guest, Frontend: Guest dùng Mã đơn hàng + SĐT để tra cứu sau này (Không cần thanh toán lại do chỉ dùng COD)
+    Backend-->>Frontend: Trả về OrderID (kèm link VNPay nếu thanh toán trực tuyến / đặt cọc)
+    Frontend-->>Guest: Hiển thị trang thành công kèm Mã đơn hàng (hoặc chuyển cổng VNPay)
+    Note over Guest, Frontend: Guest dùng Mã đơn hàng + SĐT để tra cứu và có thể thanh toán lại qua /payment/vnpay/create-guest/:orderId
 ```
 
 **Lưu ý:** Luồng này tối ưu tỷ lệ chuyển đổi (conversion rate) bằng cách loại bỏ hoàn toàn ma sát từ việc bắt buộc đăng nhập hoặc xác thực OTP.
@@ -338,26 +338,41 @@ Sử dụng kiến trúc đa kênh, hệ thống tiếp nhận Webhook từ đ�
 - `created_at`, `updated_at`
 
 **2. Bảng `categories`**
-- `id`: INT (PK)
-- `name_vi`: VARCHAR (Tên danh mục)
-- `description_vi`: TEXT
+- `id`: VARCHAR(UUID) (PK)
+- `name`: VARCHAR (Tên danh mục)
+- `description`: TEXT
 - `slug`: VARCHAR (Unique)
+- `parentId`: VARCHAR(UUID) (FK categories, Nullable)
+- `isActive`: BOOLEAN (Default TRUE)
 
 **3. Bảng `products`**
-- `id`: INT (PK)
-- `title_vi`: VARCHAR (Tên Tiếng Việt)
-- `description_vi`: TEXT
-- `price`: DECIMAL (Giá VNĐ)
+- `id`: VARCHAR(UUID) (PK)
+- `name`: VARCHAR (Tên sản phẩm)
+- `slug`: VARCHAR (Unique)
+- `brand`: VARCHAR (Nullable)
+- `description`: TEXT
+- `price`: DECIMAL (Giá niêm yết VNĐ)
+- `discountPrice`: DECIMAL (Giá giảm trực tiếp, Nullable)
 - `stock`: INT
-- `image_url`: VARCHAR (URL Cloudinary)
-- `category_id`: INT (FK categories)
-- `is_active`: BOOLEAN (Default TRUE để soft-delete)
-*(Ghi chú: Giả định phạm vi đồ án chỉ dùng 1 ảnh đại diện cho mỗi sản phẩm để tối ưu lưu trữ.)*
+- `images`: JSON (Danh sách ảnh sản phẩm)
+- `specifications`: JSON (Thông số kỹ thuật)
+- `categoryId`: VARCHAR(UUID) (FK categories)
+- `isActive`: BOOLEAN (Default TRUE để soft-delete)
+
+**3.1. Bảng `product_discounts` (Chương trình Flash Sale)**
+- `id`: VARCHAR(UUID) (PK)
+- `productId`: VARCHAR(UUID) (FK products)
+- `discountPrice`: DECIMAL (Giá Flash Sale VNĐ, bắt buộc `< product.price`)
+- `flashSaleQty`: INT (Tổng số suất mở bán Flash Sale)
+- `flashSaleSold`: INT (Số suất đã bán/giữ chỗ)
+- `startDate`: DATETIME (Thời gian bắt đầu)
+- `endDate`: DATETIME (Thời gian kết thúc)
+- `isActive`: BOOLEAN (Default TRUE)
 
 **4. Bảng `cart_items`**
-- `id`: INT (PK)
-- `user_id`: INT (FK users)
-- `product_id`: INT (FK products)
+- `id`: VARCHAR(UUID) (PK)
+- `user_id`: VARCHAR(UUID) (FK users)
+- `product_id`: VARCHAR(UUID) (FK products)
 - `quantity`: INT
 *(Ghi chú: Cần thêm ràng buộc `UNIQUE(user_id, product_id)` để khi thêm SP đã có trong giỏ thì hệ thống chỉ cộng dồn `quantity`.)*
 
