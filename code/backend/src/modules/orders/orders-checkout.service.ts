@@ -2,6 +2,7 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { Product, VoucherScope, Voucher, Prisma } from '@prisma/client';
 import { I18nService } from 'nestjs-i18n';
 import { PrismaService } from '../../database/prisma.service';
+import { RedisService } from '../redis/redis.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { ORDER_MESSAGES } from '../../common/constants/order-message.constant';
 import { VOUCHER_MESSAGES } from '../../common/constants/voucher-message.constant';
@@ -34,6 +35,7 @@ export class OrdersCheckoutService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly i18n: I18nService,
+    private readonly redisService: RedisService,
   ) {}
 
   async resolveCartItems(
@@ -44,10 +46,33 @@ export class OrdersCheckoutService {
     let cartItems: CartItemWithProduct[] = [];
 
     if (userId) {
-      cartItems = await this.prisma.cartItem.findMany({
-        where: { userId },
-        include: { product: true },
-      });
+      // Ưu tiên đọc từ Redis write-back cache (nơi CartService ghi trực tiếp)
+      const cartKey = `cart:${userId}`;
+      const cartData = await this.redisService.hgetall(cartKey);
+      delete cartData['_initialized'];
+
+      const productIds = Object.keys(cartData);
+      if (productIds.length > 0) {
+        const products = await this.prisma.product.findMany({
+          where: { id: { in: productIds } },
+        });
+        const productMap = new Map(products.map((p) => [p.id, p]));
+        for (const [productId, qtyStr] of Object.entries(cartData)) {
+          const quantity = parseInt(qtyStr, 10);
+          const product = productMap.get(productId);
+          if (product && !isNaN(quantity) && quantity > 0) {
+            cartItems.push({ productId, quantity, product });
+          }
+        }
+      }
+
+      // Fallback sang Database nếu Redis chưa được warm-up
+      if (cartItems.length === 0) {
+        cartItems = await this.prisma.cartItem.findMany({
+          where: { userId },
+          include: { product: true },
+        });
+      }
     } else {
       if (!createOrderDto.items || createOrderDto.items.length === 0) {
         throw new BadRequestException(
@@ -59,7 +84,6 @@ export class OrdersCheckoutService {
         where: { id: { in: productIds } },
       });
       const productMap = new Map(products.map((p) => [p.id, p]));
-
       for (const item of createOrderDto.items) {
         const product = productMap.get(item.productId);
         if (!product) {
@@ -83,7 +107,6 @@ export class OrdersCheckoutService {
         this.i18n.t(ORDER_MESSAGES.CART_EMPTY, { lang }),
       );
     }
-
     for (const item of cartItems) {
       if (!item.product.isActive) {
         throw new BadRequestException(
@@ -94,7 +117,6 @@ export class OrdersCheckoutService {
         );
       }
     }
-
     return cartItems;
   }
 
@@ -104,7 +126,6 @@ export class OrdersCheckoutService {
   ): Promise<ItemWithDiscount[]> {
     const now = new Date();
     const productIds = cartItems.map((item) => item.productId);
-
     const activeDiscounts = await this.prisma.productDiscount.findMany({
       where: {
         productId: { in: productIds },
@@ -114,12 +135,10 @@ export class OrdersCheckoutService {
       },
       orderBy: { startDate: 'asc' },
     });
-
     const discountMap = new Map<string, (typeof activeDiscounts)[0]>();
     for (const discount of activeDiscounts) {
-      if (!discountMap.has(discount.productId)) {
+      if (!discountMap.has(discount.productId))
         discountMap.set(discount.productId, discount);
-      }
     }
 
     return cartItems.map((item) => {
@@ -127,33 +146,23 @@ export class OrdersCheckoutService {
         throw new BadRequestException(
           this.i18n.t(ORDER_MESSAGES.INSUFFICIENT_STOCK, {
             lang,
-            args: {
-              name: item.product.name,
-              stock: item.product.stock,
-            },
+            args: { name: item.product.name, stock: item.product.stock },
           }),
         );
       }
-
       const activeDiscount = discountMap.get(item.productId);
       let effectivePrice = item.product.discountPrice
         ? Number(item.product.discountPrice)
         : Number(item.product.price);
       let productDiscountId: string | null = null;
-
-      if (activeDiscount) {
-        const discountPriceNum = Number(activeDiscount.discountPrice);
-        if (discountPriceNum < effectivePrice) {
-          effectivePrice = discountPriceNum;
-          productDiscountId = activeDiscount.id;
-        }
+      if (
+        activeDiscount &&
+        Number(activeDiscount.discountPrice) < effectivePrice
+      ) {
+        effectivePrice = Number(activeDiscount.discountPrice);
+        productDiscountId = activeDiscount.id;
       }
-
-      return {
-        ...item,
-        effectivePrice,
-        productDiscountId,
-      };
+      return { ...item, effectivePrice, productDiscountId };
     });
   }
 
@@ -178,7 +187,6 @@ export class OrdersCheckoutService {
         this.i18n.t(VOUCHER_MESSAGES.NOT_FOUND, { lang }),
       );
     }
-
     if (voucher.startDate && now < voucher.startDate) {
       throw new BadRequestException(
         this.i18n.t(VOUCHER_MESSAGES.NOT_STARTED, { lang }),
@@ -189,14 +197,11 @@ export class OrdersCheckoutService {
         this.i18n.t(VOUCHER_MESSAGES.EXPIRED, { lang }),
       );
     }
-
     if (voucher.minOrderValue && subtotal < Number(voucher.minOrderValue)) {
       throw new BadRequestException(
         this.i18n.t(VOUCHER_MESSAGES.MIN_ORDER_NOT_MET, {
           lang,
-          args: {
-            min: Number(voucher.minOrderValue).toLocaleString('vi-VN'),
-          },
+          args: { min: Number(voucher.minOrderValue).toLocaleString('vi-VN') },
         }),
       );
     }
@@ -222,7 +227,6 @@ export class OrdersCheckoutService {
       }
     }
 
-    // Anti-Stacking Rule: Chặn voucher PERCENTAGE trên sản phẩm đang Flash Sale (cả CART, CATEGORY, PRODUCT)
     if (
       voucher.type === 'PERCENTAGE' &&
       eligibleItems.some((item) => item.productDiscountId !== null)
@@ -251,18 +255,13 @@ export class OrdersCheckoutService {
       }
     }
 
-    return {
-      discountAmount,
-      appliedVoucherId: voucher.id,
-      voucher,
-    };
+    return { discountAmount, appliedVoucherId: voucher.id, voucher };
   }
 
   validatePickupTime(pickupTimeInput?: Date | string | null, lang?: string) {
     if (!pickupTimeInput) return;
     const now = new Date();
     const pickupTime = new Date(pickupTimeInput);
-
     if (pickupTime < now) {
       throw new BadRequestException(
         this.i18n.t(ORDER_MESSAGES.INVALID_PICKUP_TIME_PAST, { lang }),
@@ -282,41 +281,35 @@ export class OrdersCheckoutService {
     }
   }
 
-  async claimInventory(
+  claimInventory = (
     tx: Prisma.TransactionClient,
     items: ItemWithDiscount[],
     lang?: string,
-  ): Promise<void> {
-    return claimInventoryTx(tx, this.i18n, items, lang);
-  }
+  ) => claimInventoryTx(tx, this.i18n, items, lang);
 
-  async claimFlashSaleQuota(
+  claimFlashSaleQuota = (
     tx: Prisma.TransactionClient,
     items: ItemWithDiscount[],
     now: Date,
     lang?: string,
-  ): Promise<void> {
-    return claimFlashSaleQuotaTx(tx, this.i18n, items, now, lang);
-  }
+  ) => claimFlashSaleQuotaTx(tx, this.i18n, items, now, lang);
 
-  async claimVipPoints(
+  claimVipPoints = (
     tx: Prisma.TransactionClient,
     userId: string,
     usedVipPoints: number,
     lang?: string,
-  ): Promise<void> {
-    return claimVipPointsTx(tx, this.i18n, userId, usedVipPoints, lang);
-  }
+  ) => claimVipPointsTx(tx, this.i18n, userId, usedVipPoints, lang);
 
-  async claimVoucher(
+  claimVoucher = (
     tx: Prisma.TransactionClient,
     voucherId: string,
     userId: string | null,
     shippingPhone?: string,
     perUserLimit: number = 1,
     lang?: string,
-  ): Promise<void> {
-    return claimVoucherTx(
+  ) =>
+    claimVoucherTx(
       tx,
       this.i18n,
       voucherId,
@@ -325,5 +318,4 @@ export class OrdersCheckoutService {
       perUserLimit,
       lang,
     );
-  }
 }

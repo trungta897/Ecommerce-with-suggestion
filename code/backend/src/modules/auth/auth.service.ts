@@ -28,15 +28,17 @@ export class AuthService {
     return Math.floor(100000 + Math.random() * 900000).toString();
   }
 
+  private t(key: string, lang?: string): string {
+    return this.i18n.t(key, {
+      lang: lang || I18nContext.current()?.lang || 'vi',
+    });
+  }
+
   async register(dto: RegisterDto) {
-    const lang = I18nContext.current()?.lang;
     const existingUser = await this.prisma.user.findUnique({
       where: { email: dto.email },
     });
-
-    if (existingUser) {
-      throw new BadRequestException(this.i18n.t('auth.USER_EXISTS', { lang }));
-    }
+    if (existingUser) throw new BadRequestException(this.t('auth.USER_EXISTS'));
 
     const passwordHash = await BcryptHelper.hashPassword(dto.password);
     const newUser = await this.prisma.user.create({
@@ -53,75 +55,65 @@ export class AuthService {
     await this.mailService.sendOtpEmail(dto.email, otp, 'register');
 
     return {
-      message: this.i18n.t('auth.REGISTER_CHECK_EMAIL', { lang }),
+      message: this.t('auth.REGISTER_CHECK_EMAIL'),
       email: newUser.email,
     };
   }
 
   async verifyEmail(dto: VerifyEmailDto) {
-    const lang = I18nContext.current()?.lang || 'vi';
     const redisKey = `OTP:REGISTER:${dto.email}`;
     const failKey = `OTP:FAIL:${dto.email}`;
 
     const fails = await this.redisService.get(failKey);
     if (fails && parseInt(fails, 10) >= 3) {
-      throw new BadRequestException(this.i18n.t('auth.OTP_EXCEEDED', { lang }));
+      throw new BadRequestException(this.t('auth.OTP_EXCEEDED'));
     }
 
     const savedOtp = await this.redisService.get(redisKey);
-    if (!savedOtp) {
-      throw new BadRequestException(this.i18n.t('auth.OTP_EXPIRED', { lang }));
-    }
+    if (!savedOtp) throw new BadRequestException(this.t('auth.OTP_EXPIRED'));
 
     if (savedOtp !== dto.otp) {
       await this.redisService.incr(failKey);
       await this.redisService.set(failKey, '1', 300);
-      throw new BadRequestException(this.i18n.t('auth.OTP_INVALID', { lang }));
+      throw new BadRequestException(this.t('auth.OTP_INVALID'));
     }
 
     await this.prisma.user.update({
       where: { email: dto.email },
       data: { isVerified: true },
     });
-
     await this.redisService.del(redisKey);
     await this.redisService.del(failKey);
 
-    return { message: this.i18n.t('auth.VERIFY_SUCCESS', { lang }) };
+    return { message: this.t('auth.VERIFY_SUCCESS') };
   }
 
   async forgotPassword(dto: ForgotPasswordDto) {
-    const lang = I18nContext.current()?.lang || 'vi';
     const user = await this.prisma.user.findUnique({
       where: { email: dto.email },
     });
-    if (!user) {
-      return { message: this.i18n.t('auth.FORGOT_SENT', { lang }) };
-    }
+    if (!user) return { message: this.t('auth.FORGOT_SENT') };
 
     const otp = this.generateOtp();
     await this.redisService.set(`OTP:FORGOT:${dto.email}`, otp, 300);
     await this.mailService.sendOtpEmail(dto.email, otp, 'forgot_password');
 
-    return { message: this.i18n.t('auth.FORGOT_SENT', { lang }) };
+    return { message: this.t('auth.FORGOT_SENT') };
   }
 
   async resetPassword(dto: ResetPasswordDto) {
-    const lang = I18nContext.current()?.lang || 'vi';
     const redisKey = `OTP:FORGOT:${dto.email}`;
     const failKey = `OTP:FAIL_FORGOT:${dto.email}`;
 
     const fails = await this.redisService.get(failKey);
     if (fails && parseInt(fails, 10) >= 3) {
-      throw new BadRequestException(this.i18n.t('auth.OTP_EXCEEDED', { lang }));
+      throw new BadRequestException(this.t('auth.OTP_EXCEEDED'));
     }
 
     const savedOtp = await this.redisService.get(redisKey);
     if (!savedOtp || savedOtp !== dto.otp) {
       await this.redisService.incr(failKey);
-      throw new BadRequestException(
-        this.i18n.t('auth.RESET_INVALID_OTP', { lang }),
-      );
+      throw new BadRequestException(this.t('auth.RESET_INVALID_OTP'));
     }
 
     const passwordHash = await BcryptHelper.hashPassword(dto.newPassword);
@@ -129,11 +121,10 @@ export class AuthService {
       where: { email: dto.email },
       data: { passwordHash },
     });
-
     await this.redisService.del(redisKey);
     await this.redisService.del(failKey);
 
-    return { message: this.i18n.t('auth.RESET_SUCCESS', { lang }) };
+    return { message: this.t('auth.RESET_SUCCESS') };
   }
 
   private async mergeGuestActivities(
@@ -147,7 +138,6 @@ export class AuthService {
   }
 
   async setStaffPassword(dto: SetStaffPasswordDto) {
-    const lang = I18nContext.current()?.lang || 'vi';
     let payload: { sub?: string; email?: string; type?: string };
     try {
       payload = this.jwtService.verify<{
@@ -156,24 +146,18 @@ export class AuthService {
         type?: string;
       }>(dto.token);
     } catch {
-      throw new BadRequestException(
-        this.i18n.t('auth.SESSION_EXPIRED', { lang }),
-      );
+      throw new BadRequestException(this.t('auth.SESSION_EXPIRED'));
     }
 
     if (!payload?.sub || payload.type !== 'STAFF_INVITE') {
-      throw new BadRequestException(
-        this.i18n.t('auth.SESSION_EXPIRED', { lang }),
-      );
+      throw new BadRequestException(this.t('auth.SESSION_EXPIRED'));
     }
 
     const user = await this.prisma.user.findUnique({
       where: { id: payload.sub },
     });
     if (!user || user.passwordSetAt || user.passwordHash) {
-      throw new BadRequestException(
-        this.i18n.t('auth.SESSION_EXPIRED', { lang }),
-      );
+      throw new BadRequestException(this.t('auth.SESSION_EXPIRED'));
     }
 
     const passwordHash = await BcryptHelper.hashPassword(dto.newPassword);
@@ -187,40 +171,27 @@ export class AuthService {
       },
     });
 
-    return { message: this.i18n.t('auth.RESET_SUCCESS', { lang }) };
+    return { message: this.t('auth.RESET_SUCCESS') };
   }
 
   async login(dto: LoginDto) {
-    const lang = I18nContext.current()?.lang;
     const user = await this.prisma.user.findUnique({
       where: { email: dto.email },
     });
-    if (!user) {
-      throw new BadRequestException(
-        this.i18n.t('auth.USER_NOT_FOUND', { lang }),
-      );
-    }
-    if (user.isActive === false) {
-      throw new BadRequestException(this.i18n.t('auth.PHONE_LOCKED', { lang }));
-    }
-    if (!user.isVerified) {
-      throw new BadRequestException(
-        this.i18n.t('auth.UNVERIFIED_ACCOUNT', { lang }),
-      );
-    }
-    if (!user.passwordHash) {
-      throw new BadRequestException(this.i18n.t('auth.GOOGLE_ONLY', { lang }));
-    }
+    if (!user) throw new BadRequestException(this.t('auth.USER_NOT_FOUND'));
+    if (user.isActive === false)
+      throw new BadRequestException(this.t('auth.PHONE_LOCKED'));
+    if (!user.isVerified)
+      throw new BadRequestException(this.t('auth.UNVERIFIED_ACCOUNT'));
+    if (!user.passwordHash)
+      throw new BadRequestException(this.t('auth.GOOGLE_ONLY'));
 
     const isPasswordValid = await BcryptHelper.comparePassword(
       dto.password,
       user.passwordHash,
     );
-    if (!isPasswordValid) {
-      throw new BadRequestException(
-        this.i18n.t('auth.INVALID_PASSWORD', { lang }),
-      );
-    }
+    if (!isPasswordValid)
+      throw new BadRequestException(this.t('auth.INVALID_PASSWORD'));
 
     await this.mergeGuestActivities(dto.sessionId, user.id);
     const accessToken = this.jwtService.sign({
@@ -241,50 +212,39 @@ export class AuthService {
   }
 
   logout(): { message: string } {
-    const lang = I18nContext.current()?.lang || 'vi';
-    return { message: this.i18n.t('auth.LOGOUT_SUCCESS', { lang }) };
+    return { message: this.t('auth.LOGOUT_SUCCESS') };
   }
 
   async requestPhoneOtp(phone: string) {
-    const lang = I18nContext.current()?.lang || 'vi';
     const user = await this.prisma.user.findUnique({ where: { phone } });
-    if (user && !user.isActive) {
-      throw new BadRequestException(this.i18n.t('auth.PHONE_LOCKED', { lang }));
-    }
+    if (user && !user.isActive)
+      throw new BadRequestException(this.t('auth.PHONE_LOCKED'));
 
     const otp = this.generateOtp();
     await this.redisService.set(`OTP:PHONE:${phone}`, otp, 300);
     await this.redisService.del(`OTP:FAIL_PHONE:${phone}`);
     this.logger.log(`📱 [DEV OTP] Phone: ${phone} -> OTP: ${otp}`);
 
-    return { message: this.i18n.t('auth.PHONE_OTP_SENT', { lang }), phone };
+    return { message: this.t('auth.PHONE_OTP_SENT'), phone };
   }
 
   async verifyPhoneOtp(phone: string, otp: string, sessionId?: string) {
-    const lang = I18nContext.current()?.lang || 'vi';
     const redisKey = `OTP:PHONE:${phone}`;
     const failKey = `OTP:FAIL_PHONE:${phone}`;
 
     const fails = await this.redisService.get(failKey);
     if (fails && parseInt(fails, 10) >= 3) {
-      throw new BadRequestException(
-        this.i18n.t('auth.PHONE_OTP_EXCEEDED', { lang }),
-      );
+      throw new BadRequestException(this.t('auth.PHONE_OTP_EXCEEDED'));
     }
 
     const savedOtp = await this.redisService.get(redisKey);
-    if (!savedOtp) {
-      throw new BadRequestException(
-        this.i18n.t('auth.PHONE_OTP_EXPIRED', { lang }),
-      );
-    }
+    if (!savedOtp)
+      throw new BadRequestException(this.t('auth.PHONE_OTP_EXPIRED'));
 
     if (savedOtp !== otp) {
       const isNewKey = await this.redisService.setNx(failKey, '1', 900);
       if (!isNewKey) await this.redisService.incr(failKey);
-      throw new BadRequestException(
-        this.i18n.t('auth.PHONE_OTP_INVALID', { lang }),
-      );
+      throw new BadRequestException(this.t('auth.PHONE_OTP_INVALID'));
     }
 
     let user = await this.prisma.user.findUnique({ where: { phone } });
@@ -300,7 +260,7 @@ export class AuthService {
         },
       });
     } else if (user.isActive === false) {
-      throw new BadRequestException(this.i18n.t('auth.PHONE_LOCKED', { lang }));
+      throw new BadRequestException(this.t('auth.PHONE_LOCKED'));
     }
 
     await this.redisService.del(redisKey);

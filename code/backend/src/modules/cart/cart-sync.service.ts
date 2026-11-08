@@ -54,8 +54,19 @@ export class CartSyncService {
             },
           });
 
-          // Upsert items that exist in Redis
+          // Lấy danh sách sản phẩm hợp lệ trong DB để tránh lỗi Foreign Key P2003
+          const validProducts = await prisma.product.findMany({
+            where: { id: { in: redisProductIds } },
+            select: { id: true },
+          });
+          const validProductIds = new Set(validProducts.map((p) => p.id));
+
+          // Upsert items that exist in Redis và hợp lệ trong Database
           for (const [productId, qtyStr] of Object.entries(cartData)) {
+            if (!validProductIds.has(productId)) {
+              await this.redisService.hdel(cartKey, productId);
+              continue;
+            }
             const quantity = parseInt(qtyStr, 10);
             if (isNaN(quantity) || quantity <= 0) continue;
 

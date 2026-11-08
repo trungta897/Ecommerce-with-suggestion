@@ -14,6 +14,7 @@ import { OrdersShippingService } from './orders-shipping.service';
 import { OrdersCheckoutService } from './orders-checkout.service';
 import { OrdersQueryService } from './orders-query.service';
 import { OrdersStatusService } from './orders-status.service';
+import { RedisService } from '../redis/redis.service';
 
 @Injectable()
 export class OrdersService {
@@ -24,6 +25,7 @@ export class OrdersService {
     private readonly checkoutService: OrdersCheckoutService,
     private readonly queryService: OrdersQueryService,
     private readonly statusService: OrdersStatusService,
+    private readonly redisService: RedisService,
   ) {}
 
   async calculateShipping(
@@ -205,6 +207,7 @@ export class OrdersService {
         await tx.cartItem.deleteMany({
           where: { userId },
         });
+        await this.redisService.del(`cart:${userId}`);
       }
 
       return newOrder;

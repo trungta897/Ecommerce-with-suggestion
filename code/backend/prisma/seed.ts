@@ -423,8 +423,40 @@ async function main() {
   rlReview.close();
   reviewStream.close();
 
+  console.log('6. Khởi tạo dữ liệu Flash Sale (ProductDiscount) mặc định...');
+  const sampleFlashSaleProducts = await prisma.product.findMany({
+    where: { isActive: true, price: { gt: 100000 } },
+    take: 8,
+    orderBy: { createdAt: 'desc' },
+  });
+  const discountRates = [0.2, 0.25, 0.15, 0.3, 0.2, 0.18, 0.22, 0.28];
+  const now = new Date();
+  const flashStart = new Date(now.getTime() - 2 * 3600000);
+  const flashEnd = new Date(now.getTime() + 72 * 3600000);
+  for (let i = 0; i < sampleFlashSaleProducts.length; i++) {
+    const p = sampleFlashSaleProducts[i];
+    const orig = Number(p.price);
+    const salePrice = Math.max(
+      1000,
+      Math.round(
+        (orig * (1 - discountRates[i % discountRates.length])) / 1000,
+      ) * 1000,
+    );
+    await prisma.productDiscount.create({
+      data: {
+        productId: p.id,
+        discountPrice: salePrice,
+        flashSaleQty: 25 + (i % 4) * 5,
+        flashSaleSold: 5 + (i % 5) * 2,
+        startDate: flashStart,
+        endDate: flashEnd,
+        isActive: true,
+      },
+    });
+  }
+
   console.log(
-    `✅ Hoàn tất! Đã thêm ${userCount} users và ${reviewCount} đánh giá.`,
+    `✅ Hoàn tất! Đã thêm ${userCount} users, ${reviewCount} đánh giá và ${sampleFlashSaleProducts.length} Flash Sale.`,
   );
   console.log('🎉 Seed dữ liệu thành công!');
 }
