@@ -5,11 +5,20 @@ import {
   UpdateDiscountInput,
   DiscountsResponse,
 } from '@/types/promotion';
+import { mapProduct, RawProductResponse } from './product-service';
+
+const mapDiscount = (discount: ProductDiscount): ProductDiscount => ({
+  ...discount,
+  discountPrice: Number(discount.discountPrice),
+  product: discount.product
+    ? mapProduct(discount.product as unknown as RawProductResponse)
+    : undefined,
+});
 
 export const promotionService = {
   async getActiveFlashSales(): Promise<ProductDiscount[]> {
     const { data } = await apiClient.get<ProductDiscount[]>('/promotions/flash-sale/active');
-    return data;
+    return Array.isArray(data) ? data.map(mapDiscount) : [];
   },
 
   async getAdminDiscounts(
@@ -27,26 +36,29 @@ export const promotionService = {
     const { data } = await apiClient.get<DiscountsResponse>(
       `/promotions/discounts?${params.toString()}`
     );
-    return data;
+    return {
+      ...data,
+      data: Array.isArray(data.data) ? data.data.map(mapDiscount) : [],
+    };
   },
 
   async getDiscountById(id: string): Promise<ProductDiscount> {
     const { data } = await apiClient.get<ProductDiscount>(`/promotions/discounts/${id}`);
-    return data;
+    return mapDiscount(data);
   },
 
   async createDiscount(dto: CreateDiscountInput): Promise<ProductDiscount> {
     const { data } = await apiClient.post<ProductDiscount>('/promotions/discounts', dto);
-    return data;
+    return mapDiscount(data);
   },
 
   async updateDiscount(id: string, dto: UpdateDiscountInput): Promise<ProductDiscount> {
     const { data } = await apiClient.patch<ProductDiscount>(`/promotions/discounts/${id}`, dto);
-    return data;
+    return mapDiscount(data);
   },
 
   async deleteDiscount(id: string): Promise<ProductDiscount> {
     const { data } = await apiClient.delete<ProductDiscount>(`/promotions/discounts/${id}`);
-    return data;
+    return mapDiscount(data);
   },
 };

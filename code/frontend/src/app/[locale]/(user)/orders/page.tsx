@@ -4,7 +4,7 @@ import { useTranslations, useLocale } from 'next-intl';
 import { Package, Clock, ChevronRight, Loader2 } from '@/components/base/icons';
 import Link from 'next/link';
 import { formatPrice } from '@/utils/format';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { orderService } from '@/services/order-service';
 import { Order } from '@/types/order';
 import { ORDER_STATUS_COLORS, ORDER_TABS } from '@/constants/order';
@@ -20,23 +20,26 @@ export default function OrderHistoryPage() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
+  const fetchOrders = useCallback(
+    async (p: number) => {
+      try {
+        setLoading(true);
+        const res = await orderService.getMyOrders(p, 10);
+        setOrders(res.data || []);
+        setTotalPages(res.totalPages || 1);
+      } catch (err: unknown) {
+        console.error(err);
+        toast.error(t('fetchOrdersError'));
+      } finally {
+        setLoading(false);
+      }
+    },
+    [t]
+  );
+
   useEffect(() => {
     fetchOrders(page);
-  }, [page]);
-
-  const fetchOrders = async (p: number) => {
-    try {
-      setLoading(true);
-      const res = await orderService.getMyOrders(p, 10);
-      setOrders(res.data || []);
-      setTotalPages(res.totalPages || 1);
-    } catch (err: unknown) {
-      console.error(err);
-      toast.error(t('fetchOrdersError'));
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [page, fetchOrders]);
 
   const filteredOrders = orders.filter((order) => {
     if (selectedTab === 'ALL') return true;
@@ -60,7 +63,9 @@ export default function OrderHistoryPage() {
                 : 'bg-paper-2 text-ink-2 hover:bg-primary/10 hover:text-primary'
             }`}
           >
-            {t(tab.labelKey as Parameters<typeof t>[0])}
+            {tab.labelKey === 'allOrders'
+              ? t('allOrders')
+              : t(`statusLabels.${tab.labelKey}` as Parameters<typeof t>[0])}
           </button>
         ))}
       </div>

@@ -320,9 +320,18 @@
     "loadingList": "Đang tải danh sách...",
     "ongoing": "Đang chạy",
     "scheduled": "Lên lịch",
+    "ended": "Đã kết thúc",
     "fetch_error": "Lỗi khi tải danh sách khuyến mãi",
     "save_error": "Lỗi khi lưu đợt Flash Sale",
-    "delete_error": "Lỗi khi xóa đợt Flash Sale"
+    "delete_error": "Lỗi khi xóa đợt Flash Sale",
+    "search_product_placeholder": "Tìm kiếm sản phẩm theo tên...",
+    "original_price_label": "Giá niêm yết:",
+    "stock_label": "Tồn kho:",
+    "quick_discount": "Mức giảm nhanh:",
+    "quick_duration": "Thời lượng nhanh:",
+    "discount_badge": "Giảm {percent}%",
+    "invalid_price_error": "Giá Flash Sale phải lớn hơn 0 và nhỏ hơn giá gốc của sản phẩm!",
+    "toggle_active": "Bật / Tắt hiển thị trên trang chủ"
   },
   "common": {
     "initializing": "Đang khởi tạo...",

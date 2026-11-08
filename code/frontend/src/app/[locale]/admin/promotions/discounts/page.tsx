@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
+import Image from 'next/image';
 import { useTranslations } from 'next-intl';
 import { promotionService } from '@/services/promotion-service';
 import { productService } from '@/services/product-service';
@@ -14,10 +15,16 @@ import {
   Loader2,
   AlertCircle,
   CheckCircle2,
+  Package,
 } from '@/components/base/icons';
 import { DiscountFormModal } from '@/components/admin/promotions/DiscountFormModal';
 import { AdminPagination } from '@/components/admin/AdminPagination';
 import { getApiErrorMessage } from '@/utils/get-api-error-message';
+
+const toLocalDateTimeInput = (d: Date | string) => {
+  const date = typeof d === 'string' ? new Date(d) : d;
+  return new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+};
 
 export default function AdminDiscountsPage() {
   const t = useTranslations('admin.promotions');
@@ -29,14 +36,12 @@ export default function AdminDiscountsPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
-
-  // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingDiscount, setEditingDiscount] = useState<ProductDiscount | null>(null);
   const [formData, setFormData] = useState<CreateDiscountInput>({
     productId: '',
     discountPrice: 0,
-    flashSaleQty: 10,
+    flashSaleQty: 20,
     startDate: '',
     endDate: '',
     isActive: true,
@@ -49,8 +54,7 @@ export default function AdminDiscountsPage() {
       setDiscounts(res.data);
       setTotalPages(res.totalPages || 1);
     } catch (err: unknown) {
-      const message = getApiErrorMessage(err) || t('fetch_error');
-      setErrorMsg(message);
+      setErrorMsg(getApiErrorMessage(err) || t('fetch_error'));
     } finally {
       setLoading(false);
     }
@@ -58,7 +62,7 @@ export default function AdminDiscountsPage() {
 
   const fetchProducts = useCallback(async () => {
     try {
-      const res = await productService.getAll({ limit: 100 });
+      const res = await productService.getAll({ limit: 500 });
       setProducts(res.data || []);
     } catch (err) {
       console.error('Failed to fetch products', err);
@@ -73,13 +77,13 @@ export default function AdminDiscountsPage() {
   const openCreateModal = () => {
     setEditingDiscount(null);
     const now = new Date();
-    const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+    const basePrice = Number(products[0]?.price || 0);
     setFormData({
       productId: products[0]?.id || '',
-      discountPrice: 0,
+      discountPrice: basePrice > 0 ? Math.round((basePrice * 0.8) / 1000) * 1000 : 0,
       flashSaleQty: 20,
-      startDate: now.toISOString().slice(0, 16),
-      endDate: tomorrow.toISOString().slice(0, 16),
+      startDate: toLocalDateTimeInput(now),
+      endDate: toLocalDateTimeInput(new Date(now.getTime() + 24 * 3600000)),
       isActive: true,
     });
     setErrorMsg(null);
@@ -93,8 +97,8 @@ export default function AdminDiscountsPage() {
       productId: discount.productId,
       discountPrice: Number(discount.discountPrice),
       flashSaleQty: discount.flashSaleQty,
-      startDate: new Date(discount.startDate).toISOString().slice(0, 16),
-      endDate: new Date(discount.endDate).toISOString().slice(0, 16),
+      startDate: toLocalDateTimeInput(discount.startDate),
+      endDate: toLocalDateTimeInput(discount.endDate),
       isActive: discount.isActive,
     });
     setErrorMsg(null);
@@ -128,6 +132,16 @@ export default function AdminDiscountsPage() {
       setErrorMsg(getApiErrorMessage(err) || t('save_error'));
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleToggleActive = async (discount: ProductDiscount) => {
+    try {
+      await promotionService.updateDiscount(discount.id, { isActive: !discount.isActive });
+      setSuccessMsg(t('update_success'));
+      fetchDiscounts();
+    } catch (err: unknown) {
+      setErrorMsg(getApiErrorMessage(err) || t('save_error'));
     }
   };
 
@@ -165,13 +179,13 @@ export default function AdminDiscountsPage() {
 
       {errorMsg && (
         <div className="flex items-center gap-2 p-4 bg-red-50 text-red-700 border border-red-200 rounded-xl text-sm">
-          <AlertCircle className="w-5 h-5 flex-shrink-0" />
+          <AlertCircle className="w-5 h-5 shrink-0" />
           <span>{errorMsg}</span>
         </div>
       )}
       {successMsg && (
         <div className="flex items-center gap-2 p-4 bg-green-50 text-green-700 border border-green-200 rounded-xl text-sm">
-          <CheckCircle2 className="w-5 h-5 flex-shrink-0" />
+          <CheckCircle2 className="w-5 h-5 shrink-0" />
           <span>{successMsg}</span>
         </div>
       )}
@@ -184,7 +198,6 @@ export default function AdminDiscountsPage() {
                 <th className="p-4">{t('product')}</th>
                 <th className="p-4">{t('original_price')}</th>
                 <th className="p-4 text-red-600">{t('discount_price')}</th>
-                <th className="p-4">{t('quota')}</th>
                 <th className="p-4">{t('sold')}</th>
                 <th className="p-4">{t('start_date')}</th>
                 <th className="p-4">{t('end_date')}</th>
@@ -195,78 +208,106 @@ export default function AdminDiscountsPage() {
             <tbody className="divide-y divide-rule text-ink">
               {loading ? (
                 <tr>
-                  <td colSpan={9} className="p-8 text-center text-ink-3">
+                  <td colSpan={8} className="p-8 text-center text-ink-3">
                     <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-primary" />
                     {t('loadingList')}
                   </td>
                 </tr>
               ) : discounts.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="p-8 text-center text-ink-3">
+                  <td colSpan={8} className="p-8 text-center text-ink-3">
                     {t('no_data')}
                   </td>
                 </tr>
               ) : (
                 discounts.map((discount) => {
                   const now = new Date();
-                  const isOngoing =
-                    discount.isActive &&
-                    new Date(discount.startDate) <= now &&
-                    new Date(discount.endDate) >= now;
-                  const statusClass = isOngoing
-                    ? 'bg-green-100 text-green-700 border border-green-200'
-                    : discount.isActive
-                      ? 'bg-blue-50 text-blue-700'
-                      : 'bg-gray-100 text-gray-500';
+                  const start = new Date(discount.startDate);
+                  const end = new Date(discount.endDate);
+                  const isOngoing = discount.isActive && start <= now && end >= now;
+                  const orig = Number(discount.product?.price || 0);
+                  const sale = Number(discount.discountPrice);
+                  const pct =
+                    orig > 0 && sale < orig ? Math.round(((orig - sale) / orig) * 100) : 0;
+                  const thumb =
+                    discount.product?.thumbnailUrl || discount.product?.images?.[0]?.url || '';
+                  const statusInfo = !discount.isActive
+                    ? { cls: 'bg-gray-100 text-gray-500', label: t('inactive') }
+                    : isOngoing
+                      ? {
+                          cls: 'bg-green-100 text-green-700 border border-green-200',
+                          label: t('ongoing'),
+                        }
+                      : end < now
+                        ? { cls: 'bg-amber-50 text-amber-700', label: t('ended') }
+                        : { cls: 'bg-blue-50 text-blue-700', label: t('scheduled') };
                   return (
                     <tr key={discount.id} className="hover:bg-paper-1/50 transition-colors">
-                      <td className="p-4 font-medium max-w-xs truncate">
-                        {discount.product?.name || discount.productId}
+                      <td className="p-4">
+                        <div className="flex items-center gap-3 max-w-xs">
+                          <div className="relative w-10 h-10 rounded-xl bg-paper-2 border border-rule overflow-hidden shrink-0 flex items-center justify-center">
+                            {thumb ? (
+                              <Image
+                                src={thumb}
+                                alt={discount.product?.name || ''}
+                                fill
+                                sizes="40px"
+                                className="object-contain p-1"
+                              />
+                            ) : (
+                              <Package className="w-5 h-5 text-ink-3" />
+                            )}
+                          </div>
+                          <span className="font-medium truncate">
+                            {discount.product?.name || discount.productId}
+                          </span>
+                        </div>
                       </td>
-                      <td className="p-4 text-ink-3">
-                        {discount.product?.price
-                          ? `${Number(discount.product.price).toLocaleString('vi-VN')}đ`
-                          : '-'}
+                      <td className="p-4 text-ink-3 line-through">
+                        {orig > 0 ? `${orig.toLocaleString('vi-VN')}đ` : '-'}
                       </td>
-                      <td className="p-4 font-bold text-red-600">
-                        {Number(discount.discountPrice).toLocaleString('vi-VN')}đ
+                      <td className="p-4">
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-red-600">
+                            {sale.toLocaleString('vi-VN')}đ
+                          </span>
+                          {pct > 0 && (
+                            <span className="px-1.5 py-0.5 rounded-md bg-red-100 text-red-700 text-xs font-bold">
+                              -{pct}%
+                            </span>
+                          )}
+                        </div>
                       </td>
-                      <td className="p-4 font-semibold">{discount.flashSaleQty}</td>
                       <td className="p-4">
                         <span className="font-semibold text-orange-600">
                           {discount.flashSaleSold}
                         </span>{' '}
                         / {discount.flashSaleQty}
                       </td>
-                      <td className="p-4 text-xs text-ink-2">
-                        {new Date(discount.startDate).toLocaleString('vi-VN')}
-                      </td>
-                      <td className="p-4 text-xs text-ink-2">
-                        {new Date(discount.endDate).toLocaleString('vi-VN')}
-                      </td>
+                      <td className="p-4 text-xs text-ink-2">{start.toLocaleString('vi-VN')}</td>
+                      <td className="p-4 text-xs text-ink-2">{end.toLocaleString('vi-VN')}</td>
                       <td className="p-4">
-                        <span
-                          className={`px-2.5 py-1 rounded-full text-xs font-semibold ${statusClass}`}
+                        <button
+                          type="button"
+                          onClick={() => handleToggleActive(discount)}
+                          title={t('toggle_active')}
+                          className={`px-2.5 py-1 rounded-full text-xs font-semibold cursor-pointer hover:opacity-80 ${statusInfo.cls}`}
                         >
-                          {isOngoing
-                            ? t('ongoing')
-                            : discount.isActive
-                              ? t('scheduled')
-                              : t('inactive')}
-                        </span>
+                          {statusInfo.label}
+                        </button>
                       </td>
                       <td className="p-4 text-right">
                         <div className="flex items-center justify-end gap-2">
                           <button
                             onClick={() => openEditModal(discount)}
-                            className="p-1.5 hover:bg-paper-2 rounded-lg text-ink-2 hover:text-primary transition-colors"
+                            className="p-1.5 hover:bg-paper-2 rounded-lg text-ink-2 hover:text-primary"
                             title={t('edit')}
                           >
                             <Edit className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => handleDelete(discount.id)}
-                            className="p-1.5 hover:bg-red-50 rounded-lg text-red-500 transition-colors"
+                            className="p-1.5 hover:bg-red-50 rounded-lg text-red-500"
                             title={t('delete')}
                           >
                             <Trash2 className="w-4 h-4" />
@@ -280,12 +321,9 @@ export default function AdminDiscountsPage() {
             </tbody>
           </table>
         </div>
-
-        {/* Pagination */}
         <AdminPagination page={page} totalPages={totalPages} onPageChange={setPage} />
       </div>
 
-      {/* Extracted Form Modal */}
       <DiscountFormModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}

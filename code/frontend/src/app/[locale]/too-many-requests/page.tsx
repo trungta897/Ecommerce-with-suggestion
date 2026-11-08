@@ -1,4 +1,4 @@
-import { ShieldAlert } from 'lucide-react';
+import { ShieldAlert } from '@/components/base/icons';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 

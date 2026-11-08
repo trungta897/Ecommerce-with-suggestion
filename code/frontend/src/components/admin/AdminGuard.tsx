@@ -12,6 +12,7 @@ interface AdminGuardProps {
 }
 
 const ALLOWED_ADMIN_ROLES = [UserRole.ADMIN, UserRole.SUPER_ADMIN, UserRole.EMPLOYEE];
+const EMPLOYEE_ALLOWED_PREFIXES = ['/admin/dashboard', '/admin/orders', '/admin/reviews'];
 
 export function AdminGuard({ children }: AdminGuardProps) {
   const t = useTranslations('admin.common');
@@ -22,6 +23,13 @@ export function AdminGuard({ children }: AdminGuardProps) {
 
   const isLoginPage = pathname?.includes('/admin/login');
   const isAuthorized = Boolean(isAuthenticated && user && ALLOWED_ADMIN_ROLES.includes(user.role));
+  const cleanAdminPath = pathname ? pathname.replace(/^\/(vi|en)(?=\/|$)/, '') || '/' : '';
+  const isEmployeeRestricted = Boolean(
+    user?.role === UserRole.EMPLOYEE &&
+    cleanAdminPath.startsWith('/admin') &&
+    cleanAdminPath !== '/admin' &&
+    !EMPLOYEE_ALLOWED_PREFIXES.some((prefix) => cleanAdminPath.startsWith(prefix))
+  );
 
   useEffect(() => {
     setMounted(true);
@@ -32,8 +40,13 @@ export function AdminGuard({ children }: AdminGuardProps) {
 
     if (!isAuthorized) {
       router.replace('/admin/login');
+      return;
     }
-  }, [mounted, isAuthorized, isLoginPage, router]);
+
+    if (isEmployeeRestricted) {
+      router.replace('/admin/dashboard');
+    }
+  }, [mounted, isAuthorized, isEmployeeRestricted, isLoginPage, router]);
 
   // Trong thời gian đợi hydrate từ localStorage
   if (!mounted) {
