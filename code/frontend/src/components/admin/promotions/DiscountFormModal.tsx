@@ -1,12 +1,12 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
-import Image from 'next/image';
 import { useTranslations } from 'next-intl';
 import { ProductDiscount, CreateDiscountInput } from '@/types/promotion';
 import { Product } from '@/types/product';
-import { Zap, X, Loader2, Search, Package } from '@/components/base/icons';
+import { Zap, X, Loader2, Search } from '@/components/base/icons';
 import { FLASH_SALE_QUICK_DISCOUNT_RATES, FLASH_SALE_QUICK_DURATION_HOURS } from '@/constants';
+import { DiscountBatchPreview } from './DiscountBatchPreview';
 
 interface DiscountFormModalProps {
   isOpen: boolean;
@@ -92,8 +92,6 @@ export function DiscountFormModal({
     }));
   };
 
-  const thumbUrl = selectedProduct?.thumbnailUrl || selectedProduct?.images?.[0]?.url || '';
-
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fadeIn">
       <div className="bg-white rounded-3xl w-full max-w-xl shadow-2xl border border-rule overflow-hidden max-h-[92vh] flex flex-col">
@@ -144,47 +142,17 @@ export function DiscountFormModal({
           </div>
 
           {selectedProduct && (
-            <div className="flex items-center gap-3 p-3 rounded-2xl bg-paper-2/70 border border-rule">
-              <div className="relative w-14 h-14 rounded-xl bg-white border border-rule overflow-hidden shrink-0 flex items-center justify-center">
-                {thumbUrl ? (
-                  <Image
-                    src={thumbUrl}
-                    alt={selectedProduct.name}
-                    fill
-                    sizes="56px"
-                    className="object-contain p-1"
-                  />
-                ) : (
-                  <Package className="w-6 h-6 text-ink-3" />
-                )}
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-semibold text-ink truncate">{selectedProduct.name}</p>
-                <div className="flex flex-wrap items-center gap-3 text-xs text-ink-2 mt-1">
-                  <span>
-                    {t('original_price_label')}{' '}
-                    <strong className="text-ink">{originalPrice.toLocaleString('vi-VN')}đ</strong>
-                  </span>
-                  {selectedProduct.stock !== undefined && (
-                    <span>
-                      {t('stock_label')}{' '}
-                      <strong className="text-ink">{selectedProduct.stock}</strong>
-                    </span>
-                  )}
-                  {discountPercent > 0 && (
-                    <span className="px-2 py-0.5 rounded-full bg-red-100 text-red-700 font-bold">
-                      {t('discount_badge', { percent: discountPercent })}
-                    </span>
-                  )}
-                </div>
-              </div>
-            </div>
+            <DiscountBatchPreview
+              product={selectedProduct}
+              originalPrice={originalPrice}
+              discountPercent={discountPercent}
+            />
           )}
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-semibold text-ink mb-1">
-                {t('discount_price')} (VNĐ)
+                {t('discount_price')}
               </label>
               <input
                 type="number"
