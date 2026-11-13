@@ -70,7 +70,7 @@ graph TD
 | **Bảo mật và Bot spam (SMS OTP)** | Nguy cơ bị bot spam API đăng ký, rút cạn hạn ngạch SMS OTP, hoặc brute-force mã OTP. | Áp dụng Redis Rate Limiting theo SĐT (5 req/phút, khóa 15 phút nếu sai 3 lần) và IP để kiểm soát chi phí SMS; mock SMS log môi trường Dev. |
 | **Hệ thống Email (SMTP)** | Lỗi mạng, email bị đánh dấu spam, hết hạn ngạch gửi mail miễn phí. | Sử dụng Nodemailer; cho phép resend OTP (tối đa 5 lần); lưu log gửi email để debug. |
 | **Object Storage (Cloudinary)** | Quản lý lưu trữ ảnh sản phẩm, ảnh avatar. | Sử dụng duy nhất Cloudinary làm Object Storage chính thức để đơn giản hóa kiến trúc. |
-| **ML Service (FastAPI)** | Quá trình dự đoán mô hình có thể chậm hoặc server Python sập/quá tải. | Timeout internal API (5s) và fallback trả về Popular Items; cache kết quả trong Redis 1 giờ. |
+| **ML Service (FastAPI)** | Quá trình dự đoán mô hình có thể chậm hoặc server Python sập/quá tải. | Timeout internal API (500ms) và fallback trả về Popular Items; cache kết quả trong Redis 1 giờ. |
 | **Đối tác vận chuyển (Grab/Be)** | Không có API thật, phụ thuộc vào việc Admin nhập tay đúng/kịp thời sau khi đặt xe ngoài hệ thống. | Quy trình thủ công (mục 5.6); không phát sinh rủi ro kỹ thuật tích hợp vì không gọi API bên ngoài. |
 
 ---
@@ -287,8 +287,8 @@ Có thể cấu hình giảm theo phần trăm (%) hoặc trừ một khoản ti
 Khi đơn được tạo (kể cả ở `pending_payment`), `stock` của sản phẩm được trừ tạm ngay trong transaction (row locking) để tránh oversell. Nếu đơn không hoàn tất thanh toán trong đúng **30 phút** (VNPay), một job định kỳ sẽ tự động chuyển đơn sang `cancelled` và **hoàn trả `stock`** đã giữ.
 
 #### 3.6.4. Dọn dẹp tài khoản/đơn hàng tạm bỏ dở (Guest Cleanup Cronjob)
-- **Đơn hàng tạm (Guest Order):** Nếu bị bỏ dở (chưa xác thực OTP), đơn sẽ bị job định kỳ xóa sau **24 giờ** và hoàn trả tồn kho.
-- **Tài khoản chưa xác thực (Guest Account):** Nếu chưa kích hoạt sau **6 ngày**, hệ thống gửi 1 email cảnh báo. Nếu vẫn không kích hoạt đến **ngày thứ 7**, tài khoản sẽ bị tự động xóa kèm email thông báo đã xóa.
+- **Đơn hàng chờ thanh toán quá hạn (`PENDING_PAYMENT`):** Nếu đơn hàng trực tuyến (VNPay hoặc đặt cọc COD) không hoàn tất thanh toán trong **30 phút** (`paymentExpiresAt`), job định kỳ mỗi phút (`OrdersCronService.handleExpiredOrders`) sẽ tự động chuyển đơn sang `cancelled` và hoàn trả tồn kho / suất Flash Sale đã giữ.
+- **Tài khoản khách hàng thuần SĐT không phát sinh đơn hàng (Stale Phone-Only Account):** Các tài khoản chỉ đăng ký qua SĐT (email `@placeholder.local`) nhưng không có bất kỳ đơn hàng nào sau **30 ngày** kể từ khi tạo sẽ được job định kỳ lúc 02:00 sáng hàng ngày (`OrdersCronService.cleanupStalePhoneAccounts`) tự động xóa (không gửi email cảnh báo vì khách hàng thuần SĐT không dùng email xác thực; lịch sử hành vi `UserActivityLog` vẫn được giữ lại với `userId = null` để phục vụ huấn luyện RecSys).
 
 #### 3.6.5. Tích hợp Webhook Vận chuyển đa kênh
 Sử dụng kiến trúc đa kênh, hệ thống tiếp nhận Webhook từ đối tác giao hàng. Điều kiện kiên quyết: Đơn COD phải được Admin duyệt tay (`pending` -> `confirmed`) trước khi Webhook có thể xử lý các trạng thái tiếp theo. API Webhook sẽ tự động cập nhật trạng thái đơn từ `handed_over` -> `delivering` -> `completed` theo thực tế. Webhook tuyệt đối không tự động duyệt đơn thay con người. Cập nhật thủ công chỉ áp dụng như phương án Fallback.
@@ -483,7 +483,7 @@ Sử dụng kiến trúc đa kênh, hệ thống tiếp nhận Webhook từ đ�
 
 ### 5.5. Tích hợp Hệ thống AI (FastAPI ML Service)
 - **Mục đích:** Trả về kết quả gợi ý.
-- **Yêu cầu:** Internal REST API `GET /recommend/hybrid/{user_id}`. Timeout 5 giây. NestJS gọi và cache vào Redis trong 1 giờ.
+- **Yêu cầu:** Internal REST API `POST /recommend/hybrid` (và `GET /recommend/hybrid/{user_id}`). Timeout 500ms (`ML_SERVICE_TIMEOUT_MS = 500`). NestJS gọi và cache vào Redis trong 1 giờ (TTL 3600s, fallback Popular TTL 120s).
 
 ### 5.6. Tích hợp Webhook Vận chuyển đa kênh (Grab/Be/GHN/SPX)
 - **Mục đích:** Tự động hóa quá trình xác nhận giao hàng và cập nhật hành trình đơn.

@@ -18,8 +18,8 @@
   - [x] Fallback về thuật toán Popular (bán chạy) khi API ML timeout/down (Cache 120s)
 
 - [x] **4. Cronjob Dọn dẹp Dữ liệu rác (TS-CRON-01)**
-  - [x] Xóa tài khoản Guest và giỏ hàng rỗng sau 7 ngày
-  - [x] Giải phóng tồn kho và suất Flash Sale bị kẹt từ các đơn `pending_payment` quá hạn 30 phút
+  - [x] Xóa tài khoản khách hàng thuần SĐT (`@placeholder.local`) không phát sinh đơn hàng sau 30 ngày (`OrdersCronService.cleanupStalePhoneAccounts`)
+  - [x] Giải phóng tồn kho và suất Flash Sale bị kẹt từ các đơn `pending_payment` quá hạn 30 phút (`OrdersCronService.handleExpiredOrders`)
 
 - [x] **5. Full-stack Wishlist, Profile AI Recommendations & UI Polish**
   - [x] Backend Module Wishlist (`WishlistModule`, `GET /wishlist`, `GET /wishlist/ids`, `POST /wishlist/:productId`, `DELETE /wishlist/:productId`)
@@ -111,8 +111,8 @@
   - [x] Smoke test toàn bộ route public, route admin (đã đăng nhập) và kiểm tra middleware chuyển hướng khách/admin.
   - [x] Functional test: đăng nhập admin (đúng/sai/rỗng), validate đăng nhập SĐT (không gửi OTP thật), luồng thêm giỏ hàng → checkout → validate bước giao hàng, trang tìm kiếm, đa ngôn ngữ `vi`/`en`.
   - [x] Visual regression cho 6 trang chính (desktop + mobile) với `toHaveScreenshot`.
-  - [ ] Tạo ảnh baseline (`npm run test:update-snapshots`) trên môi trường chạy thật.
-  - [ ] Mở rộng: luồng đặt hàng COD hoàn chỉnh & CRUD admin trên DB test riêng; tích hợp GitHub Actions.
+  - [x] Tạo ảnh baseline (`npm run test:update-snapshots`) và kiểm thử chụp ảnh giao diện (`lifecycle.visual.spec.ts`) trên môi trường chạy thật.
+  - [x] Mở rộng: luồng đặt hàng COD hoàn chỉnh & CRUD admin trên DB test riêng (`test:lifecycle`, `test:roles`); tích hợp GitHub Actions (`.github/workflows/ci.yml`).
 
 - [x] **17. Hoàn Thiện Block Giới Thiệu (Hero & Promo Banners) và Block Flash Sale Trang Chủ**
   - [x] Tách hằng số cấu hình trang chủ sang `src/constants/home.ts` (`HERO_SLIDES`, `HERO_SMALL_BANNERS`, `MID_PROMO_BANNERS`, `FLASH_SALE_FALLBACK_DISCOUNT_RATES`).
