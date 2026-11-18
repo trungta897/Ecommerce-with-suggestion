@@ -110,7 +110,13 @@ export default async function middleware(request: NextRequest) {
     return intlMiddleware(request);
   }
 
-  const isProtectedRoute = protectedRoutes.some((route) => pathWithoutLocale.startsWith(route));
+  // Tra cứu đơn của khách vãng lai (guest) là route công khai, không yêu cầu đăng nhập.
+  const publicOrderRoutes = ['/orders/lookup', '/orders/guest'];
+  const isPublicOrderRoute = publicOrderRoutes.some(
+    (route) => pathWithoutLocale === route || pathWithoutLocale.startsWith(`${route}/`)
+  );
+  const isProtectedRoute =
+    !isPublicOrderRoute && protectedRoutes.some((route) => pathWithoutLocale.startsWith(route));
   const isAuthRoute = authRoutes.some(
     (route) => pathWithoutLocale === route || pathWithoutLocale.startsWith(`${route}/`)
   );
