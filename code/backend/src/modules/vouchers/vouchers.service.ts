@@ -53,7 +53,6 @@ export class VouchersService {
     lang?: string,
   ) {
     const { code, subtotal, phone, items } = dto;
-
     const voucher = await this.prisma.voucher.findUnique({
       where: { code },
       include: {
@@ -67,7 +66,6 @@ export class VouchersService {
         this.i18n.t(VOUCHER_MESSAGES.NOT_FOUND, { lang }),
       );
     }
-
     if (!voucher.isActive) {
       throw new BadRequestException(
         this.i18n.t(VOUCHER_MESSAGES.DISABLED, { lang }),
@@ -85,16 +83,16 @@ export class VouchersService {
         this.i18n.t(VOUCHER_MESSAGES.EXPIRED, { lang }),
       );
     }
-
-    if (voucher.usageLimit !== null && voucher.usageLimit > 0) {
-      if (voucher.usedCount >= voucher.usageLimit) {
-        throw new BadRequestException(
-          this.i18n.t(VOUCHER_MESSAGES.SYSTEM_LIMIT_REACHED, { lang }),
-        );
-      }
+    if (
+      voucher.usageLimit !== null &&
+      voucher.usageLimit > 0 &&
+      voucher.usedCount >= voucher.usageLimit
+    ) {
+      throw new BadRequestException(
+        this.i18n.t(VOUCHER_MESSAGES.SYSTEM_LIMIT_REACHED, { lang }),
+      );
     }
 
-    let usedCountForUser = 0;
     const nonCancelledStatuses = {
       notIn: [
         OrderStatus.CANCELLED,
@@ -104,6 +102,7 @@ export class VouchersService {
       ],
     };
 
+    let usedCountForUser = 0;
     if (userId) {
       usedCountForUser = await this.prisma.userVoucherUsage.count({
         where: {
@@ -116,10 +115,7 @@ export class VouchersService {
       usedCountForUser = await this.prisma.userVoucherUsage.count({
         where: {
           voucherId: voucher.id,
-          order: {
-            shippingPhone: phone,
-            status: nonCancelledStatuses,
-          },
+          order: { shippingPhone: phone, status: nonCancelledStatuses },
         },
       });
     }
@@ -161,7 +157,6 @@ export class VouchersService {
       const eligibleItems = items.filter((i) =>
         matchingProductIds.has(i.productId),
       );
-
       if (eligibleItems.length === 0) {
         throw new BadRequestException(
           this.i18n.t(VOUCHER_MESSAGES.CATEGORY_NOT_MATCHED, { lang }),
@@ -183,7 +178,6 @@ export class VouchersService {
       const eligibleItems = items.filter(
         (i) => i.productId === voucher.productId,
       );
-
       if (eligibleItems.length === 0) {
         throw new BadRequestException(
           this.i18n.t(VOUCHER_MESSAGES.PRODUCT_NOT_MATCHED, { lang }),
@@ -197,7 +191,6 @@ export class VouchersService {
       );
     }
 
-    // Anti-Stacking Rule: Chặn voucher PERCENTAGE trên sản phẩm đang Flash Sale (cả CART, CATEGORY, PRODUCT)
     if (voucher.type === 'PERCENTAGE' && eligibleProductIds.length > 0) {
       const activeFlashSale = await this.prisma.productDiscount.findFirst({
         where: {
@@ -226,8 +219,6 @@ export class VouchersService {
       }
     } else if (voucher.type === 'FIXED_AMOUNT') {
       discountAmount = Math.min(Number(voucher.value), eligibleSubtotal);
-    } else if (voucher.type === 'FREE_SHIPPING') {
-      discountAmount = 0;
     }
 
     return {
@@ -247,14 +238,12 @@ export class VouchersService {
   async getPublicVouchers(page = 1, limit = 20) {
     const skip = (page - 1) * limit;
     const now = new Date();
-
     const where: Prisma.VoucherWhereInput = {
       isActive: true,
       isPublic: true,
       endDate: { gte: now },
       startDate: { lte: now },
     };
-
     const [data, total] = await Promise.all([
       this.prisma.voucher.findMany({
         where,
@@ -270,52 +259,39 @@ export class VouchersService {
       }),
       this.prisma.voucher.count({ where }),
     ]);
-
     return {
       data,
       meta: { total, page, limit, totalPages: Math.ceil(total / limit) },
     };
   }
 
-  async getVoucherUsages(voucherId: string, page = 1, limit = 10) {
-    return getVoucherUsagesHelper(this.prisma, voucherId, page, limit);
-  }
-
-  async findAll(page = 1, limit = 10, search?: string) {
-    return findAllVouchersHelper(this.prisma, page, limit, search);
-  }
+  getVoucherUsages = (voucherId: string, page = 1, limit = 10) =>
+    getVoucherUsagesHelper(this.prisma, voucherId, page, limit);
+  findAll = (page = 1, limit = 10, search?: string) =>
+    findAllVouchersHelper(this.prisma, page, limit, search);
 
   async findOne(id: string, lang?: string) {
     const voucher = await this.prisma.voucher.findUnique({
       where: { id },
-      include: {
-        category: true,
-        product: true,
-      },
+      include: { category: true, product: true },
     });
-    if (!voucher) {
+    if (!voucher)
       throw new NotFoundException(
         this.i18n.t(VOUCHER_MESSAGES.NOT_FOUND, { lang }),
       );
-    }
     return voucher;
   }
 
-  async create(dto: CreateVoucherDto) {
-    return createVoucherHelper(this.prisma, dto);
-  }
-
-  async update(id: string, dto: UpdateVoucherDto) {
-    return updateVoucherHelper(this.prisma, id, dto);
-  }
+  create = (dto: CreateVoucherDto) => createVoucherHelper(this.prisma, dto);
+  update = (id: string, dto: UpdateVoucherDto) =>
+    updateVoucherHelper(this.prisma, id, dto);
 
   async toggleStatus(id: string, lang?: string) {
     const voucher = await this.prisma.voucher.findUnique({ where: { id } });
-    if (!voucher) {
+    if (!voucher)
       throw new BadRequestException(
         this.i18n.t(VOUCHER_MESSAGES.NOT_FOUND, { lang }),
       );
-    }
     return this.prisma.voucher.update({
       where: { id },
       data: { isActive: !voucher.isActive },

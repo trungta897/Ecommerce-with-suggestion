@@ -16,6 +16,7 @@ import { LoginDto } from './dto/login.dto';
 import { VerifyEmailDto } from './dto/verify-email.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
+import { SetStaffPasswordDto } from './dto/set-staff-password.dto';
 import { ApiTags } from '@nestjs/swagger';
 
 @ApiTags('Auth')
@@ -51,6 +52,13 @@ export class AuthController {
   @Post('reset-password')
   async resetPassword(@Body() dto: ResetPasswordDto) {
     return this.authService.resetPassword(dto);
+  }
+
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
+  @HttpCode(HttpStatus.OK)
+  @Post('set-password')
+  async setStaffPassword(@Body() dto: SetStaffPasswordDto) {
+    return this.authService.setStaffPassword(dto);
   }
 
   @Throttle({ default: { limit: 10, ttl: 60000 } })

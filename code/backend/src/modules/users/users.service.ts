@@ -19,6 +19,15 @@ export class UsersService {
     private readonly mailService: MailService,
   ) {}
 
+  private computeVipTier(
+    vipPoints: number,
+  ): 'BRONZE' | 'SILVER' | 'GOLD' | 'PLATINUM' {
+    if (vipPoints >= 10000) return 'PLATINUM';
+    if (vipPoints >= 5000) return 'GOLD';
+    if (vipPoints >= 1000) return 'SILVER';
+    return 'BRONZE';
+  }
+
   async getProfile(userId: string) {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
@@ -32,6 +41,7 @@ export class UsersService {
         role: true,
         isVerified: true,
         provider: true,
+        vipPoints: true,
         createdAt: true,
       },
     });
@@ -42,7 +52,11 @@ export class UsersService {
         this.i18n.t('users.USER_NOT_FOUND', { lang }),
       );
     }
-    return user;
+    return {
+      ...user,
+      loyaltyPoints: user.vipPoints,
+      vipTier: this.computeVipTier(user.vipPoints),
+    };
   }
 
   async updateProfile(userId: string, dto: UpdateProfileDto) {
@@ -70,11 +84,16 @@ export class UsersService {
         role: true,
         isVerified: true,
         provider: true,
+        vipPoints: true,
         createdAt: true,
       },
     });
 
-    return updatedUser;
+    return {
+      ...updatedUser,
+      loyaltyPoints: updatedUser.vipPoints,
+      vipTier: this.computeVipTier(updatedUser.vipPoints),
+    };
   }
 
   async getAllUsers(page = 1, limit = 10, role?: string) {
@@ -152,7 +171,7 @@ export class UsersService {
     );
 
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-    const inviteLink = `${frontendUrl}/auth/set-password?token=${inviteToken}`;
+    const inviteLink = `${frontendUrl}/set-password?token=${inviteToken}`;
 
     await this.mailService.sendStaffInvitationEmail(
       email,

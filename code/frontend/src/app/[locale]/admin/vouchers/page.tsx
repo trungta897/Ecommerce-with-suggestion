@@ -78,9 +78,7 @@ export default function AdminVouchersPage() {
       setShowModal(false);
       fetchVouchers(page, search);
     } catch (err: unknown) {
-      console.error('Failed to save voucher', err);
-      const msg = getApiErrorMessage(err) || t('saveError');
-      toast.error(msg);
+      toast.error(getApiErrorMessage(err) || t('saveError'));
     }
   };
 
@@ -152,7 +150,9 @@ export default function AdminVouchersPage() {
                 vouchers.map((voucher) => {
                   const scopeMeta = VOUCHER_SCOPES[voucher.scope] || VOUCHER_SCOPES.CART;
                   const typeMeta = VOUCHER_TYPES[voucher.type] || VOUCHER_TYPES.PERCENTAGE;
-
+                  const badgeClass = voucher.isPublic
+                    ? 'text-emerald-700 bg-emerald-50 border-emerald-200'
+                    : 'text-amber-700 bg-amber-50 border-amber-200';
                   return (
                     <tr
                       key={voucher.id}
@@ -163,15 +163,9 @@ export default function AdminVouchersPage() {
                           {voucher.code}
                         </div>
                         <div className="text-xs text-ink-2 mt-0.5">
-                          {voucher.isPublic ? (
-                            <span className="text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
-                              {t('publicBadge')}
-                            </span>
-                          ) : (
-                            <span className="text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200">
-                              {t('privateBadge')}
-                            </span>
-                          )}
+                          <span className={`px-1.5 py-0.5 rounded border ${badgeClass}`}>
+                            {voucher.isPublic ? t('publicBadge') : t('privateBadge')}
+                          </span>
                         </div>
                       </td>
                       <td className="px-5 py-3.5">

@@ -5,6 +5,8 @@ import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import ProductCard from '@/components/features/product/ProductCard';
 import { useProducts } from '@/hooks/use-products';
+import { activityService } from '@/services/activity-service';
+import { getOrCreateSessionId } from '@/utils/session';
 import {
   Star,
   Search,
@@ -34,11 +36,8 @@ export default function SearchPage() {
 
   useEffect(() => {
     setLocalMinPrice(minPriceParam);
-  }, [minPriceParam]);
-
-  useEffect(() => {
     setLocalMaxPrice(maxPriceParam);
-  }, [maxPriceParam]);
+  }, [minPriceParam, maxPriceParam]);
 
   const { data: response, isLoading } = useProducts({
     q: q || undefined,
@@ -52,20 +51,28 @@ export default function SearchPage() {
 
   const products = response?.data || [];
   const metadata = response?.metadata || { total: 0, page: 1, limit: 12, totalPages: 1 };
+  const firstProductId = products[0]?.id;
+
+  useEffect(() => {
+    const trimmed = q.trim();
+    if (!trimmed || !firstProductId) return;
+    activityService
+      .logActivity({
+        action: 'SEARCH',
+        productId: firstProductId,
+        searchQuery: trimmed,
+        sessionId: getOrCreateSessionId(),
+      })
+      .catch(() => {});
+  }, [q, firstProductId]);
 
   const updateFilters = (updates: Record<string, string | null>) => {
     const params = new URLSearchParams(searchParams.toString());
     Object.entries(updates).forEach(([key, val]) => {
-      if (val === null || val === '') {
-        params.delete(key);
-      } else {
-        params.set(key, val);
-      }
+      if (val === null || val === '') params.delete(key);
+      else params.set(key, val);
     });
-    // Reset page to 1 on filter changes unless page was explicitly updated
-    if (!('page' in updates)) {
-      params.set('page', '1');
-    }
+    if (!('page' in updates)) params.set('page', '1');
     router.push(`${pathname}?${params.toString()}`);
   };
 
@@ -77,31 +84,18 @@ export default function SearchPage() {
     });
   };
 
-  const handleRatingChange = (ratingVal: string) => {
-    const nextRating = minRatingParam === ratingVal ? null : ratingVal;
-    updateFilters({ minRating: nextRating });
-  };
-
-  const handleSortChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    updateFilters({ sort: e.target.value });
-  };
-
   const handleClearFilters = () => {
     setLocalMinPrice('');
     setLocalMaxPrice('');
     router.push(q ? `${pathname}?q=${encodeURIComponent(q)}` : pathname);
   };
 
-  const hasActiveFilters = !!(
-    minPriceParam ||
-    maxPriceParam ||
-    minRatingParam ||
-    (sortParam && sortParam !== 'newest')
+  const hasActiveFilters = Boolean(
+    minPriceParam || maxPriceParam || minRatingParam || (sortParam && sortParam !== 'newest')
   );
 
   const renderFilterContent = () => (
     <div className="space-y-6">
-      {/* Header filter title */}
       <div className="flex items-center justify-between">
         <h3 className="font-bold text-ink flex items-center gap-2">
           <FilterIcon className="w-4 h-4 text-primary" />
@@ -117,10 +111,7 @@ export default function SearchPage() {
           </button>
         )}
       </div>
-
       <hr className="border-rule" />
-
-      {/* Price Range Filter */}
       <div>
         <h4 className="font-semibold text-sm text-ink mb-3">{t('filterPrice')}</h4>
         <form onSubmit={handleApplyPrice} className="space-y-3">
@@ -151,10 +142,7 @@ export default function SearchPage() {
           </button>
         </form>
       </div>
-
       <hr className="border-rule" />
-
-      {/* Rating Filter */}
       <div>
         <h4 className="font-semibold text-sm text-ink mb-3">{t('filterRating')}</h4>
         <div className="space-y-1.5">
@@ -164,7 +152,9 @@ export default function SearchPage() {
               <button
                 key={opt.value}
                 type="button"
-                onClick={() => handleRatingChange(opt.value)}
+                onClick={() =>
+                  updateFilters({ minRating: minRatingParam === opt.value ? null : opt.value })
+                }
                 className={`w-full flex items-center justify-between p-2 rounded-lg text-xs font-medium transition-all cursor-pointer ${
                   isSelected
                     ? 'bg-primary/10 text-primary border border-primary/30 font-semibold'
@@ -215,7 +205,7 @@ export default function SearchPage() {
           <select
             id="search-sort"
             value={sortParam}
-            onChange={handleSortChange}
+            onChange={(e) => updateFilters({ sort: e.target.value })}
             className="text-xs font-medium py-2 px-3 rounded-lg border border-rule bg-white text-ink focus:outline-none focus:border-primary shadow-sm cursor-pointer"
           >
             {SEARCH_SORT_OPTIONS.map((opt) => (
@@ -224,8 +214,6 @@ export default function SearchPage() {
               </option>
             ))}
           </select>
-
-          {/* Mobile Filter Button */}
           <button
             onClick={() => setMobileFilterOpen(!mobileFilterOpen)}
             className="lg:hidden flex items-center gap-2 py-2 px-3 border border-rule rounded-lg text-xs font-medium text-ink bg-white shadow-sm cursor-pointer"
@@ -236,23 +224,19 @@ export default function SearchPage() {
         </div>
       </div>
 
-      {/* Mobile Filter Drawer */}
       {mobileFilterOpen && (
         <div className="lg:hidden mb-6 p-4 bg-white rounded-xl border border-rule shadow-md">
           {renderFilterContent()}
         </div>
       )}
 
-      {/* Main Content Layout */}
       <div className="flex flex-col lg:flex-row gap-8">
-        {/* Desktop Sidebar */}
         <aside className="hidden lg:block w-full lg:w-1/4 shrink-0">
           <div className="p-5 bg-white rounded-2xl border border-rule shadow-sm sticky top-24">
             {renderFilterContent()}
           </div>
         </aside>
 
-        {/* Product Grid */}
         <main className="w-full lg:w-3/4 flex-1">
           {isLoading && (
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4 animate-pulse">
@@ -261,7 +245,6 @@ export default function SearchPage() {
               ))}
             </div>
           )}
-
           {!isLoading && products.length === 0 && (
             <div className="py-16 text-center bg-white rounded-2xl border border-rule shadow-sm p-8">
               <div className="w-16 h-16 bg-paper-2 text-ink-2 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -279,7 +262,6 @@ export default function SearchPage() {
               )}
             </div>
           )}
-
           {!isLoading && products.length > 0 && (
             <div className="space-y-8">
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
@@ -287,8 +269,6 @@ export default function SearchPage() {
                   <ProductCard key={product.id} product={product} />
                 ))}
               </div>
-
-              {/* Pagination */}
               {metadata.totalPages > 1 && (
                 <div className="flex items-center justify-center gap-2 pt-6 border-t border-rule">
                   <button
@@ -298,11 +278,9 @@ export default function SearchPage() {
                   >
                     <ChevronLeft className="w-4 h-4" />
                   </button>
-
                   <span className="text-xs font-medium text-ink-2 px-3">
                     {metadata.page} / {metadata.totalPages}
                   </span>
-
                   <button
                     disabled={metadata.page >= metadata.totalPages}
                     onClick={() => updateFilters({ page: (metadata.page + 1).toString() })}

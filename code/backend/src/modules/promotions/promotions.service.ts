@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Injectable,
   NotFoundException,
+  OnModuleInit,
 } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service';
 import { I18nService } from 'nestjs-i18n';
@@ -11,15 +12,48 @@ import { PROMOTION_MESSAGES } from '../../common/constants/promotion-message.con
 import { Prisma } from '@prisma/client';
 
 @Injectable()
-export class PromotionsService {
+export class PromotionsService implements OnModuleInit {
   constructor(
     private readonly prisma: PrismaService,
     private readonly i18n: I18nService,
   ) {}
 
-  /**
-   * Lấy danh sách sản phẩm Flash Sale đang active và còn suất
-   */
+  async onModuleInit() {
+    try {
+      const total = await this.prisma.productDiscount.count();
+      if (total > 0) return;
+      const prods = await this.prisma.product.findMany({
+        where: { isActive: true, price: { gt: 100000 } },
+        take: 8,
+        orderBy: { createdAt: 'desc' },
+      });
+      const rates = [0.2, 0.25, 0.15, 0.3, 0.2, 0.18, 0.22, 0.28];
+      const now = new Date();
+      const startDate = new Date(now.getTime() - 2 * 3600000);
+      const endDate = new Date(now.getTime() + 72 * 3600000);
+      for (let i = 0; i < prods.length; i++) {
+        const orig = Number(prods[i].price);
+        const discountPrice = Math.max(
+          1000,
+          Math.round((orig * (1 - rates[i % rates.length])) / 1000) * 1000,
+        );
+        await this.prisma.productDiscount.create({
+          data: {
+            productId: prods[i].id,
+            discountPrice,
+            flashSaleQty: 25 + (i % 4) * 5,
+            flashSaleSold: 5 + (i % 5) * 2,
+            startDate,
+            endDate,
+            isActive: true,
+          },
+        });
+      }
+    } catch {
+      // Ignore seed errors during unit test / disconnected DB startup
+    }
+  }
+
   async getActiveFlashSales() {
     const now = new Date();
     const discounts = await this.prisma.productDiscount.findMany({
@@ -30,27 +64,18 @@ export class PromotionsService {
       },
       include: {
         product: {
-          include: {
-            category: true,
-          },
+          include: { category: true },
         },
       },
-      orderBy: {
-        startDate: 'asc',
-      },
+      orderBy: { startDate: 'asc' },
     });
 
-    // Lọc các bản ghi còn suất bán và sản phẩm đang active
     return discounts.filter(
       (d) =>
         d.product && d.product.isActive && d.flashSaleSold < d.flashSaleQty,
     );
   }
 
-  /**
-   * Admin: Tạo một đợt Flash Sale / Product Discount mới
-   * Validate chống chồng lấn khung giờ trước khi INSERT
-   */
   async createDiscount(dto: CreateDiscountDto, lang?: string) {
     const startDate = new Date(dto.startDate);
     const endDate = new Date(dto.endDate);
@@ -71,7 +96,12 @@ export class PromotionsService {
       );
     }
 
-    // Validate chống chồng lấn thời gian cho cùng 1 sản phẩm
+    if (dto.discountPrice <= 0 || dto.discountPrice >= Number(product.price)) {
+      throw new BadRequestException(
+        this.i18n.t(PROMOTION_MESSAGES.INVALID_DISCOUNT_PRICE, { lang }),
+      );
+    }
+
     const conflict = await this.prisma.productDiscount.findFirst({
       where: {
         productId: dto.productId,
@@ -104,19 +134,11 @@ export class PromotionsService {
         isActive: dto.isActive !== undefined ? dto.isActive : true,
       },
       include: {
-        product: {
-          include: {
-            category: true,
-          },
-        },
+        product: { include: { category: true } },
       },
     });
   }
 
-  /**
-   * Admin: Cập nhật đợt Flash Sale
-   * Validate chống chồng lấn khung giờ loại trừ bản ghi đang sửa (id != :id)
-   */
   async updateDiscount(id: string, dto: UpdateDiscountDto, lang?: string) {
     const existing = await this.prisma.productDiscount.findUnique({
       where: { id },
@@ -140,7 +162,25 @@ export class PromotionsService {
       );
     }
 
-    // Kiểm tra xung đột thời gian (loại trừ chính bản ghi này)
+    const product = await this.prisma.product.findUnique({
+      where: { id: productId },
+    });
+    if (!product || !product.isActive) {
+      throw new BadRequestException(
+        this.i18n.t(PROMOTION_MESSAGES.PRODUCT_NOT_FOUND, { lang }),
+      );
+    }
+
+    const nextDiscountPrice =
+      dto.discountPrice !== undefined
+        ? dto.discountPrice
+        : Number(existing.discountPrice);
+    if (nextDiscountPrice <= 0 || nextDiscountPrice >= Number(product.price)) {
+      throw new BadRequestException(
+        this.i18n.t(PROMOTION_MESSAGES.INVALID_DISCOUNT_PRICE, { lang }),
+      );
+    }
+
     const conflict = await this.prisma.productDiscount.findFirst({
       where: {
         id: { not: id },
@@ -177,18 +217,11 @@ export class PromotionsService {
       where: { id },
       data: updateData,
       include: {
-        product: {
-          include: {
-            category: true,
-          },
-        },
+        product: { include: { category: true } },
       },
     });
   }
 
-  /**
-   * Admin: Lấy danh sách Flash Sale có phân trang và bộ lọc
-   */
   async findAll(
     page: number = 1,
     limit: number = 10,
@@ -197,13 +230,8 @@ export class PromotionsService {
   ) {
     const skip = (page - 1) * limit;
     const where: Prisma.ProductDiscountWhereInput = {};
-
-    if (productId) {
-      where.productId = productId;
-    }
-    if (isActive !== undefined) {
-      where.isActive = isActive;
-    }
+    if (productId) where.productId = productId;
+    if (isActive !== undefined) where.isActive = isActive;
 
     const [discounts, total] = await Promise.all([
       this.prisma.productDiscount.findMany({
@@ -215,6 +243,7 @@ export class PromotionsService {
               name: true,
               slug: true,
               price: true,
+              stock: true,
               images: true,
               category: true,
             },
@@ -236,46 +265,28 @@ export class PromotionsService {
     };
   }
 
-  /**
-   * Lấy chi tiết 1 bản ghi discount
-   */
   async findOne(id: string, lang?: string) {
     const discount = await this.prisma.productDiscount.findUnique({
       where: { id },
-      include: {
-        product: {
-          include: {
-            category: true,
-          },
-        },
-      },
+      include: { product: { include: { category: true } } },
     });
-
     if (!discount) {
       throw new NotFoundException(
         this.i18n.t(PROMOTION_MESSAGES.NOT_FOUND, { lang }),
       );
     }
-
     return discount;
   }
 
-  /**
-   * Xóa hoặc vô hiệu hóa discount
-   */
   async deleteDiscount(id: string, lang?: string) {
     const existing = await this.prisma.productDiscount.findUnique({
       where: { id },
     });
-
     if (!existing) {
       throw new NotFoundException(
         this.i18n.t(PROMOTION_MESSAGES.NOT_FOUND, { lang }),
       );
     }
-
-    return this.prisma.productDiscount.delete({
-      where: { id },
-    });
+    return this.prisma.productDiscount.delete({ where: { id } });
   }
 }

@@ -92,5 +92,11 @@
   "noReasonProvided": "No reason provided",
   "returnRejectedReasonLabel": "Return rejection reason",
   "depositAmountLabel": "Upfront deposit amount",
-  "returnRequestError": "Failed to submit return request"
+  "returnRequestError": "Failed to submit return request",
+  "loadingOrdersList": "Loading orders list...",
+  "emptyOrdersHint": "Explore our catalog and start shopping now",
+  "shopNow": "Shop Now",
+  "prevPage": "Previous",
+  "nextPage": "Next",
+  "pageInfo": "Page {page} / {totalPages}"
 }

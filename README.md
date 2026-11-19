@@ -60,10 +60,11 @@ flowchart LR
   - **Collaborative Filtering (`TruncatedSVD`)**: Phân rã ma trận tương tác tiềm ẩn kết hợp kỹ thuật **SVD Item Folding-in** thời gian thực từ lịch sử hành vi có trọng số $H = \{(p_k, w_k)\}$ (`PURCHASE: 5`, `ADD_TO_CART: 3`, `WISHLIST_ADD: 2`, `SEARCH: 2`, `VIEW: 1`, `CURRENT_PRODUCT: 6`).
   - **Content-Based Filtering (`TfidfVectorizer` 5.000 features)**: Tính độ tương đồng ngữ nghĩa Cosine trên tiêu đề & mô tả kỹ thuật sản phẩm.
   - **Popular Baseline (Bayesian Weighted Average)**: Công thức chuẩn IMDB $W = \frac{R \cdot v + C \cdot m}{v + m}$ làm prior ổn định và xử lý Cold-start.
-- **Kiến trúc Chịu lỗi 3 Tầng (Zero Empty State & < 500ms SLA)**:
-  1. **Tầng 1**: Gọi sang FastAPI ML Service với `AbortController` timeout **500ms**, bảo toàn thứ tự xếp hạng `score` và quy đổi sang huy hiệu độ khớp **`% AI Match` (`aiScore`: `75%–99%`)** trên giao diện.
+- **Kiến trúc Chịu lỗi 3 Tầng & Cân bằng Quota Đa dạng (Zero Empty State & < 500ms SLA)**:
+  1. **Tầng 1**: Gọi sang FastAPI ML Service với `AbortController` timeout **500ms**, bảo toàn thứ tự xếp hạng `score` và áp dụng **Cân bằng Quota Đa dạng (`buildQuotaBalancedRecommendations`)**: giới hạn tối đa **`60%–65%`** sản phẩm thuộc cùng danh mục trọng tâm và dành **`35%–40%`** còn lại cho các sản phẩm từ lịch sử hành vi (`VIEW`, `CLICK`, `SEARCH`, `ADD_TO_CART`, `PURCHASE`).
   2. **Tầng 2**: Tự động chuyển sang **DB Category-Seed & Pre-computed Fallback** nếu ML Service quá thời gian chờ hoặc đang bảo trì.
   3. **Tầng 3**: **Popular Baseline Fallback** kết hợp bộ đệm Redis 2 mức TTL (`3600s` cho Hybrid / `120s` cho Fallback) và tự động xóa cache khi phát sinh hành vi tương tác mới.
+  4. **Khu vực Sản phẩm Cùng Danh mục (`RelatedCategoryProducts`)**: Tách biệt rõ ràng với khu vực Gợi ý AI cá nhân hóa trên trang Chi tiết sản phẩm (`/products/[id]`).
 
 ### 🛍️ 2.2. Phân hệ Mua sắm, Giỏ hàng & Thanh toán An toàn
 
@@ -137,10 +138,10 @@ DATN/
 │   └── evaluation_report.json  # Kết quả đánh giá học thuật (Precision@10, Recall@10, NDCG@10, RMSE)
 │
 ├── docs/                       # Tài liệu Đặc tả & Thiết kế Hệ thống
-│   ├── requirements/           # SRS (Software Requirements Specification)
-│   ├── architecture/           # ERD, Sequence Diagrams (VNPay IPN, Checkout...)
-│   ├── plans/                  # Project Plan, Báo cáo Đánh giá Mô hình Học máy
-│   └── backlogs/               # Sprint Backlogs (Sprint 1 -> Sprint 5)
+│   ├── backlogs/               # SRS.md & Sprint Backlogs (Sprint 1 -> Sprint 5)
+│   ├── DB-erd/                 # ERD (erd.md)
+│   ├── sequence/               # Sequence Diagrams (sequence_vnpay_ipn.md)
+│   └── plans/                  # Project Plan, Báo cáo Đánh giá Mô hình Học máy
 │
 └── summary/                    # Nhật ký tổng hợp thay đổi trước mỗi đợt Commit
 ```
@@ -159,15 +160,16 @@ DATN/
 ### 5.2. Khởi chạy Dịch vụ Machine Learning (`ml/` — Port `8001`)
 
 ```bash
-# 1. Cài đặt thư viện Python
-pip install -r ml/requirements.txt
+# 1. Cài đặt thư viện Python vào môi trường ảo (.venv)
+uv venv
+uv pip install -r ml/requirements.txt
 
 # 2. (Tùy chọn) Huấn luyện lại mô hình và xuất báo cáo đánh giá học thuật
-uv run ml/scripts/02_train_models.py
-uv run ml/scripts/03_evaluate_metrics.py
+uv run python ml/scripts/02_train_models.py
+uv run python ml/scripts/03_evaluate_metrics.py
 
 # 3. Khởi chạy FastAPI Inference Server tại cổng 8001
-uvicorn ml.service.main:app --host 0.0.0.0 --port 8001 --reload
+uv run uvicorn ml.service.main:app --host 0.0.0.0 --port 8001 --reload
 ```
 
 - **Swagger UI của ML Service**: `http://localhost:8001/docs`
@@ -236,8 +238,9 @@ node scripts/check-i18n.js
 
 ## 📚 7. Danh mục Tài liệu Tham khảo trong Repo
 
+- **Đặc tả Yêu cầu Phần mềm (SRS)**: [`docs/backlogs/SRS.md`](file:///c:/Users/nguye/Desktop/CODE/DATN/docs/backlogs/SRS.md)
 - **Kế hoạch Dự án & Lộ trình Sprint**: [`docs/plans/project_plan.md`](file:///c:/Users/nguye/Desktop/CODE/DATN/docs/plans/project_plan.md)
 - **Báo cáo Đánh giá Học thuật Mô hình Gợi ý**: [`docs/plans/model_evaluation_report.md`](file:///c:/Users/nguye/Desktop/CODE/DATN/docs/plans/model_evaluation_report.md)
-- **Sơ đồ Thực thể Liên kết (Database ERD)**: [`docs/architecture/erd.md`](file:///c:/Users/nguye/Desktop/CODE/DATN/docs/architecture/erd.md)
-- **Biểu đồ Tuần tự Thanh toán & Đối soát VNPay IPN**: [`docs/architecture/sequence_vnpay_ipn.md`](file:///c:/Users/nguye/Desktop/CODE/DATN/docs/architecture/sequence_vnpay_ipn.md)
+- **Sơ đồ Thực thể Liên kết (Database ERD)**: [`docs/DB-erd/erd.md`](file:///c:/Users/nguye/Desktop/CODE/DATN/docs/DB-erd/erd.md)
+- **Biểu đồ Tuần tự Thanh toán & Đối soát VNPay IPN**: [`docs/sequence/sequence_vnpay_ipn.md`](file:///c:/Users/nguye/Desktop/CODE/DATN/docs/sequence/sequence_vnpay_ipn.md)
 - **Tiến độ Chi tiết Sprint 5**: [`docs/backlogs/sprint5/tasks.md`](file:///c:/Users/nguye/Desktop/CODE/DATN/docs/backlogs/sprint5/tasks.md)

@@ -62,5 +62,8 @@
     "changePasswordInfo": "Tính năng đổi mật khẩu đang gửi mã xác thực về email của bạn.",
     "securityTitle": "Bảo mật"
   },
-  "loading": "Đang tải..."
+  "loading": "Đang tải...",
+  "vipTierLabel": "Hạng thành viên",
+  "loyaltyPointsLabel": "{points} điểm tích lũy",
+  "viewAllOrders": "Xem tất cả đơn hàng"
 }

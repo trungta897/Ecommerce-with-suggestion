@@ -157,26 +157,56 @@ export class ProductsService {
     );
   }
 
+  private getActiveDiscountInclude(now = new Date()) {
+    return {
+      category: true,
+      discounts: {
+        where: {
+          isActive: true,
+          startDate: { lte: now },
+          endDate: { gte: now },
+        },
+        orderBy: { startDate: 'asc' as const },
+      },
+    };
+  }
+
   async findById(id: string, lang: string = DEFAULT_LANG) {
     const product = await this.prisma.product.findUnique({
       where: { id },
-      include: { category: true },
+      include: this.getActiveDiscountInclude(),
     });
     if (!product) {
       throw new NotFoundException(this.i18n.t('products.NOT_FOUND', { lang }));
     }
-    return product;
+    const activeSale = product.discounts.find(
+      (d) => d.flashSaleSold < d.flashSaleQty,
+    );
+    return {
+      ...product,
+      discountPrice: activeSale
+        ? activeSale.discountPrice
+        : product.discountPrice,
+    };
   }
 
   async findBySlug(slug: string, lang: string = DEFAULT_LANG) {
     const product = await this.prisma.product.findUnique({
       where: { slug },
-      include: { category: true },
+      include: this.getActiveDiscountInclude(),
     });
     if (!product) {
       throw new NotFoundException(this.i18n.t('products.NOT_FOUND', { lang }));
     }
-    return product;
+    const activeSale = product.discounts.find(
+      (d) => d.flashSaleSold < d.flashSaleQty,
+    );
+    return {
+      ...product,
+      discountPrice: activeSale
+        ? activeSale.discountPrice
+        : product.discountPrice,
+    };
   }
 
   async create(dto: CreateProductDto, lang: string = DEFAULT_LANG) {

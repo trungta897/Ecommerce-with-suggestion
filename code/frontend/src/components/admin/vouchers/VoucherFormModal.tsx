@@ -43,16 +43,15 @@ export function VoucherFormModal({
   const [products, setProducts] = useState<Product[]>([]);
 
   useEffect(() => {
-    if (isOpen) {
-      categoryService
-        .getAll()
-        .then((data) => setCategories(data || []))
-        .catch(console.error);
-      productService
-        .getAll({ limit: 50 })
-        .then((res) => setProducts(res.data || []))
-        .catch(console.error);
-    }
+    if (!isOpen) return;
+    categoryService
+      .getAll()
+      .then((data) => setCategories(data || []))
+      .catch(console.error);
+    productService
+      .getAll({ limit: 50 })
+      .then((res) => setProducts(res.data || []))
+      .catch(console.error);
   }, [isOpen]);
 
   useEffect(() => {
@@ -133,7 +132,6 @@ export function VoucherFormModal({
                 <option value="FREE_SHIPPING">{t('typeFreeShipping')}</option>
               </select>
             </div>
-
             <div>
               <label className="block text-sm font-medium mb-1 text-ink">{t('scope')}</label>
               <select
@@ -146,7 +144,6 @@ export function VoucherFormModal({
                 <option value="PRODUCT">{t('byProduct')}</option>
               </select>
             </div>
-
             {scope === 'CATEGORY' && (
               <div>
                 <label className="block text-sm font-medium mb-1 text-ink">
@@ -167,7 +164,6 @@ export function VoucherFormModal({
                 </select>
               </div>
             )}
-
             {scope === 'PRODUCT' && (
               <div>
                 <label className="block text-sm font-medium mb-1 text-ink">
@@ -188,7 +184,6 @@ export function VoucherFormModal({
                 </select>
               </div>
             )}
-
             <div>
               <label className="block text-sm font-medium mb-1 text-ink">
                 {type === 'PERCENTAGE' ? t('discountPercentage') : t('discountFixed')}
@@ -201,7 +196,6 @@ export function VoucherFormModal({
                 min={0}
               />
             </div>
-
             {type === 'PERCENTAGE' && (
               <div>
                 <label className="block text-sm font-medium mb-1 text-ink">
@@ -215,7 +209,6 @@ export function VoucherFormModal({
                 />
               </div>
             )}
-
             <div>
               <label className="block text-sm font-medium mb-1 text-ink">
                 {t('minOrderValue')} (VNĐ)
@@ -228,7 +221,6 @@ export function VoucherFormModal({
                 min={0}
               />
             </div>
-
             <div>
               <label className="block text-sm font-medium mb-1 text-ink">{t('usageLimit')}</label>
               <BaseInput
@@ -238,7 +230,6 @@ export function VoucherFormModal({
                 onChange={(e) => setUsageLimit(e.target.value ? Number(e.target.value) : '')}
               />
             </div>
-
             <div>
               <label className="block text-sm font-medium mb-1 text-ink">{t('perUserLimit')}</label>
               <BaseInput
@@ -249,7 +240,6 @@ export function VoucherFormModal({
                 min={1}
               />
             </div>
-
             <div className="flex items-center gap-3 pt-6">
               <input
                 type="checkbox"
@@ -267,7 +257,6 @@ export function VoucherFormModal({
               </label>
             </div>
           </div>
-
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium mb-1 text-ink">{t('startDate')}</label>
@@ -288,7 +277,6 @@ export function VoucherFormModal({
               />
             </div>
           </div>
-
           <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-rule">
             <BaseButton type="button" variant="outline" onClick={onClose} disabled={submitting}>
               {tCommon('cancel')}

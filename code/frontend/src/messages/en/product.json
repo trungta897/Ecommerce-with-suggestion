@@ -74,5 +74,8 @@
   "previous": "Previous",
   "next": "Next",
   "errorSubmit": "An error occurred, please try again",
-  "newProduct": "New"
+  "newProduct": "New",
+  "relatedCategoryTitle": "Products in the Same Category",
+  "relatedCategorySubtitle": "More products from {category}",
+  "viewMoreCategory": "View all"
 }

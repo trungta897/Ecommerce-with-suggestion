@@ -11,11 +11,13 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
-import { ShoppingCart, Heart, Star, Sparkles } from '@/components/base/icons';
+import { ShoppingCart, Heart, Star } from '@/components/base/icons';
 import { useCart } from '@/hooks/use-cart';
 import { useWishlistIds, useToggleWishlist } from '@/hooks/use-wishlist';
 import { useToast } from '@/providers/toast-provider';
 import { formatPrice } from '@/utils/format';
+import { getOrCreateSessionId } from '@/utils/session';
+import { activityService } from '@/services/activity-service';
 import { Product } from '@/types';
 
 const getInitialThumbnail = (prod: Product): string => {
@@ -106,9 +108,20 @@ export default function ProductCard({ product, isFlashSale, flashSaleData }: Pro
   const reviewCount = product.reviewCount || 0;
   const brandName = product.brand || product.category?.name;
 
+  const handleCardClick = () => {
+    activityService
+      .logActivity({
+        action: 'CLICK',
+        productId: product.id,
+        sessionId: getOrCreateSessionId(),
+      })
+      .catch(() => {});
+  };
+
   return (
     <Link
       href={`/products/${product.slug || product.id}`}
+      onClick={handleCardClick}
       className="group relative bg-white p-3.5 sm:p-4 rounded-2xl border border-rule/80 hover:border-primary/40 hover:shadow-xl hover:-translate-y-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 active:scale-[0.99] transition-all duration-300 flex flex-col justify-between h-full"
     >
       {/* Image Frame - Hallmark: Seamless white canvas, zero clipping */}
@@ -131,14 +144,6 @@ export default function ProductCard({ product, isFlashSale, flashSaleData }: Pro
         {discountPercentage && isFlashSale && (
           <div className="absolute top-0 left-0 z-10 bg-red-600 text-white text-xs font-bold px-2.5 py-1 rounded-br-xl shadow-md">
             {t('discount', { percent: discountPercentage })}
-          </div>
-        )}
-
-        {/* AI Score Badge */}
-        {product.aiScore && (
-          <div className="absolute bottom-2 left-2 z-10 inline-flex items-center gap-1 bg-purple-50/95 text-purple-700 border border-purple-200/80 backdrop-blur-sm text-[10px] font-semibold px-2 py-0.5 rounded-md shadow-xs">
-            <Sparkles className="w-3 h-3 text-purple-600" />
-            {product.aiScore}% {t('aiMatch')}
           </div>
         )}
 

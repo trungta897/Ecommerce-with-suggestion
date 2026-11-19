@@ -320,9 +320,18 @@
     "loadingList": "Loading list...",
     "ongoing": "Ongoing",
     "scheduled": "Scheduled",
+    "ended": "Ended",
     "fetch_error": "Failed to fetch discounts",
     "save_error": "Error saving flash sale",
-    "delete_error": "Failed to delete discount"
+    "delete_error": "Failed to delete discount",
+    "search_product_placeholder": "Search product by name...",
+    "original_price_label": "Original price:",
+    "stock_label": "Stock:",
+    "quick_discount": "Quick discount:",
+    "quick_duration": "Quick duration:",
+    "discount_badge": "-{percent}%",
+    "invalid_price_error": "Flash Sale price must be greater than 0 and lower than the original price!",
+    "toggle_active": "Toggle visibility on homepage"
   },
   "common": {
     "initializing": "Initializing...",

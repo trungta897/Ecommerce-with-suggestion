@@ -73,6 +73,6 @@ Dựa trên tài liệu Đặc tả phần mềm (SRS), dưới đây là mốc 
 - [x] **Task 6.1:** Viết Unit Test cho Core Modules (`order-payment.policy.spec.ts`, `payment.service.spec.ts`, `mail`, `redis`, `storage`).
 - [x] **Task 6.2:** Code scripts `03_evaluate_metrics.py` chạy Offline Evaluation cho mô hình ML (RMSE, Precision@10, NDCG@10).
 - [x] **Task 6.3:** Dọn dẹp code, chuẩn hóa `< 300` dòng/file, Zero Hardcode i18n, rà soát bảo mật (HTTP Security Headers, Rate Limit, RBAC, chống SQL Injection).
-- [ ] **Task 6.4:** Clean up Database rác / chuẩn hóa đơn hàng legacy từ quá trình dev.
+- [x] **Task 6.4:** Clean up Database rác / chuẩn hóa đơn hàng legacy từ quá trình dev.
 - [ ] **Task 6.5:** Chuẩn bị slide thuyết trình và hoàn thiện Quyển báo cáo tốt nghiệp.
 - [ ] **Task 6.6:** Báo cáo / Bảo vệ đồ án.

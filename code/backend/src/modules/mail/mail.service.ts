@@ -41,6 +41,13 @@ export class MailService {
         <p>Mã này sẽ hết hạn sau 5 phút. Vui lòng không chia sẻ mã này cho bất kỳ ai.</p>
       </div>`;
 
+    if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
+      this.logger.warn(
+        `⚠️ [DEV OTP] SMTP_USER/SMTP_PASS chưa cấu hình. Mã OTP cho ${to} là: ${otp}`,
+      );
+      return;
+    }
+
     try {
       await this.transporter.sendMail({
         from: `"E-Commerce App" <${process.env.SMTP_USER}>`,

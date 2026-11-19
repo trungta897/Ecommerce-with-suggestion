@@ -87,4 +87,62 @@
   - [x] Hoàn thiện Pub/Sub `@OnEvent('activity.log')` tại `ActivitiesService`, phát sự kiện `ADD_TO_CART` / `REMOVE_FROM_CART` từ `CartService`, chuẩn hóa `activityService.logActivity` kèm JWT trên Frontend và tự động xóa cache `REC:CACHE:*` khi có hành vi mới.
   - [x] Bổ sung Unit Tests `activities.service.spec.ts` kiểm chứng xác thực JWT, xếp hạng AI `aiScore` và làm mới cache Pub/Sub.
 
+- [x] **14. Hoàn Thiện Toàn Bộ Chức Năng User & Admin (Khắc Phục Route Order `/orders/admin`, Khóa Tài Khoản Login, Luồng Set-Password Nhân Viên, Admin Categories Ẩn/Hiện & Hồ Sơ VIP/Đơn Hàng)**
+  - [x] Khắc phục xung đột thứ tự route `ADM-01` tại `orders.controller.ts` (đưa `@Get('admin')` lên trước `@Get(':id')`).
+  - [x] Bảo mật đăng nhập `SEC-01` tại `auth.service.ts`: Chặn tài khoản bị khóa (`user.isActive === false`) ở cả Email/Password và Phone OTP.
+  - [x] Hoàn thiện luồng nhân viên thiết lập mật khẩu `ADM-02`: Bổ sung `POST /auth/set-password` (`SetStaffPasswordDto`) và trang `/[locale]/(auth)/set-password/page.tsx`.
+  - [x] Bổ sung endpoint bảo mật `GET /categories/admin` (`ADM-03`) và tích hợp `categoryService.getAdminAll()` để Admin xem và bật lại danh mục đã ẩn.
+  - [x] Hoàn thiện trang Hồ sơ người dùng `USR-01` & `USR-02`: Hiển thị hạng VIP (`vipTier`), điểm tích lũy (`loyaltyPoints`) và danh sách đơn hàng gần đây tại tab Đơn hàng (`/profile`).
+  - [x] Đồng bộ thanh tìm kiếm đánh giá Admin (`ADM-04`), chuẩn hóa i18n cho `/orders`, sửa port SSE fallback `8000` và đảm bảo 100% file logic `< 300` dòng.
 
+- [x] **15. Sản Phẩm Cùng Danh Mục Trên Trang Chi Tiết & Cân Bằng Quota Gợi Ý (60–65% Cùng Loại / 35–40% Lịch Sử Hành Vi)**
+  - [x] Bổ sung component `RelatedCategoryProducts` hiển thị danh sách sản phẩm cùng danh mục trên trang Chi tiết sản phẩm (`/products/[id]`) và gỡ bỏ hoàn toàn chỉ số `% aiScore` trên cả `ProductCard` lẫn trang chi tiết.
+  - [x] Xây dựng bộ cân bằng Quota `buildQuotaBalancedRecommendations` (`recommendations-quota.helper.ts`, `SAME_CATEGORY_MAX_RATIO = 0.625`): Giới hạn tối đa `60%–65%` (5/8 sản phẩm) thuộc cùng danh mục trọng tâm và dành `35%–40%` (3/8 sản phẩm) cho lịch sử truy cập (`VIEW`), click (`CLICK`), tìm kiếm (`SEARCH`), thêm giỏ hàng (`ADD_TO_CART`) và mua hàng trước đó (`PURCHASE` / `OrderItem`).
+  - [x] Tích hợp ghi nhận sự kiện `CLICK` trên `ProductCard` và `SEARCH` trên trang tìm kiếm (`/search`), kèm Unit Test kiểm chứng tỷ lệ phân bổ `5/8` cùng loại và `3/8` lịch sử hành vi.
+
+
+
+
+
+- [x] **16. Kiểm Thử Tự Động Giao Diện & Chức Năng (E2E + Visual Regression với Playwright)**
+  - [x] Khởi tạo package độc lập `test/e2e` (`@playwright/test`, Chromium), cấu hình 2 project chức năng (`desktop-chromium`, `mobile-chromium` – Pixel 5) và 2 project visual (`visual`, `visual-mobile`), trace/video/screenshot khi fail, báo cáo HTML.
+  - [x] Fixture `auth.setup.ts` đăng nhập admin 1 lần và lưu `storageState`; fixture `pageHealth` bắt lỗi JS chưa xử lý và lỗi thiếu key i18n (`MISSING_MESSAGE`).
+  - [x] Page Object Model (`AdminLoginPage`, `CustomerLoginPage`, `ShopPage`, `CartPage`, `CheckoutPage`); text UI đọc trực tiếp từ `code/frontend/src/messages` qua `utils/i18n.ts` (không hardcode).
+  - [x] Smoke test toàn bộ route public, route admin (đã đăng nhập) và kiểm tra middleware chuyển hướng khách/admin.
+  - [x] Functional test: đăng nhập admin (đúng/sai/rỗng), validate đăng nhập SĐT (không gửi OTP thật), luồng thêm giỏ hàng → checkout → validate bước giao hàng, trang tìm kiếm, đa ngôn ngữ `vi`/`en`.
+  - [x] Visual regression cho 6 trang chính (desktop + mobile) với `toHaveScreenshot`.
+  - [ ] Tạo ảnh baseline (`npm run test:update-snapshots`) trên môi trường chạy thật.
+  - [ ] Mở rộng: luồng đặt hàng COD hoàn chỉnh & CRUD admin trên DB test riêng; tích hợp GitHub Actions.
+
+- [x] **17. Hoàn Thiện Block Giới Thiệu (Hero & Promo Banners) và Block Flash Sale Trang Chủ**
+  - [x] Tách hằng số cấu hình trang chủ sang `src/constants/home.ts` (`HERO_SLIDES`, `HERO_SMALL_BANNERS`, `MID_PROMO_BANNERS`, `FLASH_SALE_FALLBACK_DISCOUNT_RATES`).
+  - [x] Nâng cấp `Hero.tsx`: Main Banner Slider 3 slides tự động chuyển + điều hướng kèm hình ảnh sản phẩm, khung thời gian, badge ưu đãi; 4 thẻ giới thiệu nhỏ có hình ảnh, thời gian, badge giảm giá, mô tả chi tiết và `<Link>` điều hướng.
+  - [x] Khắc phục lỗi ẩn `FlashSaleSection` tại `page.tsx` (bỏ điều kiện lọc giá USD cũ `50 < price < 300`), bổ sung hiển thị khung giờ hoạt động, đồng hồ đếm ngược, hình ảnh sản phẩm và giá giảm fallback tự động.
+  - [x] Đồng bộ 100% từ điển đa ngôn ngữ `vi/home.json` và `en/home.json`.
+
+- [x] **18. Kiểm Thử Tự Động Toàn Diện Cho Tất Cả Các Role (Guest, Customer SĐT + OTP, Employee, Super Admin)**
+  - [x] Tạo seed script `code/backend/prisma/seed-test-roles.ts` chuẩn hóa 3 tài khoản: Super Admin (`admin@datn.com`), Employee (`employee@datn.com`), Customer thuần SĐT (`0912345678`).
+  - [x] Tích hợp `ioredis` đọc mã OTP tự động từ Redis `OTP:PHONE:{phone}` cho Customer Login tại `test/e2e/fixtures/auth.setup.ts`.
+  - [x] Xây dựng bộ test specs phân quyền 4 Roles (`specs/roles/guest.spec.ts`, `customer.spec.ts`, `employee.spec.ts`, `admin.spec.ts`).
+  - [x] Khắc phục lỗ hổng phân quyền bảo mật tại `code/frontend/src/middleware.ts`: ngăn chặn Employee truy cập các trang quản trị ngoài danh mục cho phép (sửa bẫy `startsWith('/admin/')`).
+  - [x] Sửa lỗi nhãn dịch `order.pending` tại `code/frontend/src/app/[locale]/(user)/orders/page.tsx`.
+  - [x] Đạt tỷ lệ 100% test cases (25/25) cho cả 4 Roles đều PASS trong 1.4 phút.
+
+- [x] **19. Kiểm Thử Tự Động Vòng Đời TMĐT Toàn Diện (Lifecycle E2E: Đăng Ký SĐT + OTP, Gợi Ý AI, Mua Hàng COD, Đánh Giá 5 Sao, Duyệt Đơn, CRUD Sản Phẩm & CRUD Nhân Viên)**
+  - [x] Tự động tạo mới tài khoản Khách hàng bằng SĐT ngẫu nhiên + xác thực OTP Redis, cập nhật hồ sơ (`01-customer-register-and-recommendations.spec.ts`).
+  - [x] Kiểm thử khối Gợi ý sản phẩm AI Hybrid & Sản phẩm cùng danh mục trên giao diện người dùng.
+  - [x] Mua hàng hoàn chỉnh bằng phương thức COD (Giỏ hàng -> Điền thông tin -> Đặt tại cửa hàng pickup -> Đặt hàng thành công -> Kiểm tra lịch sử `/orders`).
+  - [x] Khắc phục bất đồng bộ giỏ hàng giữa Redis và Database tại `orders-checkout.service.ts` và `orders.service.ts`: tự động fallback đọc giỏ hàng từ Redis khi chưa đến chu kỳ 5 phút của `CartSyncService`, xóa đồng thời DB & Redis khi tạo đơn.
+  - [x] Khắc phục lỗi Foreign Key P2003 trong `CartSyncService.handleCron`: xác thực sản phẩm tồn tại trong DB trước khi upsert và tự động dọn dẹp key mồ côi trong Redis.
+  - [x] Viết đánh giá 5 sao & bình luận kèm kiểm thử tab Đánh giá trên trang chi tiết sản phẩm.
+  - [x] Nhân viên / Admin duyệt đơn hàng (`PENDING` -> `CONFIRMED`), kiểm tra modal chi tiết và lọc trạng thái đơn hàng (`03-order-fulfillment.spec.ts`).
+  - [x] Admin toàn quyền CRUD Sản phẩm: Tạo mới sản phẩm với giá và danh mục, tìm kiếm theo tên, cập nhật giá và bật/tắt trạng thái kinh doanh (`04-admin-crud-product.spec.ts`).
+  - [x] Admin toàn quyền CRUD Nhân viên: Tạo và mời nhân viên mới với vai trò `EMPLOYEE`, xác nhận hiển thị trong bảng người dùng (`05-admin-crud-employee.spec.ts`).
+  - [x] Chụp ảnh kiểm thử giao diện E2E (`lifecycle.visual.spec.ts`) cho Trang chủ, Giỏ hàng, Checkout và Admin Portal.
+  - [x] Đạt tỷ lệ 100% test cases (14/14) của Lifecycle E2E đều PASS trong 1.1 phút.
+
+- [x] **20. Quản Trị Toàn Diện Block Flash Sale (Sản Phẩm, Giá Tiền, Thời Gian) & Khắc Phục Toàn Bộ Lỗi Kiểm Thử / Audit**
+  - [x] Backend `PromotionsService` & `ProductsService`: Validate chặt `0 < discountPrice < product.price` khi tạo/sửa Flash Sale (`INVALID_DISCOUNT_PRICE`), tự động khởi tạo 8 sản phẩm Flash Sale mẫu khi bảng `product_discounts` trống (`onModuleInit`), và đồng bộ giá `discountPrice` từ `ProductDiscount` đang chạy vào API chi tiết sản phẩm (`findById`, `findBySlug`).
+  - [x] Frontend `promotion-service.ts`, `FlashSaleSection.tsx` & `page.tsx`: Chuẩn hóa `discount.product` qua `mapProduct` (đầy đủ `imageUrl`, `images`, `rating`, `reviews`), gỡ bỏ hoàn toàn dữ liệu giả `fallbackProducts` để block Flash Sale trang chủ hiển thị chính xác 100% danh sách sản phẩm, giá tiền và khung thời gian do Admin thiết lập.
+  - [x] Nâng cấp trang quản trị `/admin/promotions/discounts` & `DiscountFormModal.tsx`: Bổ sung ô tìm kiếm sản phẩm, thẻ xem trước sản phẩm (ảnh thumbnail, giá niêm yết, tồn kho, badge `-%`), nút chọn nhanh mức giảm (`-10%` đến `-50%`) và thời lượng (`+6h` đến `+7d`), nút bật/tắt nhanh trạng thái trên bảng, và sửa triệt để lỗi lệch múi giờ UTC 7 tiếng của `datetime-local`.
+  - [x] Củng cố sửa lỗi từ `test_errors_report.md` & `progress_audit.md`: Ưu tiên đọc giỏ hàng từ Redis trước DB tại `OrdersCheckoutService.resolveCartItems` (`CACHE-CART-01`), bổ sung chặn route `EMPLOYEE` tại `AdminGuard.tsx` (`SEC-AUTH-01`), sửa import icon `too-many-requests/page.tsx` (`CQ-01`), bọc `useCallback` tại `(user)/orders/page.tsx` (`CQ-03`), rút gọn 100% file logic/component xuống `< 300` dòng (`CQ-02`) và đồng bộ `SRS.md`, `project_plan.md`.

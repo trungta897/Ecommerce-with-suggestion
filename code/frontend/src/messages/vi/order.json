@@ -92,5 +92,11 @@
   "noReasonProvided": "Không có lý do",
   "returnRejectedReasonLabel": "Lý do từ chối trả hàng",
   "depositAmountLabel": "Tiền cọc cần thanh toán trước",
-  "returnRequestError": "Không thể gửi yêu cầu trả hàng"
+  "returnRequestError": "Không thể gửi yêu cầu trả hàng",
+  "loadingOrdersList": "Đang tải danh sách đơn hàng...",
+  "emptyOrdersHint": "Khám phá các sản phẩm và tiến hành mua sắm ngay",
+  "shopNow": "Mua sắm ngay",
+  "prevPage": "Trước",
+  "nextPage": "Sau",
+  "pageInfo": "Trang {page} / {totalPages}"
 }

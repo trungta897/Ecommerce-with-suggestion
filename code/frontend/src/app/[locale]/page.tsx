@@ -1,6 +1,8 @@
 'use client';
 
+import React from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useTranslations } from 'next-intl';
 import Hero from '@/components/home/Hero';
 import FlashSaleSection from '@/components/home/FlashSaleSection';
@@ -9,8 +11,17 @@ import { Newsletter } from '@/components/home/Newsletter';
 import CategorySection from '@/components/features/product/CategorySection';
 import { RecentlyViewedSlider } from '@/components/features/product/RecentlyViewedSlider';
 import { RecommendedProducts } from '@/components/features/product/RecommendedProducts';
-import { useHomeSections, useProducts } from '@/hooks/use-products';
-import { Laptop, CircuitBoard, Layers, HardDrive, Monitor } from '@/components/base/icons';
+import { useHomeSections } from '@/hooks/use-products';
+import {
+  Laptop,
+  CircuitBoard,
+  Layers,
+  HardDrive,
+  Monitor,
+  Clock,
+  ArrowRight,
+} from '@/components/base/icons';
+import { HOME_CATEGORY_SLUGS, HOME_SECTION_PRODUCT_LIMIT, MID_PROMO_BANNERS } from '@/constants';
 
 const ICON_MAP: Record<string, React.ReactNode> = {
   laptop: <Laptop className="w-6 h-6" />,
@@ -21,23 +32,14 @@ const ICON_MAP: Record<string, React.ReactNode> = {
   ram: <Layers className="w-6 h-6" />,
 };
 
-const HOME_CATEGORY_SLUGS = ['laptop', 'man-hinh', 'may-tinh-de-ban', 'o-cung', 'vga', 'ram'];
-
 export default function Home() {
   const tHome = useTranslations('home');
   const tCat = useTranslations('home.categories');
 
-  // Dedicated query to fetch 8 products for each category in parallel with caching
   const { data: homeSections, isLoading: isSectionsLoading } = useHomeSections(
-    HOME_CATEGORY_SLUGS,
-    8
+    [...HOME_CATEGORY_SLUGS],
+    HOME_SECTION_PRODUCT_LIMIT
   );
-
-  // Flash sale products (optional)
-  const { data: productsResponse } = useProducts({ limit: 12 });
-  const onSale = (productsResponse?.data || [])
-    .filter((p) => p.price > 50 && p.price < 300)
-    .slice(0, 6);
 
   return (
     <div className="flex flex-col gap-8 pb-0 pt-6 bg-[#f4f6f8] min-h-screen">
@@ -47,45 +49,62 @@ export default function Home() {
       <RecentlyViewedSlider className="container mx-auto px-4 lg:px-8 max-w-7xl" />
 
       {/* FLASH SALE SECTION */}
-      {onSale.length > 0 && <FlashSaleSection products={onSale} />}
+      <FlashSaleSection />
 
-      {/* PROMO BANNERS */}
+      {/* PROMO BANNERS WITH IMAGE, TIME & BADGE */}
       <section className="container mx-auto px-4 lg:px-8 max-w-7xl">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Link
-            href="/category/laptop"
-            className="relative h-48 md:h-64 rounded-3xl overflow-hidden group cursor-pointer block shadow-sm hover:shadow-md transition-all"
-          >
-            <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-indigo-900 opacity-90 group-hover:scale-105 transition-transform duration-500"></div>
-            <div className="absolute inset-0 p-8 flex flex-col justify-center">
-              <h3 className="text-2xl md:text-3xl font-bold text-white mb-2 font-display">
-                {tHome('promo_banners.laptop_title')}
-              </h3>
-              <p className="text-blue-100 mb-4 max-w-xs text-sm">
-                {tHome('promo_banners.laptop_desc')}
-              </p>
-              <span className="px-4 py-2 bg-white text-blue-900 rounded-full text-sm font-bold w-fit shadow-sm">
-                {tHome('promo_banners.laptop_cta')}
-              </span>
-            </div>
-          </Link>
-          <Link
-            href="/category/vga"
-            className="relative h-48 md:h-64 rounded-3xl overflow-hidden group cursor-pointer block shadow-sm hover:shadow-md transition-all"
-          >
-            <div className="absolute inset-0 bg-gradient-to-r from-red-600 to-orange-500 opacity-90 group-hover:scale-105 transition-transform duration-500"></div>
-            <div className="absolute inset-0 p-8 flex flex-col justify-center">
-              <h3 className="text-2xl md:text-3xl font-bold text-white mb-2 font-display">
-                {tHome('promo_banners.vga_title')}
-              </h3>
-              <p className="text-red-100 mb-4 max-w-xs text-sm">
-                {tHome('promo_banners.vga_desc')}
-              </p>
-              <span className="px-4 py-2 bg-white text-red-900 rounded-full text-sm font-bold w-fit shadow-sm">
-                {tHome('promo_banners.vga_cta')}
-              </span>
-            </div>
-          </Link>
+          {MID_PROMO_BANNERS.map((banner) => (
+            <Link
+              key={banner.id}
+              href={banner.href}
+              className="relative h-56 md:h-64 rounded-3xl overflow-hidden group cursor-pointer block shadow-sm hover:shadow-lg transition-all"
+            >
+              <div
+                className={`absolute inset-0 bg-gradient-to-r ${banner.gradientClass} transition-transform duration-500`}
+              />
+
+              {/* Right Side Product Image */}
+              <div className="absolute right-0 inset-y-0 w-1/2 opacity-45 group-hover:opacity-65 group-hover:scale-105 transition-all duration-500 pointer-events-none">
+                <Image
+                  src={banner.imageUrl}
+                  alt={tHome(banner.titleKey as Parameters<typeof tHome>[0])}
+                  fill
+                  sizes="(max-width: 768px) 50vw, 350px"
+                  className="object-cover"
+                />
+              </div>
+              <div className="absolute inset-0 bg-gradient-to-r from-black/55 via-black/30 to-transparent pointer-events-none" />
+
+              {/* Left Content */}
+              <div className="relative z-10 h-full p-6 md:p-8 flex flex-col justify-between max-w-md">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="px-2.5 py-1 rounded-full bg-white/95 text-ink text-xs font-bold shadow-xs">
+                    {tHome(banner.badgeKey as Parameters<typeof tHome>[0])}
+                  </span>
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-black/35 text-white text-xs font-medium backdrop-blur-xs">
+                    <Clock className="w-3.5 h-3.5 text-amber-300" />
+                    {tHome(banner.timeKey as Parameters<typeof tHome>[0])}
+                  </span>
+                </div>
+
+                <div>
+                  <h3 className="text-2xl md:text-3xl font-bold text-white mb-1.5 font-display">
+                    {tHome(banner.titleKey as Parameters<typeof tHome>[0])}
+                  </h3>
+                  <p className="text-white/90 mb-4 text-xs md:text-sm line-clamp-2">
+                    {tHome(banner.descKey as Parameters<typeof tHome>[0])}
+                  </p>
+                  <span
+                    className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-bold w-fit shadow-sm transition-colors ${banner.ctaClass}`}
+                  >
+                    <span>{tHome(banner.ctaKey as Parameters<typeof tHome>[0])}</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </span>
+                </div>
+              </div>
+            </Link>
+          ))}
         </div>
       </section>
 

@@ -27,8 +27,12 @@ const ratelimit =
     : null;
 
 export default async function middleware(request: NextRequest) {
-  // 1. Rate Limit Check
-  if (ratelimit && !request.nextUrl.pathname.includes('/too-many-requests')) {
+  // 1. Rate Limit Check (Chỉ áp dụng trong môi trường Production để không chặn quá trình test E2E tự động)
+  if (
+    process.env.NODE_ENV === 'production' &&
+    ratelimit &&
+    !request.nextUrl.pathname.includes('/too-many-requests')
+  ) {
     const ip = request.ip ?? '127.0.0.1';
     const { success, limit, reset, remaining } = await ratelimit.limit(ip);
 
@@ -88,17 +92,14 @@ export default async function middleware(request: NextRequest) {
       return NextResponse.redirect(new URL(`${localePrefix || '/'}`, request.url));
     }
 
-    // Phân quyền cho Nhân viên (EMPLOYEE)
+    // Phân quyền cho Nhân viên (EMPLOYEE): Chỉ được phép vào /admin, /admin/dashboard, /admin/orders, /admin/reviews
     if (userRole === 'EMPLOYEE') {
-      const allowedEmployeePaths = [
-        '/admin',
-        '/admin/dashboard',
-        '/admin/orders',
-        '/admin/reviews',
-      ];
-      const isAllowedForEmployee = allowedEmployeePaths.some(
-        (p) => pathWithoutLocale === p || pathWithoutLocale.startsWith(`${p}/`)
-      );
+      const isAllowedForEmployee =
+        pathWithoutLocale === '/admin' ||
+        pathWithoutLocale === '/admin/dashboard' ||
+        pathWithoutLocale.startsWith('/admin/dashboard/') ||
+        pathWithoutLocale.startsWith('/admin/orders') ||
+        pathWithoutLocale.startsWith('/admin/reviews');
 
       if (!isAllowedForEmployee) {
         return NextResponse.redirect(new URL(`${localePrefix}/admin/dashboard`, request.url));

@@ -4,7 +4,7 @@ import { useTranslations, useLocale } from 'next-intl';
 import { Package, Clock, ChevronRight, Loader2 } from '@/components/base/icons';
 import Link from 'next/link';
 import { formatPrice } from '@/utils/format';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { orderService } from '@/services/order-service';
 import { Order } from '@/types/order';
 import { ORDER_STATUS_COLORS, ORDER_TABS } from '@/constants/order';
@@ -20,23 +20,26 @@ export default function OrderHistoryPage() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
+  const fetchOrders = useCallback(
+    async (p: number) => {
+      try {
+        setLoading(true);
+        const res = await orderService.getMyOrders(p, 10);
+        setOrders(res.data || []);
+        setTotalPages(res.totalPages || 1);
+      } catch (err: unknown) {
+        console.error(err);
+        toast.error(t('fetchOrdersError'));
+      } finally {
+        setLoading(false);
+      }
+    },
+    [t]
+  );
+
   useEffect(() => {
     fetchOrders(page);
-  }, [page]);
-
-  const fetchOrders = async (p: number) => {
-    try {
-      setLoading(true);
-      const res = await orderService.getMyOrders(p, 10);
-      setOrders(res.data || []);
-      setTotalPages(res.totalPages || 1);
-    } catch (err: unknown) {
-      console.error(err);
-      toast.error(t('fetchOrdersError'));
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [page, fetchOrders]);
 
   const filteredOrders = orders.filter((order) => {
     if (selectedTab === 'ALL') return true;
@@ -60,7 +63,9 @@ export default function OrderHistoryPage() {
                 : 'bg-paper-2 text-ink-2 hover:bg-primary/10 hover:text-primary'
             }`}
           >
-            {t(tab.labelKey as Parameters<typeof t>[0])}
+            {tab.labelKey === 'allOrders'
+              ? t('allOrders')
+              : t(`statusLabels.${tab.labelKey}` as Parameters<typeof t>[0])}
           </button>
         ))}
       </div>
@@ -69,7 +74,7 @@ export default function OrderHistoryPage() {
       {loading ? (
         <div className="flex flex-col items-center justify-center py-16 text-ink-2">
           <Loader2 className="w-8 h-8 animate-spin text-primary mb-3" />
-          <p className="text-sm">Đang tải danh sách đơn hàng...</p>
+          <p className="text-sm">{t('loadingOrdersList')}</p>
         </div>
       ) : filteredOrders.length === 0 ? (
         <div className="bg-white border border-rule rounded-xl p-12 text-center">
@@ -77,12 +82,12 @@ export default function OrderHistoryPage() {
             <Package className="w-8 h-8 text-ink-2" />
           </div>
           <p className="font-semibold text-ink text-lg mb-1">{t('noOrders')}</p>
-          <p className="text-sm text-ink-2 mb-6">Khám phá các sản phẩm và tiến hành mua sắm ngay</p>
+          <p className="text-sm text-ink-2 mb-6">{t('emptyOrdersHint')}</p>
           <Link
             href="/"
             className="inline-flex items-center justify-center px-6 py-2.5 rounded-lg bg-primary text-white font-medium hover:bg-primary/90 transition-colors"
           >
-            Mua sắm ngay
+            {t('shopNow')}
           </Link>
         </div>
       ) : (
@@ -144,17 +149,17 @@ export default function OrderHistoryPage() {
                 onClick={() => setPage((p) => p - 1)}
                 className="px-4 py-2 text-sm font-medium rounded-lg bg-paper-2 text-ink-2 disabled:opacity-50 hover:bg-primary/10 hover:text-primary transition-colors"
               >
-                Trước
+                {t('prevPage')}
               </button>
               <span className="px-4 py-2 text-sm font-semibold text-ink">
-                Trang {page} / {totalPages}
+                {t('pageInfo', { page, totalPages })}
               </span>
               <button
                 disabled={page >= totalPages}
                 onClick={() => setPage((p) => p + 1)}
                 className="px-4 py-2 text-sm font-medium rounded-lg bg-paper-2 text-ink-2 disabled:opacity-50 hover:bg-primary/10 hover:text-primary transition-colors"
               >
-                Sau
+                {t('nextPage')}
               </button>
             </div>
           )}
