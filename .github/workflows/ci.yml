@@ -2,9 +2,10 @@ name: CI Pipeline
 
 on:
   push:
-    branches: [main, master]
+    branches: [main, master, develop]
   pull_request:
-    branches: [main, master]
+    branches: [main, master, develop]
+  workflow_dispatch:
 
 jobs:
   backend-ci:
@@ -36,6 +37,10 @@ jobs:
       - name: Run Unit Tests
         run: npm test -- --passWithNoTests
 
+      - name: Dependency audit (production, informational)
+        run: npm audit --omit=dev --audit-level=critical
+        continue-on-error: true
+
   frontend-ci:
     name: Frontend Typecheck
     runs-on: ubuntu-latest
@@ -59,3 +64,103 @@ jobs:
       - name: TypeScript Typecheck
         run: npx tsc --noEmit
 
+      - name: Dependency audit (production, informational)
+        run: npm audit --omit=dev --audit-level=critical
+        continue-on-error: true
+
+  ml-ci:
+    name: ML Service Unit Tests (pytest)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ml
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        # Không cài toàn bộ requirements.txt (lightfm cần biên dịch và không dùng trong bộ kiểm thử này).
+        run: pip install numpy scipy scikit-learn pandas joblib fastapi pydantic pydantic-settings redis python-dotenv pytest
+
+      - name: Run pytest
+        run: python -m pytest tests -q
+
+  e2e:
+    name: Playwright E2E (roles, auth, shop, i18n, smoke)
+    # Chạy khi đẩy lên main hoặc kích hoạt thủ công để tránh làm chậm mọi pull request.
+    if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    needs: [backend-ci, frontend-ci]
+    timeout-minutes: 40
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: datn_ecommerce
+        ports: ['3306:3306']
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -proot"
+          --health-interval=10s --health-timeout=5s --health-retries=10
+      redis:
+        image: redis:7-alpine
+        ports: ['6379:6379']
+    env:
+      DATABASE_URL: mysql://root:root@127.0.0.1:3306/datn_ecommerce
+      DB_HOST: 127.0.0.1
+      DB_PORT: '3306'
+      REDIS_HOST: 127.0.0.1
+      REDIS_PORT: '6379'
+      JWT_SECRET: ci-only-secret-change-me
+      CLIENT_URL: http://localhost:3000
+      ML_SERVICE_URL: http://localhost:8001
+      ML_API_KEY: ci-only-ml-key
+      NEXT_PUBLIC_API_URL: http://localhost:8000
+      E2E_BASE_URL: http://localhost:3000
+      E2E_API_URL: http://localhost:8000
+      E2E_START_SERVERS: 'true'
+      CI: 'true'
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install backend dependencies and prepare database
+        working-directory: code/backend
+        run: |
+          npm ci
+          npx prisma generate
+          npx prisma migrate deploy
+          npm run db:seed-locations
+          npm run db:seed-test-roles
+
+      - name: Install frontend dependencies
+        working-directory: code/frontend
+        run: npm ci
+
+      - name: Install E2E dependencies and Chromium
+        working-directory: test/e2e
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+
+      - name: Run Playwright (kịch bản không tạo dữ liệu hàng loạt)
+        working-directory: test/e2e
+        run: npx playwright test --project=roles --project=desktop-chromium --grep-invert "Lifecycle"
+
+      - name: Upload Playwright HTML report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: test/e2e/playwright-report
+          retention-days: 14
