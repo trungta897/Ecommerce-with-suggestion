@@ -11,6 +11,10 @@ POPULAR_MODEL_PATH = MODELS_DIR / "popular_model.pkl"
 HYBRID_MODEL_PATH = MODELS_DIR / "hybrid_model.pkl"
 
 
+# Trọng số hợp nhất Hybrid (xem Chương 4, Bảng chọn siêu tham số)
+HYBRID_W_CF = 0.70
+HYBRID_W_CB = 0.30
+
 class RecommenderSystem:
     def __init__(self):
         self.popular_model: List[Dict[str, Any]] = []
@@ -170,20 +174,16 @@ class RecommenderSystem:
 
             cb_scores = self._min_max_normalize(cb_raw) if has_cb_signal else cb_raw
 
-            # 3. Popularity Prior
-            pop_scores = (
-                self.pop_prior_vec
-                if self.pop_prior_vec is not None
-                else np.zeros(n_items, dtype=float)
-            )
-
             # 4. Hybrid Score Fusion
+            # Cấu hình chọn bằng tập kiểm định (ml/scripts/05_tuning_and_quota.py):
+            # 0,70 CF + 0,30 CB, không dùng tiên nghiệm phổ biến (làm giảm NDCG@10 khi
+            # chỉ khác 0 ở 100 sản phẩm hàng đầu). Khi chỉ có một tín hiệu, dùng tín hiệu đó.
             if has_cf_signal and has_cb_signal:
-                hybrid_scores = 0.50 * cf_scores + 0.35 * cb_scores + 0.15 * pop_scores
+                hybrid_scores = HYBRID_W_CF * cf_scores + HYBRID_W_CB * cb_scores
             elif has_cf_signal:
-                hybrid_scores = 0.80 * cf_scores + 0.20 * pop_scores
+                hybrid_scores = cf_scores
             elif has_cb_signal:
-                hybrid_scores = 0.80 * cb_scores + 0.20 * pop_scores
+                hybrid_scores = cb_scores
             else:
                 logger.info(
                     f"User {user_id} has no training/seed signal. Falling back to popular items."
