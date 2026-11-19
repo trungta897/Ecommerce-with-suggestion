@@ -185,7 +185,7 @@ npm install
 # 2. Cấu hình biến môi trường (.env)
 # Khai báo DATABASE_URL, REDIS_HOST, REDIS_PORT, JWT_SECRET,
 # ML_SERVICE_URL=http://localhost:8001, ML_API_KEY=test_api_key_123,
-# VNP_TMN_CODE, VNP_HASH_SECRET, VNP_RETURN_URL, CLOUDINARY_*
+# VNPAY_TMN_CODE, VNPAY_HASH_SECRET, VNPAY_RETURN_URL, CLOUDINARY_*
 
 # 3. Đồng bộ Prisma Schema & Seed dữ liệu mẫu
 npx prisma generate

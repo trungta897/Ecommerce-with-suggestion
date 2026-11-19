@@ -8,6 +8,7 @@ import numpy as np
 import pytest
 from fastapi import HTTPException
 
+from service.core.config import settings
 from service.core.security import get_api_key
 from service.models.recommender import RecommenderSystem
 
@@ -84,7 +85,7 @@ def test_hybrid_folding_in_excludes_primary_seed():
 
 
 def test_api_key_check_accepts_valid_and_rejects_invalid():
-    assert run(get_api_key("unit-test-key")) == "unit-test-key"
+    assert run(get_api_key(settings.API_KEY)) == settings.API_KEY
     for bad in (None, "", "wrong-key"):
         with pytest.raises(HTTPException) as exc:
             run(get_api_key(bad))

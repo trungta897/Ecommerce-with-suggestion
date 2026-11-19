@@ -136,13 +136,19 @@ describe('PaymentService', () => {
     } as unknown as ReturnQueryFromVNPay;
 
     it('returns RspCode 97 when signature is invalid', async () => {
-      mockVnPayService.verifyIpn.mockReturnValue({ isSuccess: false });
+      mockVnPayService.verifyIpn.mockReturnValue({
+        isVerified: false,
+        isSuccess: true,
+      });
       const res = await service.handleVnPayWebhook(baseQuery);
       expect(res).toEqual({ RspCode: '97', Message: 'Invalid signature' });
     });
 
     it('returns RspCode 02 on idempotent retry of the same vnp_TransactionNo', async () => {
-      mockVnPayService.verifyIpn.mockReturnValue({ isSuccess: true });
+      mockVnPayService.verifyIpn.mockReturnValue({
+        isVerified: true,
+        isSuccess: true,
+      });
       mockPrisma.order.findFirst.mockResolvedValue({
         ...mockOrderBase,
         status: OrderStatus.PENDING,
@@ -158,7 +164,10 @@ describe('PaymentService', () => {
     });
 
     it('resolves superseded txnRef via Step 2 (UUID prefix) and marks order paid if still PENDING_PAYMENT', async () => {
-      mockVnPayService.verifyIpn.mockReturnValue({ isSuccess: true });
+      mockVnPayService.verifyIpn.mockReturnValue({
+        isVerified: true,
+        isSuccess: true,
+      });
       mockPrisma.order.findFirst.mockResolvedValue(null); // Step 1 misses because paymentGatewayTxnId is txnRef2
       mockPrisma.order.findUnique.mockResolvedValue(mockOrderBase); // Step 2 hits by UUID
       mockPrisma.order.updateMany.mockResolvedValue({ count: 1 });
@@ -176,7 +185,10 @@ describe('PaymentService', () => {
     });
 
     it('flags duplicate payment when a second distinct vnp_TransactionNo arrives after order is already paid (B2 -> B1 or B1 -> B2)', async () => {
-      mockVnPayService.verifyIpn.mockReturnValue({ isSuccess: true });
+      mockVnPayService.verifyIpn.mockReturnValue({
+        isVerified: true,
+        isSuccess: true,
+      });
       const alreadyPaidOrder = {
         ...mockOrderBase,
         status: OrderStatus.PENDING,

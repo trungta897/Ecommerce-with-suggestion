@@ -143,8 +143,10 @@ export class PaymentService {
   // 1. VNPay Webhook (4-Layer Protection + Superseded Session & Duplicate Payment Guard)
   async handleVnPayWebhook(query: ReturnQueryFromVNPay) {
     // Lớp 1: Verify Signature
+    // LƯU Ý: `isVerified` là kết quả kiểm tra chữ ký; `isSuccess` chỉ phản ánh mã phản hồi
+    // thanh toán (vnp_ResponseCode = 00). Phải kiểm tra chữ ký bằng `isVerified`.
     const verifyResult = this.vnPayService.verifyIpn(query);
-    if (!verifyResult.isSuccess) {
+    if (!verifyResult.isVerified) {
       return { RspCode: '97', Message: 'Invalid signature' };
     }
 
