@@ -243,4 +243,3 @@ node scripts/check-i18n.js
 - **Báo cáo Đánh giá Học thuật Mô hình Gợi ý**: [`docs/plans/model_evaluation_report.md`](file:///c:/Users/nguye/Desktop/CODE/DATN/docs/plans/model_evaluation_report.md)
 - **Sơ đồ Thực thể Liên kết (Database ERD)**: [`docs/DB-erd/erd.md`](file:///c:/Users/nguye/Desktop/CODE/DATN/docs/DB-erd/erd.md)
 - **Biểu đồ Tuần tự Thanh toán & Đối soát VNPay IPN**: [`docs/sequence/sequence_vnpay_ipn.md`](file:///c:/Users/nguye/Desktop/CODE/DATN/docs/sequence/sequence_vnpay_ipn.md)
-- **Tiến độ Chi tiết Sprint 5**: [`docs/backlogs/sprint5/tasks.md`](file:///c:/Users/nguye/Desktop/CODE/DATN/docs/backlogs/sprint5/tasks.md)
