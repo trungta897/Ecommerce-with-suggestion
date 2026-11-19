@@ -1,0 +1,37 @@
+import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
+import { User } from '@/types';
+import { clearSessionAndRegenerate } from '@/utils/session';
+
+interface AuthState {
+  user: User | null;
+  accessToken: string | null;
+  isAuthenticated: boolean;
+  setAuth: (user: User, accessToken: string) => void;
+  logout: () => void;
+}
+
+export const useAuthStore = create<AuthState>()(
+  persist(
+    (set) => ({
+      user: null,
+      accessToken: null,
+      isAuthenticated: false,
+      setAuth: (user, accessToken) => set({ user, accessToken, isAuthenticated: true }),
+      logout: () => {
+        if (typeof window !== 'undefined') {
+          const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+          fetch(`${apiUrl}/auth/logout`, {
+            method: 'POST',
+            credentials: 'include',
+          }).catch(() => {});
+          clearSessionAndRegenerate();
+        }
+        set({ user: null, accessToken: null, isAuthenticated: false });
+      },
+    }),
+    {
+      name: 'auth-storage',
+    }
+  )
+);

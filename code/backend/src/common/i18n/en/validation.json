@@ -1,0 +1,8 @@
+{
+  "NOT_EMPTY": "The {property} field cannot be left blank.",
+  "IS_EMAIL": "The {property} field must be a valid email format.",
+  "IS_STRING": "The {property} field must be a string text value.",
+  "MIN_LENGTH": "The {property} field must contain at least {constraints.0} characters.",
+  "MAX_LENGTH": "The {property} field cannot exceed {constraints.0} characters.",
+  "IS_NUMBER": "The {property} field must be a valid numeric value."
+}

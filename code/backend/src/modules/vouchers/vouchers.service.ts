@@ -1,0 +1,300 @@
+import {
+  Injectable,
+  BadRequestException,
+  NotFoundException,
+} from '@nestjs/common';
+import { PrismaService } from '../../database/prisma.service';
+import { OrderStatus, Prisma, VoucherScope } from '@prisma/client';
+import { I18nService } from 'nestjs-i18n';
+import { VOUCHER_MESSAGES } from '../../common/constants/voucher-message.constant';
+import { ValidateVoucherDto } from './dto/validate-voucher.dto';
+import { CreateVoucherDto } from './dto/create-voucher.dto';
+import { UpdateVoucherDto } from './dto/update-voucher.dto';
+import {
+  createVoucherHelper,
+  findAllVouchersHelper,
+  getVoucherUsagesHelper,
+  updateVoucherHelper,
+} from './vouchers-admin.helper';
+
+@Injectable()
+export class VouchersService {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly i18n: I18nService,
+  ) {}
+
+  async validateVoucherQuery(
+    code: string | undefined,
+    subtotalStr: string | undefined,
+    phone: string | undefined,
+    userId?: string,
+    lang?: string,
+  ) {
+    if (!code || !subtotalStr) {
+      throw new BadRequestException(
+        this.i18n.t(VOUCHER_MESSAGES.REQUIRED_FIELDS, { lang }),
+      );
+    }
+
+    const subtotal = Number(subtotalStr);
+    if (isNaN(subtotal) || subtotal < 0) {
+      throw new BadRequestException(
+        this.i18n.t(VOUCHER_MESSAGES.INVALID_SUBTOTAL, { lang }),
+      );
+    }
+
+    return this.validateVoucher({ code, subtotal, phone }, userId, lang);
+  }
+
+  async validateVoucher(
+    dto: ValidateVoucherDto,
+    userId?: string,
+    lang?: string,
+  ) {
+    const { code, subtotal, phone, items } = dto;
+    const voucher = await this.prisma.voucher.findUnique({
+      where: { code },
+      include: {
+        category: { select: { id: true, name: true, slug: true } },
+        product: { select: { id: true, name: true, slug: true } },
+      },
+    });
+
+    if (!voucher) {
+      throw new BadRequestException(
+        this.i18n.t(VOUCHER_MESSAGES.NOT_FOUND, { lang }),
+      );
+    }
+    if (!voucher.isActive) {
+      throw new BadRequestException(
+        this.i18n.t(VOUCHER_MESSAGES.DISABLED, { lang }),
+      );
+    }
+
+    const now = new Date();
+    if (voucher.startDate && now < voucher.startDate) {
+      throw new BadRequestException(
+        this.i18n.t(VOUCHER_MESSAGES.NOT_STARTED, { lang }),
+      );
+    }
+    if (voucher.endDate && now > voucher.endDate) {
+      throw new BadRequestException(
+        this.i18n.t(VOUCHER_MESSAGES.EXPIRED, { lang }),
+      );
+    }
+    if (
+      voucher.usageLimit !== null &&
+      voucher.usageLimit > 0 &&
+      voucher.usedCount >= voucher.usageLimit
+    ) {
+      throw new BadRequestException(
+        this.i18n.t(VOUCHER_MESSAGES.SYSTEM_LIMIT_REACHED, { lang }),
+      );
+    }
+
+    const nonCancelledStatuses = {
+      notIn: [
+        OrderStatus.CANCELLED,
+        OrderStatus.RETURN_REJECTED,
+        OrderStatus.RETURNED,
+        OrderStatus.REFUNDED,
+      ],
+    };
+
+    let usedCountForUser = 0;
+    if (userId) {
+      usedCountForUser = await this.prisma.userVoucherUsage.count({
+        where: {
+          voucherId: voucher.id,
+          userId,
+          order: { status: nonCancelledStatuses },
+        },
+      });
+    } else if (phone) {
+      usedCountForUser = await this.prisma.userVoucherUsage.count({
+        where: {
+          voucherId: voucher.id,
+          order: { shippingPhone: phone, status: nonCancelledStatuses },
+        },
+      });
+    }
+
+    if (usedCountForUser >= voucher.perUserLimit) {
+      throw new BadRequestException(
+        this.i18n.t(VOUCHER_MESSAGES.USER_LIMIT_REACHED, { lang }),
+      );
+    }
+
+    if (voucher.minOrderValue && subtotal < Number(voucher.minOrderValue)) {
+      throw new BadRequestException(
+        this.i18n.t(VOUCHER_MESSAGES.MIN_ORDER_NOT_MET, {
+          lang,
+          args: { min: Number(voucher.minOrderValue).toLocaleString('vi-VN') },
+        }),
+      );
+    }
+
+    let eligibleSubtotal = subtotal;
+    let eligibleProductIds = (items || []).map((i) => i.productId);
+
+    if (voucher.scope === VoucherScope.CATEGORY && voucher.categoryId) {
+      if (!items || items.length === 0) {
+        throw new BadRequestException(
+          this.i18n.t(VOUCHER_MESSAGES.CATEGORY_NOT_MATCHED, { lang }),
+        );
+      }
+
+      const matchingProducts = await this.prisma.product.findMany({
+        where: {
+          id: { in: eligibleProductIds },
+          categoryId: voucher.categoryId,
+        },
+        select: { id: true },
+      });
+
+      const matchingProductIds = new Set(matchingProducts.map((p) => p.id));
+      const eligibleItems = items.filter((i) =>
+        matchingProductIds.has(i.productId),
+      );
+      if (eligibleItems.length === 0) {
+        throw new BadRequestException(
+          this.i18n.t(VOUCHER_MESSAGES.CATEGORY_NOT_MATCHED, { lang }),
+        );
+      }
+
+      eligibleProductIds = eligibleItems.map((i) => i.productId);
+      eligibleSubtotal = eligibleItems.reduce(
+        (sum, item) => sum + Number(item.price) * item.quantity,
+        0,
+      );
+    } else if (voucher.scope === VoucherScope.PRODUCT && voucher.productId) {
+      if (!items || items.length === 0) {
+        throw new BadRequestException(
+          this.i18n.t(VOUCHER_MESSAGES.PRODUCT_NOT_MATCHED, { lang }),
+        );
+      }
+
+      const eligibleItems = items.filter(
+        (i) => i.productId === voucher.productId,
+      );
+      if (eligibleItems.length === 0) {
+        throw new BadRequestException(
+          this.i18n.t(VOUCHER_MESSAGES.PRODUCT_NOT_MATCHED, { lang }),
+        );
+      }
+
+      eligibleProductIds = [voucher.productId];
+      eligibleSubtotal = eligibleItems.reduce(
+        (sum, item) => sum + Number(item.price) * item.quantity,
+        0,
+      );
+    }
+
+    if (voucher.type === 'PERCENTAGE' && eligibleProductIds.length > 0) {
+      const activeFlashSale = await this.prisma.productDiscount.findFirst({
+        where: {
+          productId: { in: eligibleProductIds },
+          isActive: true,
+          startDate: { lte: now },
+          endDate: { gte: now },
+        },
+        orderBy: { startDate: 'asc' },
+      });
+
+      if (activeFlashSale) {
+        throw new BadRequestException(
+          this.i18n.t(VOUCHER_MESSAGES.FLASH_SALE_CONFLICT, { lang }),
+        );
+      }
+    }
+
+    let discountAmount = 0;
+    if (voucher.type === 'PERCENTAGE') {
+      discountAmount = Math.floor(
+        (eligibleSubtotal * Number(voucher.value)) / 100,
+      );
+      if (voucher.maxDiscount && discountAmount > Number(voucher.maxDiscount)) {
+        discountAmount = Number(voucher.maxDiscount);
+      }
+    } else if (voucher.type === 'FIXED_AMOUNT') {
+      discountAmount = Math.min(Number(voucher.value), eligibleSubtotal);
+    }
+
+    return {
+      valid: true,
+      voucherId: voucher.id,
+      code: voucher.code,
+      type: voucher.type,
+      scope: voucher.scope,
+      discountAmount,
+      minOrderValue: Number(voucher.minOrderValue),
+      maxDiscount: voucher.maxDiscount ? Number(voucher.maxDiscount) : null,
+      category: voucher.category,
+      product: voucher.product,
+    };
+  }
+
+  async getPublicVouchers(page = 1, limit = 20) {
+    const skip = (page - 1) * limit;
+    const now = new Date();
+    const where: Prisma.VoucherWhereInput = {
+      isActive: true,
+      isPublic: true,
+      endDate: { gte: now },
+      startDate: { lte: now },
+    };
+    const [data, total] = await Promise.all([
+      this.prisma.voucher.findMany({
+        where,
+        include: {
+          category: { select: { id: true, name: true, slug: true } },
+          product: {
+            select: { id: true, name: true, slug: true, images: true },
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
+      }),
+      this.prisma.voucher.count({ where }),
+    ]);
+    return {
+      data,
+      meta: { total, page, limit, totalPages: Math.ceil(total / limit) },
+    };
+  }
+
+  getVoucherUsages = (voucherId: string, page = 1, limit = 10) =>
+    getVoucherUsagesHelper(this.prisma, voucherId, page, limit);
+  findAll = (page = 1, limit = 10, search?: string) =>
+    findAllVouchersHelper(this.prisma, page, limit, search);
+
+  async findOne(id: string, lang?: string) {
+    const voucher = await this.prisma.voucher.findUnique({
+      where: { id },
+      include: { category: true, product: true },
+    });
+    if (!voucher)
+      throw new NotFoundException(
+        this.i18n.t(VOUCHER_MESSAGES.NOT_FOUND, { lang }),
+      );
+    return voucher;
+  }
+
+  create = (dto: CreateVoucherDto) => createVoucherHelper(this.prisma, dto);
+  update = (id: string, dto: UpdateVoucherDto) =>
+    updateVoucherHelper(this.prisma, id, dto);
+
+  async toggleStatus(id: string, lang?: string) {
+    const voucher = await this.prisma.voucher.findUnique({ where: { id } });
+    if (!voucher)
+      throw new BadRequestException(
+        this.i18n.t(VOUCHER_MESSAGES.NOT_FOUND, { lang }),
+      );
+    return this.prisma.voucher.update({
+      where: { id },
+      data: { isActive: !voucher.isActive },
+    });
+  }
+}

@@ -1,0 +1,11 @@
+#!/bin/sh
+
+echo "Running pre-commit hook for frontend..."
+cd code/frontend || exit
+npx lint-staged
+cd ../..
+
+echo "Running pre-commit hook for backend..."
+cd code/backend || exit
+npx lint-staged
+cd ../..

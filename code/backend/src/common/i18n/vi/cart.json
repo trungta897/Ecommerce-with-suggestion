@@ -1,0 +1,6 @@
+{
+  "PRODUCT_NOT_FOUND": "Sản phẩm không tồn tại.",
+  "PRODUCT_INACTIVE": "Sản phẩm đã ngừng kinh doanh.",
+  "EXCEED_STOCK": "Số lượng thêm vào vượt quá tồn kho (còn lại {stock}).",
+  "ITEM_NOT_FOUND": "Sản phẩm không có trong giỏ hàng."
+}

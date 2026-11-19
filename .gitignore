@@ -1,0 +1,19 @@
+# Internal planning documents
+/plans/
+
+# Machine Learning Data
+ml/data/*.csv
+ml/data/*.jsonl
+ml/data/*.json
+node_modules/
+
+.env
+.env.*
+
+.grapuco
+
+summary
+superpowers
+
+# Graduation Thesis & Report documentation (Personal, not pushed to git/code)
+/docs/bao_cao_datn/

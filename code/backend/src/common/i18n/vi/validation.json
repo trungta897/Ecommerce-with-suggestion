@@ -1,0 +1,8 @@
+{
+  "NOT_EMPTY": "Trường {property} không được để trống.",
+  "IS_EMAIL": "Định dạng {property} phải là địa chỉ email hợp lệ.",
+  "IS_STRING": "Trường {property} phải là định dạng văn bản.",
+  "MIN_LENGTH": "Trường {property} phải chứa tối thiểu {constraints.0} ký tự.",
+  "MAX_LENGTH": "Trường {property} chỉ được phép chứa tối đa {constraints.0} ký tự.",
+  "IS_NUMBER": "Trường {property} bắt buộc phải là một chữ số hoặc giá trị số hợp lệ."
+}

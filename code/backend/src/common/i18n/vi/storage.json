@@ -1,0 +1,6 @@
+{
+  "UPLOAD_FAILED": "Tải lên file thất bại",
+  "FILE_NOT_FOUND": "Không tìm thấy file",
+  "BUCKET_CREATE_FAILED": "Không thể tạo bucket storage",
+  "FILE_TOO_LARGE": "File vượt quá kích thước cho phép"
+}

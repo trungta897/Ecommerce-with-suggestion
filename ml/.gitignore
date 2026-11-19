@@ -1,0 +1,32 @@
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Data files (Cực kỳ quan trọng, không được commit file dữ liệu lớn lên Git)
+data/*
+!data/.keep
+*.csv
+*.tsv
+*.dat
+*.json
+
+# Model files (Không commit model nặng)
+models/*
+!models/.keep
+*.pkl
+*.model
+*.h5
+*.joblib
+
+# Jupyter Notebook
+.ipynb_checkpoints

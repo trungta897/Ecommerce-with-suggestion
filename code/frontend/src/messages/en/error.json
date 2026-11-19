@@ -1,0 +1,23 @@
+{
+  "404": {
+    "title": "404",
+    "subtitle": "Page Not Found",
+    "description": "The page you are looking for might have been removed, had its name changed, or is temporarily unavailable.",
+    "back_home": "Back to Home"
+  },
+  "500": {
+    "title": "500",
+    "subtitle": "Oops! Something went wrong.",
+    "description": "Sorry, there was a technical issue on our end. Our engineering team has been notified and is working to fix it.",
+    "retry": "Try again",
+    "back_home": "Back to Home",
+    "support": "Contact Support",
+    "error_detail": "Error details (for developers only):"
+  },
+  "429": {
+    "title": "429 - Too Many Requests",
+    "subtitle": "Please slow down",
+    "description": "You have sent too many requests in a short amount of time. Please wait a moment before trying again.",
+    "reload": "Reload page"
+  }
+}

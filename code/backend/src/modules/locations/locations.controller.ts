@@ -1,0 +1,30 @@
+import { Controller, Get, Param, NotFoundException } from '@nestjs/common';
+import { LocationsService } from './locations.service';
+import { I18nService, I18nContext } from 'nestjs-i18n';
+import { ApiTags } from '@nestjs/swagger';
+
+@ApiTags('Locations')
+@Controller('locations')
+export class LocationsController {
+  constructor(
+    private readonly locationsService: LocationsService,
+    private readonly i18n: I18nService,
+  ) {}
+
+  @Get('provinces')
+  async getProvinces() {
+    return await this.locationsService.getProvinces();
+  }
+
+  @Get('provinces/:id/wards')
+  async getWards(@Param('id') provinceId: string) {
+    const wards = await this.locationsService.getWards(provinceId);
+    if (!wards || wards.length === 0) {
+      const lang = I18nContext.current()?.lang || 'vi';
+      throw new NotFoundException(
+        this.i18n.t('locations.DIST_NOT_FOUND', { lang }),
+      );
+    }
+    return wards;
+  }
+}

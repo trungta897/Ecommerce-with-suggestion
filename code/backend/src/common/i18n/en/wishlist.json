@@ -1,0 +1,6 @@
+{
+  "PRODUCT_NOT_FOUND": "Product not found or is currently inactive.",
+  "ITEM_NOT_FOUND": "Product is not in your wishlist.",
+  "ADDED_SUCCESS": "Added to wishlist.",
+  "REMOVED_SUCCESS": "Removed from wishlist."
+}

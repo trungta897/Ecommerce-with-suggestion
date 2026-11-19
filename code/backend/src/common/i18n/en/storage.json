@@ -1,0 +1,6 @@
+{
+  "UPLOAD_FAILED": "File upload failed",
+  "FILE_NOT_FOUND": "File not found",
+  "BUCKET_CREATE_FAILED": "Cannot create storage bucket",
+  "FILE_TOO_LARGE": "File exceeds allowable limit size"
+}

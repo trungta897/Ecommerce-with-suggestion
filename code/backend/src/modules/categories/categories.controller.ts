@@ -1,0 +1,76 @@
+import {
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Delete,
+  Body,
+  Param,
+  UseGuards,
+  Headers,
+} from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
+import { CategoriesService } from './categories.service';
+import { CreateCategoryDto } from './dto/create-category.dto';
+import { UpdateCategoryDto } from './dto/update-category.dto';
+import { Roles } from '../../common/decorators/roles.decorator';
+import { RolesGuard } from '../../common/guards/roles.guard';
+import { UserRole } from '@prisma/client';
+import { ApiTags } from '@nestjs/swagger';
+
+@ApiTags('Categories')
+@Controller('categories')
+export class CategoriesController {
+  constructor(private readonly categoriesService: CategoriesService) {}
+
+  @Get()
+  findAll() {
+    return this.categoriesService.findAll(false);
+  }
+
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN, UserRole.EMPLOYEE)
+  @Get('admin')
+  findAllAdmin() {
+    return this.categoriesService.findAll(true);
+  }
+
+  @Get(':id')
+  findOne(
+    @Param('id') id: string,
+    @Headers('accept-language') lang: string = 'vi',
+  ) {
+    return this.categoriesService.findOne(id, lang);
+  }
+
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
+  @Post()
+  create(
+    @Body() createCategoryDto: CreateCategoryDto,
+    @Headers('accept-language') lang: string = 'vi',
+  ) {
+    return this.categoriesService.create(createCategoryDto, lang);
+  }
+
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
+  @Patch(':id')
+  update(
+    @Param('id') id: string,
+    @Body() updateCategoryDto: UpdateCategoryDto,
+    @Headers('accept-language') lang: string = 'vi',
+  ) {
+    return this.categoriesService.update(id, updateCategoryDto, lang);
+  }
+
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
+  @Delete(':id')
+  remove(
+    @Param('id') id: string,
+    @Headers('accept-language') lang: string = 'vi',
+  ) {
+    return this.categoriesService.remove(id, lang);
+  }
+}
