@@ -33,7 +33,10 @@ export default async function middleware(request: NextRequest) {
     ratelimit &&
     !request.nextUrl.pathname.includes('/too-many-requests')
   ) {
-    const ip = request.ip ?? '127.0.0.1';
+    const ip =
+      request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ??
+      request.headers.get('x-real-ip') ??
+      '127.0.0.1';
     const { success, limit, reset, remaining } = await ratelimit.limit(ip);
 
     if (!success) {

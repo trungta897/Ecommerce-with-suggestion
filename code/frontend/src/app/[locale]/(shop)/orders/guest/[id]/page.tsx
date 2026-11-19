@@ -3,7 +3,7 @@
 import { useLocale, useTranslations } from 'next-intl';
 import { ChevronRight, Loader2, AlertCircle } from '@/components/base/icons';
 import Link from 'next/link';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, use } from 'react';
 import { useSearchParams } from 'next/navigation';
 import {
   OrderStatusTimeline,
@@ -19,7 +19,8 @@ import { useRepayOrder } from '@/hooks/use-repay-order';
 import { getApiErrorMessage } from '@/utils/get-api-error-message';
 import toast from 'react-hot-toast';
 
-export default function GuestOrderDetailPage({ params }: { params: { id: string } }) {
+export default function GuestOrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
   const locale = useLocale();
   const t = useTranslations('order');
   const tCommon = useTranslations('common');
@@ -40,7 +41,7 @@ export default function GuestOrderDetailPage({ params }: { params: { id: string 
 
     try {
       setLoading(true);
-      const data = await orderService.getGuestOrderById(params.id, phone);
+      const data = await orderService.getGuestOrderById(id, phone);
       setOrder(data);
       if (data.trackingToken) {
         setTrackingToken(data.trackingToken);
@@ -50,7 +51,7 @@ export default function GuestOrderDetailPage({ params }: { params: { id: string 
     } finally {
       setLoading(false);
     }
-  }, [params.id, phone, t]);
+  }, [id, phone, t]);
 
   const { isRepaying, handleRepay } = useRepayOrder({
     guestPhone: phone,
@@ -67,7 +68,7 @@ export default function GuestOrderDetailPage({ params }: { params: { id: string 
 
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
     const eventSource = new EventSource(
-      `${apiUrl}/orders/guest/${params.id}/tracking?token=${encodeURIComponent(trackingToken)}`
+      `${apiUrl}/orders/guest/${id}/tracking?token=${encodeURIComponent(trackingToken)}`
     );
 
     eventSource.onmessage = (event) => {
@@ -93,7 +94,7 @@ export default function GuestOrderDetailPage({ params }: { params: { id: string 
     return () => {
       eventSource.close();
     };
-  }, [trackingToken, order?.id, params.id, fetchOrder, t]);
+  }, [trackingToken, order?.id, id, fetchOrder, t]);
 
   if (loading) {
     return (

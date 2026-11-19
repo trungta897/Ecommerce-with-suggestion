@@ -121,7 +121,7 @@ def train_collaborative_filtering(df_train):
     rating_matrix = csr_matrix((ratings, (row_indices, col_indices)), shape=(n_users, n_items))
     print(f"User-Item sparse matrix shape: {rating_matrix.shape}")
 
-    n_components = min(50, n_items - 1, n_users - 1)
+    n_components = min(10, n_items - 1, n_users - 1)  # k=10 chọn bằng tập kiểm định
     print(f"Fitting TruncatedSVD with n_components={n_components}...")
     svd = TruncatedSVD(n_components=n_components, random_state=42)
     user_factors = svd.fit_transform(rating_matrix)
