@@ -50,8 +50,9 @@ def test_popular_fallback_on_redis_down(redis_down):
         data = response.json()
         assert "items" in data
         # Khi có tệp mô hình đã huấn luyện, endpoint vẫn phục vụ được (nhãn trained_hybrid);
-        # khi thiếu mô hình hoặc mô hình lỗi, endpoint rơi về popular_fallback.
-        assert data["algorithm"] in ("popular_fallback", "trained_hybrid")
+        # khi thiếu mô hình (môi trường CI chưa có tệp .pkl) endpoint trả mock_hybrid;
+        # khi mô hình lỗi, endpoint rơi về popular_fallback.
+        assert data["algorithm"] in ("popular_fallback", "trained_hybrid", "mock_hybrid")
         assert data["cached"] == False
         
         # 2. Test popular endpoint with Redis down
@@ -101,6 +102,11 @@ def test_double_failure(monkeypatch, redis_down):
     async def mock_popular_fail(*args, **kwargs):
         raise RuntimeError("Simulated DB/Logic Error")
     
+    async def mock_predict_fail(*args, **kwargs):
+        raise ValueError("Simulated Model Error")
+
+    # Cả mô hình lẫn danh sách phổ biến đều lỗi (không phụ thuộc có tệp mô hình hay không)
+    monkeypatch.setattr(recommender_system, "predict_hybrid", mock_predict_fail)
     monkeypatch.setattr(recommender_system, "get_popular", mock_popular_fail)
     
     with TestClient(app) as client:

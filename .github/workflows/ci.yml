@@ -84,6 +84,12 @@ jobs:
         # Không cài toàn bộ requirements.txt (lightfm cần biên dịch và không dùng trong bộ kiểm thử này).
         run: pip install numpy scipy scikit-learn pandas joblib fastapi pydantic pydantic-settings redis python-dotenv httpx pytest
 
+      - name: Dependency audit (pip-audit, informational)
+        continue-on-error: true
+        run: |
+          pip install pip-audit
+          pip-audit -r ml/requirements.txt || true
+
       - name: Run pytest
         env:
           API_KEY: ci-test-key
