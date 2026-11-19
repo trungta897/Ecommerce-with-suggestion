@@ -3,6 +3,7 @@ import { PassportStrategy } from '@nestjs/passport';
 import { Injectable } from '@nestjs/common';
 import { UserRole } from '@prisma/client';
 import { Request } from 'express';
+import { requireSecret } from '../../../common/utils/secrets.helper';
 
 interface JwtPayload {
   sub: string;
@@ -21,7 +22,11 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
           (req?.cookies?.['access_token'] as string) || null,
       ]),
       ignoreExpiration: false,
-      secretOrKey: process.env.JWT_SECRET || 'fallback_secret_key_change_me',
+      secretOrKey: requireSecret(
+        process.env.JWT_SECRET,
+        'JWT_SECRET',
+        'fallback_secret_key_change_me',
+      ),
     });
   }
 

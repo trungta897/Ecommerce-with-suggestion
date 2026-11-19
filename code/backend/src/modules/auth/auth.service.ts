@@ -1,4 +1,5 @@
 import { Injectable, BadRequestException, Logger } from '@nestjs/common';
+import { randomInt } from 'crypto';
 import { PrismaService } from '../../database/prisma.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
@@ -11,6 +12,8 @@ import { JwtService } from '@nestjs/jwt';
 import { I18nContext, I18nService } from 'nestjs-i18n';
 import { RedisService } from '../redis/redis.service';
 import { MailService } from '../mail/mail.service';
+
+const OTP_MAX_REQUESTS_PER_PHONE = 10; // số lần yêu cầu OTP tối đa trên mỗi SĐT trong 15 phút
 
 @Injectable()
 export class AuthService {
@@ -25,7 +28,8 @@ export class AuthService {
   ) {}
 
   private generateOtp(): string {
-    return Math.floor(100000 + Math.random() * 900000).toString();
+    // Dùng bộ sinh số ngẫu nhiên an toàn mật mã (CSPRNG) thay cho Math.random().
+    return randomInt(100000, 1000000).toString();
   }
 
   private t(key: string, lang?: string): string {
@@ -220,10 +224,22 @@ export class AuthService {
     if (user && !user.isActive)
       throw new BadRequestException(this.t('auth.PHONE_LOCKED'));
 
+    // Giới hạn tần suất yêu cầu OTP theo SĐT (bổ sung cho giới hạn theo IP ở Controller).
+    const reqKey = `OTP:REQ_PHONE:${phone}`;
+    const isFirstRequest = await this.redisService.setNx(reqKey, '1', 900);
+    if (!isFirstRequest) {
+      const requests = await this.redisService.incr(reqKey);
+      if (requests > OTP_MAX_REQUESTS_PER_PHONE) {
+        throw new BadRequestException(this.t('auth.PHONE_OTP_EXCEEDED'));
+      }
+    }
+
     const otp = this.generateOtp();
     await this.redisService.set(`OTP:PHONE:${phone}`, otp, 300);
-    await this.redisService.del(`OTP:FAIL_PHONE:${phone}`);
-    this.logger.log(`📱 [DEV OTP] Phone: ${phone} -> OTP: ${otp}`);
+    // Không xóa bộ đếm nhập sai khi cấp OTP mới: tránh vô hiệu hóa cơ chế khóa 15 phút.
+    if (process.env.NODE_ENV !== 'production') {
+      this.logger.log(`📱 [DEV OTP] Phone: ${phone} -> OTP: ${otp}`);
+    }
 
     return { message: this.t('auth.PHONE_OTP_SENT'), phone };
   }

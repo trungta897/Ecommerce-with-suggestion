@@ -19,6 +19,8 @@ import { ResetPasswordDto } from './dto/reset-password.dto';
 import { SetStaffPasswordDto } from './dto/set-staff-password.dto';
 import { ApiTags } from '@nestjs/swagger';
 
+const VN_PHONE_REGEX = /^(0|\+84)\d{9}$/;
+
 @ApiTags('Auth')
 @Controller('auth')
 export class AuthController {
@@ -95,6 +97,11 @@ export class AuthController {
         this.i18n.t('auth.PHONE_REQUIRED', { lang }),
       );
     }
+    if (!VN_PHONE_REGEX.test(phone)) {
+      throw new BadRequestException(
+        this.i18n.t('auth.PHONE_REQUIRED', { lang }),
+      );
+    }
     return this.authService.requestPhoneOtp(phone);
   }
 
@@ -110,6 +117,11 @@ export class AuthController {
     if (!phone || !otp) {
       throw new BadRequestException(
         this.i18n.t('auth.PHONE_AND_OTP_REQUIRED', { lang }),
+      );
+    }
+    if (!VN_PHONE_REGEX.test(phone)) {
+      throw new BadRequestException(
+        this.i18n.t('auth.PHONE_REQUIRED', { lang }),
       );
     }
     const result = await this.authService.verifyPhoneOtp(phone, otp, sessionId);

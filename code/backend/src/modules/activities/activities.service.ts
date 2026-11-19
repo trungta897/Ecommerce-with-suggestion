@@ -22,6 +22,7 @@ import {
   type ProductWithCategory,
 } from './recommendations.helper';
 import { buildQuotaBalancedRecommendations } from './recommendations-quota.helper';
+import { requireSecret } from '../../common/utils/secrets.helper';
 
 export interface ActivityEventPayload {
   userId?: string;
@@ -192,8 +193,11 @@ export class ActivitiesService {
         const mlUrl =
           this.configService.get<string>('ML_SERVICE_URL') ||
           'http://localhost:8001';
-        const mlApiKey =
-          this.configService.get<string>('ML_API_KEY') || 'test_api_key_123';
+        const mlApiKey = requireSecret(
+          this.configService.get<string>('ML_API_KEY'),
+          'ML_API_KEY',
+          'test_api_key_123',
+        );
         const candidateLimit = Math.min(
           limit * ML_CANDIDATE_MULTIPLIER,
           ML_MAX_CANDIDATES,
