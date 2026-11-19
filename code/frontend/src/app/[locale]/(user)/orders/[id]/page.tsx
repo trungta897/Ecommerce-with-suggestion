@@ -4,7 +4,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import { ChevronRight, Loader2, AlertCircle } from '@/components/base/icons';
 import { BaseButton, BaseModal } from '@/components/base';
 import Link from 'next/link';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, use } from 'react';
 import {
   ReturnModal,
   OrderStatusTimeline,
@@ -21,7 +21,8 @@ import { canRepayOrder } from '@/utils/order-payment';
 import { getApiErrorMessage } from '@/utils/get-api-error-message';
 import toast from 'react-hot-toast';
 
-export default function OrderDetailPage({ params }: { params: { id: string } }) {
+export default function OrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
   const locale = useLocale();
   const t = useTranslations('order');
   const tCommon = useTranslations('common');
@@ -35,7 +36,7 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
   const fetchOrder = useCallback(async () => {
     try {
       setLoading(true);
-      const data = await orderService.getOrderById(params.id);
+      const data = await orderService.getOrderById(id);
       setOrder(data);
     } catch (err: unknown) {
       console.error(err);
@@ -43,7 +44,7 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
     } finally {
       setLoading(false);
     }
-  }, [params.id, t]);
+  }, [id, t]);
 
   const { isRepaying, handleRepay } = useRepayOrder({
     onRefetch: fetchOrder,
@@ -58,7 +59,7 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
     if (!order?.id) return;
 
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-    const eventSource = new EventSource(`${apiUrl}/orders/${params.id}/tracking`, {
+    const eventSource = new EventSource(`${apiUrl}/orders/${id}/tracking`, {
       withCredentials: true,
     });
 
@@ -85,12 +86,12 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
     return () => {
       eventSource.close();
     };
-  }, [order?.id, params.id, fetchOrder, t]);
+  }, [order?.id, id, fetchOrder, t]);
 
   const handleCancelOrder = async () => {
     try {
       setCancelling(true);
-      await orderService.cancelOrder(params.id);
+      await orderService.cancelOrder(id);
       toast.success(t('cancelSuccess'));
       setShowCancelModal(false);
       fetchOrder();

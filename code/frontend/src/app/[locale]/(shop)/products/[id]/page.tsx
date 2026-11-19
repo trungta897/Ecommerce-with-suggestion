@@ -8,7 +8,7 @@ import { ProductPurchasePanel } from '@/components/features/product/ProductPurch
 import { useCart } from '@/hooks/use-cart';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, use } from 'react';
 import { ProductImageCarousel } from '@/components/features/product/ProductImageCarousel';
 import { useToast } from '@/providers/toast-provider';
 import { formatPrice } from '@/utils/format';
@@ -19,7 +19,8 @@ import { RecentlyViewedSlider } from '@/components/features/product/RecentlyView
 import { RecommendedProducts } from '@/components/features/product/RecommendedProducts';
 import { RelatedCategoryProducts } from '@/components/features/product/RelatedCategoryProducts';
 
-export default function ProductDetailPage({ params }: { params: { id: string } }) {
+export default function ProductDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
   const locale = useLocale();
   const t = useTranslations('product');
   const tCommon = useTranslations('common');
@@ -30,7 +31,7 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
   const [quantity, setQuantity] = useState(1);
   const [activeTab, setActiveTab] = useState<'description' | 'reviews'>('description');
 
-  const { data: product, isLoading } = useProductBySlug(params.id);
+  const { data: product, isLoading } = useProductBySlug(id);
 
   useEffect(() => {
     if (product && product.id) {

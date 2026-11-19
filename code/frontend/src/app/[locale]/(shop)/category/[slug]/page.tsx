@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, use } from 'react';
 import { useTranslations } from 'next-intl';
 import FilterSidebar from '@/components/category/FilterSidebar';
 import ProductCard from '@/components/features/product/ProductCard';
@@ -9,12 +9,13 @@ import { FilterIcon, ChevronLeft, ChevronRight } from '@/components/base/icons';
 
 const ITEMS_PER_PAGE = 20;
 
-export default function CategorySlugPage({ params }: { params: { slug: string } }) {
+export default function CategorySlugPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = use(params);
   const t = useTranslations('home.categories');
   const tProduct = useTranslations('product');
   const [page, setPage] = useState<number>(1);
 
-  const { data: productsResponse, isLoading } = useProductsByCategory(params.slug, {
+  const { data: productsResponse, isLoading } = useProductsByCategory(slug, {
     page,
     limit: ITEMS_PER_PAGE,
   });
@@ -27,12 +28,12 @@ export default function CategorySlugPage({ params }: { params: { slug: string } 
     totalPages: 1,
   };
 
-  let categoryTitle = params.slug;
+  let categoryTitle = slug;
   try {
-    const tr = t(params.slug as Parameters<typeof t>[0]);
+    const tr = t(slug as Parameters<typeof t>[0]);
     if (tr && !tr.includes('.')) categoryTitle = tr;
   } catch {
-    categoryTitle = params.slug;
+    categoryTitle = slug;
   }
 
   const handlePageChange = (newPage: number) => {
