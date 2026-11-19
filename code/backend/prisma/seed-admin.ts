@@ -4,8 +4,16 @@ import * as bcrypt from 'bcrypt';
 const prisma = new PrismaClient();
 
 async function main() {
-  const email = 'admin@datn.com';
-  const password = 'Admin@123456';
+  const isProd = process.env.NODE_ENV === 'production';
+  const email = process.env.SEED_ADMIN_EMAIL ?? 'admin@datn.com';
+  // Ở production bắt buộc cấp mật khẩu qua biến môi trường; mật khẩu mặc định chỉ dùng cho dev/test.
+  const password =
+    process.env.SEED_ADMIN_PASSWORD ?? (isProd ? '' : 'Admin@123456');
+  if (!password || (isProd && password.length < 12)) {
+    throw new Error(
+      'Production: đặt SEED_ADMIN_PASSWORD (tối thiểu 12 ký tự) trước khi seed admin.',
+    );
+  }
   const saltRounds = 10;
   const passwordHash = await bcrypt.hash(password, saltRounds);
 

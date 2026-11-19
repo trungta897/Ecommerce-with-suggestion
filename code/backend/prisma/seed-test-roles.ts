@@ -4,6 +4,11 @@ import * as bcrypt from 'bcrypt';
 const prisma = new PrismaClient();
 
 async function main() {
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error(
+      'Không chạy seed tài khoản thử nghiệm ở môi trường production.',
+    );
+  }
   const saltRounds = 10;
 
   // 1. Super Admin
