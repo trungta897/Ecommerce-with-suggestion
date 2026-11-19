@@ -17,3 +17,7 @@ superpowers
 
 # Graduation Thesis & Report documentation (Personal, not pushed to git/code)
 /docs/bao_cao_datn/
+
+# Python bytecode
+__pycache__/
+*.pyc
