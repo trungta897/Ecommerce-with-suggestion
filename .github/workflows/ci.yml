@@ -71,9 +71,6 @@ jobs:
   ml-ci:
     name: ML Service Unit Tests (pytest)
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ml
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -85,10 +82,12 @@ jobs:
 
       - name: Install dependencies
         # Không cài toàn bộ requirements.txt (lightfm cần biên dịch và không dùng trong bộ kiểm thử này).
-        run: pip install numpy scipy scikit-learn pandas joblib fastapi pydantic pydantic-settings redis python-dotenv pytest
+        run: pip install numpy scipy scikit-learn pandas joblib fastapi pydantic pydantic-settings redis python-dotenv httpx pytest
 
       - name: Run pytest
-        run: python -m pytest tests -q
+        env:
+          API_KEY: ci-test-key
+        run: PYTHONPATH=ml:. python -m pytest ml/tests test/ml -q
 
   e2e:
     name: Playwright E2E (roles, auth, shop, i18n, smoke)
@@ -142,6 +141,10 @@ jobs:
           npx prisma migrate deploy
           npm run db:seed-locations
           npm run db:seed-test-roles
+
+      - name: Run API integration tests (Supertest)
+        working-directory: code/backend
+        run: npm run test:e2e
 
       - name: Install frontend dependencies
         working-directory: code/frontend

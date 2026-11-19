@@ -60,7 +60,7 @@ export class VnPayService {
     } catch (e: unknown) {
       const errorMessage = e instanceof Error ? e.message : String(e);
       this.logger.error(`IPN Verify Error: ${errorMessage}`);
-      return { isSuccess: false, message: errorMessage };
+      return { isVerified: false, isSuccess: false, message: errorMessage };
     }
   }
 
